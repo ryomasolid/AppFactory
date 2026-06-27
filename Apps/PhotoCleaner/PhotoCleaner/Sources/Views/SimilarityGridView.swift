@@ -38,7 +38,12 @@ struct SimilarityGridView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
+            if viewModel.totalFreeableByteSize > 0 {
+                Label("最大 約 \(viewModel.formattedSize(viewModel.totalFreeableByteSize)) 節約できます", systemImage: "internaldrive")
+                    .font(.headline)
+                    .foregroundStyle(.tint)
+            }
             Text("各グループで残す1枚以外を選んで削除できます。タップで選択を切り替え、長押しで「残す」を変更します。")
                 .font(.footnote)
                 .foregroundStyle(.secondary)

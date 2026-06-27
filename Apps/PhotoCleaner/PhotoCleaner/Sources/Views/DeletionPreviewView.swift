@@ -30,6 +30,12 @@ struct DeletionPreviewView: View {
 
     private var footer: some View {
         VStack(spacing: 10) {
+            if viewModel.selectedByteSize > 0 {
+                Label("約 \(viewModel.formattedSize(viewModel.selectedByteSize)) を削減できます", systemImage: "internaldrive")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.primary)
+            }
+
             Text("削除した写真は「最近削除した項目」に30日間残ります。その間は端末の空き容量はすぐには増えません。")
                 .font(.footnote)
                 .foregroundStyle(.secondary)

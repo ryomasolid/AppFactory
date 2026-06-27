@@ -103,8 +103,15 @@ public struct ContentView: View {
             } label: {
                 HStack {
                     Image(systemName: "trash")
-                    Text("\(viewModel.selectedCount) 枚を確認して削除")
-                        .fontWeight(.semibold)
+                    VStack(spacing: 1) {
+                        Text("\(viewModel.selectedCount) 枚を確認して削除")
+                            .fontWeight(.semibold)
+                        if viewModel.selectedByteSize > 0 {
+                            Text("約 \(viewModel.formattedSize(viewModel.selectedByteSize)) を削減")
+                                .font(.caption)
+                                .opacity(0.9)
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding()

@@ -17,6 +17,20 @@ struct PhotoAsset: Identifiable, Hashable {
         return "\(asset.localIdentifier)|\(mod)"
     }
 
+    /// このアセットのファイルサイズ（バイト）。削減見込み容量の算出に使う。
+    /// 完全な公開APIがないため `PHAssetResource` の fileSize を合算する（デコード不要で軽量）。
+    var byteSize: Int64 {
+        PHAssetResource.assetResources(for: asset).reduce(0) { total, resource in
+            if let size = resource.value(forKey: "fileSize") as? Int64 {
+                return total + size
+            }
+            if let size = resource.value(forKey: "fileSize") as? Int {
+                return total + Int64(size)
+            }
+            return total
+        }
+    }
+
     static func == (lhs: PhotoAsset, rhs: PhotoAsset) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }

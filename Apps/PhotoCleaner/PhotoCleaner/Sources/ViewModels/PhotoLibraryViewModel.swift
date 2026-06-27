@@ -17,6 +17,8 @@ final class PhotoLibraryViewModel {
     private(set) var phase: Phase = .idle
     private(set) var assetCount: Int = 0
     private(set) var groups: [SimilarityGroup] = []
+    /// グループ各メンバーのバイトサイズ（id→bytes）。スキャン後に背景で算出してキャッシュ。
+    private(set) var byteSizeByID: [String: Int64] = [:]
 
     // 削除フローの状態
     private(set) var isDeleting = false
@@ -76,6 +78,19 @@ final class PhotoLibraryViewModel {
         }
         groups = result
         phase = .ready
+        await computeByteSizes(for: result)
+    }
+
+    /// グループメンバーのファイルサイズを背景で算出してキャッシュする。
+    private func computeByteSizes(for groups: [SimilarityGroup]) async {
+        let members = groups.flatMap(\.members)
+        guard !members.isEmpty else { return }
+        let sizes = await Task.detached(priority: .utility) {
+            var dict: [String: Int64] = [:]
+            for photo in members { dict[photo.id] = photo.byteSize }
+            return dict
+        }.value
+        byteSizeByID = sizes
     }
 
     // MARK: - Selection
@@ -90,6 +105,25 @@ final class PhotoLibraryViewModel {
         groups.flatMap { group in
             group.members.filter { group.selectedForDeletion.contains($0.id) }
         }
+    }
+
+    /// 選択中の写真を削除した場合に削減できる見込みバイト数。
+    var selectedByteSize: Int64 {
+        selectedPhotos.reduce(0) { $0 + (byteSizeByID[$1.id] ?? 0) }
+    }
+
+    /// 全グループで「残す1枚」以外をすべて削除した場合の削減見込みバイト数（最大）。
+    var totalFreeableByteSize: Int64 {
+        groups.reduce(0) { sum, group in
+            sum + group.members
+                .filter { $0.id != group.keepCandidateID }
+                .reduce(0) { $0 + (byteSizeByID[$1.id] ?? 0) }
+        }
+    }
+
+    /// バイト数を人が読める文字列に整形（例: "12.3 MB"）。
+    func formattedSize(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
     /// 「残す1枚」以外がすべて選択されているか（全選択トグルのラベル判定用）。
