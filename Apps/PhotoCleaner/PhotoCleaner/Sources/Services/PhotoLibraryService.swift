@@ -65,6 +65,36 @@ final class PhotoLibraryService {
         return result
     }
 
+    // MARK: - Deletion
+
+    /// 削除操作の結果。`cancelled` は OS 確認ダイアログでユーザーが取り消した場合。
+    enum DeletionOutcome {
+        case completed
+        case cancelled
+    }
+
+    /// 選択されたアセットをまとめて削除する。
+    ///
+    /// `PHAssetChangeRequest.deleteAssets` は**無音削除できず、必ず OS の確認ダイアログ**が出る。
+    /// そのため UX は「選択 → まとめて確認」を前提にしており、ここで一括して削除をリクエストする。
+    /// なお削除後 30 日間は「最近削除した項目」に残り、端末の空き容量は即座には増えない。
+    func deleteAssets(_ assets: [PHAsset]) async throws -> DeletionOutcome {
+        guard !assets.isEmpty else { return .completed }
+        do {
+            try await PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.deleteAssets(assets as NSArray)
+            }
+            return .completed
+        } catch {
+            // ダイアログでキャンセルされた場合は userCancelled(3072) が返る。
+            let nsError = error as NSError
+            if nsError.domain == PHPhotosErrorDomain, nsError.code == 3072 {
+                return .cancelled
+            }
+            throw error
+        }
+    }
+
     /// 表示用サムネイルを非同期で取得する。単一コールバックになるよう degraded を無視する。
     func thumbnail(for asset: PHAsset, targetSize: CGSize) async -> UIImage? {
         let options = PHImageRequestOptions()

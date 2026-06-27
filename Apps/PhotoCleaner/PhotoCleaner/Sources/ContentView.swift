@@ -10,6 +10,18 @@ public struct ContentView: View {
         NavigationStack {
             content
                 .navigationTitle("PhotoCleaner")
+                .toolbar {
+                    if case .ready = viewModel.phase {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                Task { await viewModel.rescan() }
+                            } label: {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                            .disabled(viewModel.isDeleting)
+                        }
+                    }
+                }
         }
         .task {
             await viewModel.loadIfAuthorized()
@@ -50,8 +62,52 @@ public struct ContentView: View {
                     description: Text("\(viewModel.assetCount) 枚をスキャンしました")
                 )
             } else {
-                SimilarityGridView(groups: viewModel.groups, service: viewModel.service)
+                SimilarityGridView(viewModel: viewModel)
+                    .safeAreaInset(edge: .bottom) { deleteBar }
+                    .alert("削除しました", isPresented: $viewModel.showDeletionInfo) {
+                        Button("OK", role: .cancel) {}
+                    } message: {
+                        Text("\(viewModel.lastDeletionCount) 枚を削除しました。\n\n削除した写真は「最近削除した項目」に30日間残り、その間は端末の空き容量はすぐには増えません。完全に削除して容量を空けるには、写真アプリの「最近削除した項目」から削除してください。")
+                    }
+                    .alert("削除に失敗しました", isPresented: errorBinding) {
+                        Button("OK", role: .cancel) { viewModel.deletionError = nil }
+                    } message: {
+                        Text(viewModel.deletionError ?? "")
+                    }
             }
+        }
+    }
+
+    private var errorBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.deletionError != nil },
+            set: { if !$0 { viewModel.deletionError = nil } }
+        )
+    }
+
+    @ViewBuilder
+    private var deleteBar: some View {
+        if viewModel.selectedCount > 0 {
+            Button {
+                Task { await viewModel.deleteSelected() }
+            } label: {
+                HStack {
+                    if viewModel.isDeleting {
+                        ProgressView().tint(.white)
+                    } else {
+                        Image(systemName: "trash")
+                    }
+                    Text("\(viewModel.selectedCount) 枚を削除")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(.red, in: RoundedRectangle(cornerRadius: 14))
+                .foregroundStyle(.white)
+            }
+            .disabled(viewModel.isDeleting)
+            .padding()
+            .background(.ultraThinMaterial)
         }
     }
 }
