@@ -3,6 +3,7 @@ import SwiftUI
 
 public struct ContentView: View {
     @State private var viewModel = PhotoLibraryViewModel()
+    @State private var showDeletePreview = false
 
     public init() {}
 
@@ -11,7 +12,13 @@ public struct ContentView: View {
             content
                 .navigationTitle("PhotoCleaner")
                 .toolbar {
-                    if case .ready = viewModel.phase {
+                    if case .ready = viewModel.phase, !viewModel.groups.isEmpty {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button(viewModel.isAllSelected ? "全解除" : "全選択") {
+                                viewModel.toggleSelectAll()
+                            }
+                            .disabled(viewModel.isDeleting)
+                        }
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 Task { await viewModel.rescan() }
@@ -64,6 +71,9 @@ public struct ContentView: View {
             } else {
                 SimilarityGridView(viewModel: viewModel)
                     .safeAreaInset(edge: .bottom) { deleteBar }
+                    .sheet(isPresented: $showDeletePreview) {
+                        DeletionPreviewView(viewModel: viewModel)
+                    }
                     .alert("削除しました", isPresented: $viewModel.showDeletionInfo) {
                         Button("OK", role: .cancel) {}
                     } message: {
@@ -89,15 +99,11 @@ public struct ContentView: View {
     private var deleteBar: some View {
         if viewModel.selectedCount > 0 {
             Button {
-                Task { await viewModel.deleteSelected() }
+                showDeletePreview = true
             } label: {
                 HStack {
-                    if viewModel.isDeleting {
-                        ProgressView().tint(.white)
-                    } else {
-                        Image(systemName: "trash")
-                    }
-                    Text("\(viewModel.selectedCount) 枚を削除")
+                    Image(systemName: "trash")
+                    Text("\(viewModel.selectedCount) 枚を確認して削除")
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)

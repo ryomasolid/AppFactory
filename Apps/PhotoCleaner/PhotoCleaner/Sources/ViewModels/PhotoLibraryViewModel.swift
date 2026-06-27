@@ -85,6 +85,43 @@ final class PhotoLibraryViewModel {
         groups.reduce(0) { $0 + $1.selectedForDeletion.count }
     }
 
+    /// 削除候補に選ばれている写真（プレビュー表示・削除に使う）。
+    var selectedPhotos: [PhotoAsset] {
+        groups.flatMap { group in
+            group.members.filter { group.selectedForDeletion.contains($0.id) }
+        }
+    }
+
+    /// 「残す1枚」以外がすべて選択されているか（全選択トグルのラベル判定用）。
+    var isAllSelected: Bool {
+        for group in groups {
+            for member in group.members where member.id != group.keepCandidateID {
+                if !group.selectedForDeletion.contains(member.id) { return false }
+            }
+        }
+        return selectedCount > 0
+    }
+
+    /// 全選択⇄全解除をトグルする。
+    func toggleSelectAll() {
+        if isAllSelected { deselectAll() } else { selectAllDuplicates() }
+    }
+
+    /// 各グループの「残す1枚」以外をすべて削除候補にする。
+    func selectAllDuplicates() {
+        for i in groups.indices {
+            let keep = groups[i].keepCandidateID
+            groups[i].selectedForDeletion = Set(groups[i].members.map(\.id).filter { $0 != keep })
+        }
+    }
+
+    /// 全グループの削除候補を解除する。
+    func deselectAll() {
+        for i in groups.indices {
+            groups[i].selectedForDeletion.removeAll()
+        }
+    }
+
     /// 写真の削除候補選択をトグルする。「残す1枚」は削除対象にできない。
     func toggleSelection(_ assetID: String, inGroup groupID: String) {
         guard let g = groups.firstIndex(where: { $0.id == groupID }) else { return }
