@@ -20,8 +20,15 @@ struct FloorPlanEditorView: View {
                 background
 
                 ForEach(plan.markers) { marker in
-                    pin(marker)
-                        .position(x: marker.x * geo.size.width, y: marker.y * geo.size.height)
+                    MarkerPin(
+                        marker: marker,
+                        canvasSize: geo.size,
+                        onTap: { selectedMarker = marker },
+                        onMoved: { nx, ny in
+                            marker.x = nx
+                            marker.y = ny
+                        }
+                    )
                 }
             }
             .contentShape(Rectangle())
@@ -61,34 +68,12 @@ struct FloorPlanEditorView: View {
     }
 
     private var hint: some View {
-        Text(plan.markers.isEmpty ? "タップで対策・設置場所を追加" : "タップで追加 ・ 長押しで削除")
+        Text(plan.markers.isEmpty ? "タップで対策・設置場所を追加" : "タップで編集 ・ ドラッグで移動")
             .font(.caption)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(.ultraThinMaterial, in: Capsule())
             .padding(.bottom, 12)
-    }
-
-    private func pin(_ marker: PestMarker) -> some View {
-        Image(systemName: marker.kind.symbol)
-            .font(.callout)
-            .foregroundStyle(.white)
-            .padding(8)
-            .background(marker.kind.color, in: Circle())
-            .overlay(Circle().stroke(.white, lineWidth: 2))
-            .overlay(alignment: .topTrailing) {
-                if marker.nextActionDate != nil {
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.white)
-                        .padding(3)
-                        .background(.orange, in: Circle())
-                        .offset(x: 4, y: -4)
-                }
-            }
-            .shadow(radius: 2)
-            .onTapGesture { selectedMarker = marker }
-            .onLongPressGesture { context.delete(marker) }
     }
 
     // MARK: - Toolbar
@@ -139,6 +124,68 @@ struct FloorPlanEditorView: View {
 
     private func decodeBackground() {
         bgImage = plan.imageData.flatMap(UIImage.init)
+    }
+}
+
+/// キャンバス上のマーカー。タップで編集、ドラッグで移動する。
+/// 位置は正規化座標（0...1）で持ち、ドラッグ確定時にモデルへ書き戻す。
+private struct MarkerPin: View {
+    let marker: PestMarker
+    let canvasSize: CGSize
+    let onTap: () -> Void
+    let onMoved: (Double, Double) -> Void
+
+    @State private var dragOffset: CGSize = .zero
+    @State private var isDragging = false
+
+    var body: some View {
+        let baseX = marker.x * canvasSize.width
+        let baseY = marker.y * canvasSize.height
+
+        symbol
+            .scaleEffect(isDragging ? 1.25 : 1)
+            .shadow(radius: isDragging ? 6 : 2)
+            .position(x: baseX + dragOffset.width, y: baseY + dragOffset.height)
+            .animation(.spring(duration: 0.2), value: isDragging)
+            .onTapGesture { onTap() }
+            .gesture(
+                DragGesture(minimumDistance: 8)
+                    .onChanged { value in
+                        isDragging = true
+                        dragOffset = value.translation
+                    }
+                    .onEnded { value in
+                        guard canvasSize.width > 0, canvasSize.height > 0 else {
+                            dragOffset = .zero
+                            isDragging = false
+                            return
+                        }
+                        let nx = (baseX + value.translation.width) / canvasSize.width
+                        let ny = (baseY + value.translation.height) / canvasSize.height
+                        onMoved(min(max(nx, 0), 1), min(max(ny, 0), 1))
+                        dragOffset = .zero
+                        isDragging = false
+                    }
+            )
+    }
+
+    private var symbol: some View {
+        Image(systemName: marker.kind.symbol)
+            .font(.callout)
+            .foregroundStyle(.white)
+            .padding(8)
+            .background(marker.kind.color, in: Circle())
+            .overlay(Circle().stroke(.white, lineWidth: 2))
+            .overlay(alignment: .topTrailing) {
+                if marker.nextActionDate != nil {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.white)
+                        .padding(3)
+                        .background(.orange, in: Circle())
+                        .offset(x: 4, y: -4)
+                }
+            }
     }
 }
 
