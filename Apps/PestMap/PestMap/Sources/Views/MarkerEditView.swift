@@ -10,6 +10,7 @@ struct MarkerEditView: View {
 
     @State private var hasReminder: Bool
     @State private var reminderDate: Date
+    @State private var alertMessage: String?
 
     init(marker: PestMarker, planName: String) {
         self.marker = marker
@@ -62,7 +63,16 @@ struct MarkerEditView: View {
                     Button("キャンセル") { dismiss() }
                 }
             }
+            .alert("通知を設定できません", isPresented: alertBinding) {
+                Button("OK", role: .cancel) { alertMessage = nil }
+            } message: {
+                Text(alertMessage ?? "")
+            }
         }
+    }
+
+    private var alertBinding: Binding<Bool> {
+        Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })
     }
 
     private var kindBinding: Binding<MarkerKind> {
@@ -72,22 +82,32 @@ struct MarkerEditView: View {
     private func save() async {
         if hasReminder {
             let note = marker.note.isEmpty ? "" : "（\(marker.note)）"
-            let id = await NotificationService.shared.schedule(
+            let outcome = await NotificationService.shared.schedule(
                 title: "害虫対策のリマインド",
                 body: "\(planName)：\(marker.kind.label)\(note)",
                 at: reminderDate,
                 existingID: marker.notificationID
             )
-            marker.nextActionDate = reminderDate
-            marker.notificationID = id
+            switch outcome {
+            case .scheduled(let id):
+                marker.nextActionDate = reminderDate
+                marker.notificationID = id
+                dismiss()
+            case .notAuthorized:
+                alertMessage = "通知が許可されていません。設定アプリ →「PestMap」→「通知」で許可してください。"
+            case .invalidDate:
+                alertMessage = "過去の日時には設定できません。未来の日時を選んでください。"
+            case .failed:
+                alertMessage = "通知の登録に失敗しました。時間をおいて再度お試しください。"
+            }
         } else {
             if let id = marker.notificationID {
                 NotificationService.shared.cancel(id: id)
             }
             marker.nextActionDate = nil
             marker.notificationID = nil
+            dismiss()
         }
-        dismiss()
     }
 
     private func deleteMarker() {

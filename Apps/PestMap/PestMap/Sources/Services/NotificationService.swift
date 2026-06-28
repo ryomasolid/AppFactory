@@ -9,12 +9,19 @@ final class NotificationService {
 
     private let center = UNUserNotificationCenter.current()
 
+    /// スケジュール結果。失敗理由を呼び出し側に伝えてユーザーに案内できるようにする。
+    enum ScheduleOutcome {
+        case scheduled(id: String)
+        case notAuthorized   // 通知が許可されていない
+        case invalidDate     // 過去の日時
+        case failed          // その他の失敗
+    }
+
     /// 予定日時に通知をスケジュールする。既存の通知があれば置き換える。
-    /// - Returns: スケジュールした通知の識別子（失敗・過去日時なら nil）。
-    func schedule(title: String, body: String, at date: Date, existingID: String?) async -> String? {
+    func schedule(title: String, body: String, at date: Date, existingID: String?) async -> ScheduleOutcome {
         if let existingID { cancel(id: existingID) }
-        guard date > Date() else { return nil }
-        guard await ensureAuthorized() else { return nil }
+        guard date > Date() else { return .invalidDate }
+        guard await ensureAuthorized() else { return .notAuthorized }
 
         let content = UNMutableNotificationContent()
         content.title = title
@@ -30,9 +37,9 @@ final class NotificationService {
 
         do {
             try await center.add(request)
-            return id
+            return .scheduled(id: id)
         } catch {
-            return nil
+            return .failed
         }
     }
 
