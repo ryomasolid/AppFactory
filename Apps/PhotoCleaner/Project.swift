@@ -7,7 +7,7 @@ let project = Project(
             name: "PhotoCleaner",
             destinations: .iOS,
             product: .app,
-            bundleId: "dev.tuist.PhotoCleaner",
+            bundleId: "tech.sesame.photocleaner",
             deploymentTargets: .iOS("17.0"),
             infoPlist: .extendingDefault(
                 with: [
@@ -29,7 +29,7 @@ let project = Project(
             name: "PhotoCleanerTests",
             destinations: .iOS,
             product: .unitTests,
-            bundleId: "dev.tuist.PhotoCleanerTests",
+            bundleId: "tech.sesame.photocleaner.tests",
             infoPlist: .default,
             buildableFolders: [
                 "PhotoCleaner/Tests"
