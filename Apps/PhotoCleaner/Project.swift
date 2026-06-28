@@ -2,6 +2,13 @@ import ProjectDescription
 
 let project = Project(
     name: "PhotoCleaner",
+    settings: .settings(
+        base: [
+            // 自動署名と開発チームを固定し、tuist generate で署名設定が消えないようにする。
+            "DEVELOPMENT_TEAM": "8F626K46L8",
+            "CODE_SIGN_STYLE": "Automatic",
+        ]
+    ),
     targets: [
         .target(
             name: "PhotoCleaner",
