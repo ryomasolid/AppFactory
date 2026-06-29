@@ -2,8 +2,11 @@ import Photos
 import SwiftUI
 
 public struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = PhotoLibraryViewModel()
     @State private var showDeletePreview = false
+    @AppStorage("pc.hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var showOnboarding = false
 
     public init() {}
 
@@ -25,6 +28,7 @@ public struct ContentView: View {
                             } label: {
                                 Image(systemName: "arrow.clockwise")
                             }
+                            .accessibilityLabel("再スキャン")
                             .disabled(viewModel.isDeleting)
                         }
                     }
@@ -32,6 +36,19 @@ public struct ContentView: View {
         }
         .task {
             await viewModel.loadIfAuthorized()
+        }
+        .onAppear { showOnboarding = !hasSeenOnboarding }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView {
+                hasSeenOnboarding = true
+                showOnboarding = false
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // 設定アプリで権限を変更して戻ってきた場合に再評価する。
+            if phase == .active {
+                Task { await viewModel.loadIfAuthorized() }
+            }
         }
     }
 
