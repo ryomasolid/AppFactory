@@ -5,12 +5,19 @@ import UIKit
 /// 予約中のリマインド一覧。全間取りのマーカーから「次回予定」が設定されたものを
 /// 近い順に表示する。期限切れは赤で強調。
 struct RemindersView: View {
+    /// 行タップ時に対象の間取りへ移動するためのコールバック。
+    let onSelect: (FloorPlan) -> Void
+
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \PestMarker.nextActionDate, order: .forward) private var allMarkers: [PestMarker]
     @State private var notificationsDenied = false
 
     private var reminders: [PestMarker] {
         allMarkers.filter { $0.nextActionDate != nil }
+    }
+
+    private var overdueCount: Int {
+        reminders.filter { ($0.nextActionDate ?? .distantFuture) < Date() }.count
     }
 
     var body: some View {
@@ -27,8 +34,18 @@ struct RemindersView: View {
                         if notificationsDenied {
                             deniedBanner
                         }
+                        Section {
+                            Text("予定 \(reminders.count) 件" + (overdueCount > 0 ? " ・ 期限切れ \(overdueCount) 件" : ""))
+                                .font(.subheadline)
+                                .foregroundStyle(overdueCount > 0 ? .red : .secondary)
+                        }
                         ForEach(reminders) { marker in
-                            row(marker)
+                            Button {
+                                if let plan = marker.plan { onSelect(plan) }
+                            } label: {
+                                row(marker)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
