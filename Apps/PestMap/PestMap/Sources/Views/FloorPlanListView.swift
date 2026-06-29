@@ -8,6 +8,7 @@ struct FloorPlanListView: View {
 
     @State private var showingNewPlanAlert = false
     @State private var newPlanName = ""
+    @State private var showingReminders = false
 
     var body: some View {
         NavigationStack {
@@ -34,6 +35,13 @@ struct FloorPlanListView: View {
                 FloorPlanEditorView(plan: plan)
             }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showingReminders = true
+                    } label: {
+                        Image(systemName: "bell.badge")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         newPlanName = ""
@@ -42,6 +50,9 @@ struct FloorPlanListView: View {
                         Image(systemName: "plus")
                     }
                 }
+            }
+            .sheet(isPresented: $showingReminders) {
+                RemindersView()
             }
             .alert("新しい間取り", isPresented: $showingNewPlanAlert) {
                 TextField("名前（例: 1階キッチン）", text: $newPlanName)

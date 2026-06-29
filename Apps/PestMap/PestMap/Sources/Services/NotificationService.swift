@@ -48,6 +48,11 @@ final class NotificationService {
         center.removePendingNotificationRequests(withIdentifiers: [id])
     }
 
+    /// 通知が明示的に拒否されているか（リマインド一覧で設定誘導バナーを出すため）。
+    func isDenied() async -> Bool {
+        await center.notificationSettings().authorizationStatus == .denied
+    }
+
     /// 必要に応じて許可をリクエストし、利用可能かを返す。
     private func ensureAuthorized() async -> Bool {
         let settings = await center.notificationSettings()
