@@ -22,6 +22,7 @@ let project = Project(
                         "UIColorName": "",
                         "UIImageName": "",
                     ],
+                    "CFBundleDisplayName": "PestMap",
                     // 間取り図を撮影して取り込むためにカメラを使う。
                     "NSCameraUsageDescription": "間取り図を撮影して取り込むためにカメラを使用します。",
                 ]

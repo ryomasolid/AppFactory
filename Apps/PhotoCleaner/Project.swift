@@ -22,6 +22,7 @@ let project = Project(
                         "UIColorName": "",
                         "UIImageName": "",
                     ],
+                    "CFBundleDisplayName": "PhotoCleaner",
                     // 写真は完全オンデバイスで処理し、外部送信しない旨をユーザーに伝える。
                     "NSPhotoLibraryUsageDescription": "重複・類似した写真を端末内だけで検出し、削除候補として表示するために写真ライブラリにアクセスします。写真が端末外に送信されることはありません。",
                 ]
