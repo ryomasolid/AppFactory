@@ -30,6 +30,8 @@ public struct ContentView: View {
         .onAppear {
             showOnboarding = !hasSeenOnboarding
             authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+            // 広告の同意（UMP）→ ATT → AdMob 初期化を実行。
+            ConsentManager.shared.start()
         }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {

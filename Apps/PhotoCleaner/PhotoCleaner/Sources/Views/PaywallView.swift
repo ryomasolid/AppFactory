@@ -27,13 +27,14 @@ struct PaywallView: View {
                 Button {
                     Task { await store.purchase(); if store.isPro { dismiss() } }
                 } label: {
-                    Text(store.priceText.isEmpty ? "購入する" : "\(store.priceText) で購入")
+                    Text(store.product == nil ? "購入を準備中…" : "\(store.priceText) で購入")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(.tint, in: RoundedRectangle(cornerRadius: 14))
+                        .background(store.product == nil ? AnyShapeStyle(.gray) : AnyShapeStyle(.tint), in: RoundedRectangle(cornerRadius: 14))
                         .foregroundStyle(.white)
                 }
+                .disabled(store.product == nil)
 
                 Button("購入を復元") {
                     Task { await store.restore(); if store.isPro { dismiss() } }

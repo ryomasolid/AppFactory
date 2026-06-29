@@ -27,6 +27,8 @@ let project = Project(
                     "NSPhotoLibraryUsageDescription": "重複・類似した写真を端末内だけで検出し、削除候補として表示するために写真ライブラリにアクセスします。写真が端末外に送信されることはありません。",
                     // AdMob アプリID。現在は Google のテスト用ID。本番は自分の AdMob アプリIDに差し替える。
                     "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    // 広告のトラッキング許可（ATT）ダイアログの説明文。
+                    "NSUserTrackingUsageDescription": "あなたに関連性の高い広告を表示するために使用します。許可しなくてもアプリの機能はご利用いただけます。",
                 ]
             ),
             buildableFolders: [
@@ -34,6 +36,7 @@ let project = Project(
                 "PhotoCleaner/Resources",
             ],
             dependencies: [
+                // UserMessagingPlatform は GoogleMobileAds 経由で利用できる（transitive）。
                 .external(name: "GoogleMobileAds"),
             ]
         ),
