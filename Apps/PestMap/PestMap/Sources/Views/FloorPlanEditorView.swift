@@ -154,6 +154,13 @@ struct FloorPlanEditorView: View {
 
     private func addMarker(at point: CGPoint, in size: CGSize) {
         guard size.width > 0, size.height > 0 else { return }
+        // 既存マーカー付近のタップは「追加」せず編集に任せる
+        // （ピンのタップ＝編集と、キャンバスのタップ＝追加が二重発火するのを防ぐ）。
+        let hitRadius: CGFloat = 28
+        for marker in plan.markers {
+            let mp = CGPoint(x: marker.x * size.width, y: marker.y * size.height)
+            if hypot(mp.x - point.x, mp.y - point.y) <= hitRadius { return }
+        }
         let nx = min(max(point.x / size.width, 0), 1)
         let ny = min(max(point.y / size.height, 0), 1)
         let marker = PestMarker(x: nx, y: ny)
