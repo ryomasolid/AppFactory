@@ -1,0 +1,32 @@
+{
+  "identifier" : "B1A2C3D4",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "300",
+      "familyShareable" : false,
+      "internalID" : "PRO0000001",
+      "localizations" : [
+        {
+          "description" : "大きい動画の整理を解除し、広告を非表示にします。",
+          "displayName" : "PhotoCleaner Pro",
+          "locale" : "ja_JP"
+        }
+      ],
+      "productID" : "tech.sesame.photocleaner.pro",
+      "referenceName" : "PhotoCleaner Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "ja_JP",
+    "_storefront" : "JPN",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

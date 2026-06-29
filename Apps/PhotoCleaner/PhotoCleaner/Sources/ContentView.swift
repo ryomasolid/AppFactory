@@ -6,6 +6,7 @@ public struct ContentView: View {
     @State private var authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     @AppStorage("pc.hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var showOnboarding = false
+    @State private var store = StoreManager()
 
     private let service = PhotoLibraryService()
 
@@ -16,6 +17,7 @@ public struct ContentView: View {
             switch authStatus {
             case .authorized, .limited:
                 CategoryHomeView()
+                    .environment(store)
             default:
                 NavigationStack {
                     PermissionView(status: authStatus) {

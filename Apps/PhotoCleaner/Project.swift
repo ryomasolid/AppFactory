@@ -25,13 +25,17 @@ let project = Project(
                     "CFBundleDisplayName": "PhotoCleaner",
                     // 写真は完全オンデバイスで処理し、外部送信しない旨をユーザーに伝える。
                     "NSPhotoLibraryUsageDescription": "重複・類似した写真を端末内だけで検出し、削除候補として表示するために写真ライブラリにアクセスします。写真が端末外に送信されることはありません。",
+                    // AdMob アプリID。現在は Google のテスト用ID。本番は自分の AdMob アプリIDに差し替える。
+                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
                 ]
             ),
             buildableFolders: [
                 "PhotoCleaner/Sources",
                 "PhotoCleaner/Resources",
             ],
-            dependencies: []
+            dependencies: [
+                .external(name: "GoogleMobileAds"),
+            ]
         ),
         .target(
             name: "PhotoCleanerTests",
@@ -43,6 +47,16 @@ let project = Project(
                 "PhotoCleaner/Tests"
             ],
             dependencies: [.target(name: "PhotoCleaner")]
+        ),
+    ],
+    schemes: [
+        .scheme(
+            name: "PhotoCleaner",
+            shared: true,
+            buildAction: .buildAction(targets: ["PhotoCleaner"]),
+            testAction: .targets(["PhotoCleanerTests"]),
+            // ローカルで課金フローをテストするための StoreKit 設定。
+            runAction: .runAction(options: .options(storeKitConfigurationPath: "PhotoCleaner.storekit"))
         ),
     ]
 )
