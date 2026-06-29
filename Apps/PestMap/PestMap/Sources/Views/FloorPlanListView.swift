@@ -9,9 +9,10 @@ struct FloorPlanListView: View {
     @State private var showingNewPlanAlert = false
     @State private var newPlanName = ""
     @State private var showingReminders = false
+    @State private var path: [FloorPlan] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if plans.isEmpty {
                     ContentUnavailableView(
@@ -52,7 +53,10 @@ struct FloorPlanListView: View {
                 }
             }
             .sheet(isPresented: $showingReminders) {
-                RemindersView()
+                RemindersView { plan in
+                    showingReminders = false
+                    path = [plan]
+                }
             }
             .alert("新しい間取り", isPresented: $showingNewPlanAlert) {
                 TextField("名前（例: 1階キッチン）", text: $newPlanName)
@@ -65,12 +69,23 @@ struct FloorPlanListView: View {
     }
 
     private func row(_ plan: FloorPlan) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let overdue = plan.markers.filter { ($0.nextActionDate ?? .distantFuture) < Date() }.count
+        return VStack(alignment: .leading, spacing: 4) {
             Text(plan.name)
                 .font(.headline)
-            Text("マーカー \(plan.markers.count) 件 ・ \(plan.createdAt.formatted(date: .abbreviated, time: .omitted))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Text("マーカー \(plan.markers.count) 件 ・ \(plan.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if overdue > 0 {
+                    Text("期限切れ \(overdue)")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.red, in: Capsule())
+                }
+            }
         }
     }
 
