@@ -17,7 +17,6 @@ struct MarkerEditView: View {
     @State private var showCamera = false
     @State private var showLibrary = false
     @State private var pickedItem: PhotosPickerItem?
-    @State private var showDeleteConfirm = false
 
     init(marker: PestMarker, planName: String) {
         self.marker = marker
@@ -105,12 +104,8 @@ struct MarkerEditView: View {
                 }
 
                 Section {
-                    Button("このマーカーを削除", role: .destructive) { showDeleteConfirm = true }
+                    Button("このマーカーを削除", role: .destructive) { deleteMarker() }
                 }
-            }
-            .confirmationDialog("このマーカーを削除しますか？", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-                Button("削除", role: .destructive) { deleteMarker() }
-                Button("キャンセル", role: .cancel) {}
             }
             .navigationTitle("マーカー")
             .navigationBarTitleDisplayMode(.inline)
