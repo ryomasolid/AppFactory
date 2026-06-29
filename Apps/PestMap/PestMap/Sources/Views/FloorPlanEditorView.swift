@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftData
 import SwiftUI
+import UIKit
 
 /// 間取りエディタ。背景に間取り図（写真 or 空白グリッド）を表示し、
 /// タップで対策・設置マーカーを配置する。長押しで削除。
@@ -94,7 +95,10 @@ struct FloorPlanEditorView: View {
     private var photoMenu: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                Button { showCamera = true } label: { Label("カメラで撮影", systemImage: "camera") }
+                // カメラ非対応端末・シミュレータでは項目を出さない（開くとクラッシュするため）。
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button { showCamera = true } label: { Label("カメラで撮影", systemImage: "camera") }
+                }
                 Button { showLibrary = true } label: { Label("ライブラリから選択", systemImage: "photo") }
                 if plan.imageData != nil {
                     Button(role: .destructive) {
@@ -107,6 +111,7 @@ struct FloorPlanEditorView: View {
             } label: {
                 Image(systemName: "photo.badge.plus")
             }
+            .accessibilityLabel("背景写真を追加・変更")
         }
     }
 
@@ -120,6 +125,7 @@ struct FloorPlanEditorView: View {
                 } label: {
                     Image(systemName: "arrow.up.left.and.down.right.magnifyingglass")
                 }
+                .accessibilityLabel("ズームをリセット")
             }
         }
     }
@@ -227,6 +233,9 @@ private struct MarkerPin: View {
                         isDragging = false
                     }
             )
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(marker.kind.label + (marker.nextActionDate != nil ? "・リマインドあり" : ""))
+            .accessibilityHint("タップで編集、ドラッグで移動")
     }
 
     private var symbol: some View {

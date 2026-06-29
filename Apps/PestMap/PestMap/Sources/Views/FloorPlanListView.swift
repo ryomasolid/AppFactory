@@ -11,6 +11,8 @@ struct FloorPlanListView: View {
     @State private var showingReminders = false
     @State private var showingSettings = false
     @State private var path: [FloorPlan] = []
+    @AppStorage("pm.hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var showOnboarding = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -43,6 +45,7 @@ struct FloorPlanListView: View {
                     } label: {
                         Image(systemName: "bell.badge")
                     }
+                    .accessibilityLabel("リマインド一覧")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -50,6 +53,7 @@ struct FloorPlanListView: View {
                     } label: {
                         Image(systemName: "gearshape")
                     }
+                    .accessibilityLabel("設定")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -58,6 +62,7 @@ struct FloorPlanListView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("間取りを追加")
                 }
             }
             .sheet(isPresented: $showingReminders) {
@@ -68,6 +73,13 @@ struct FloorPlanListView: View {
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
+            }
+            .onAppear { showOnboarding = !hasSeenOnboarding }
+            .fullScreenCover(isPresented: $showOnboarding) {
+                OnboardingView {
+                    hasSeenOnboarding = true
+                    showOnboarding = false
+                }
             }
             .alert("新しい間取り", isPresented: $showingNewPlanAlert) {
                 TextField("名前（例: 1階キッチン）", text: $newPlanName)

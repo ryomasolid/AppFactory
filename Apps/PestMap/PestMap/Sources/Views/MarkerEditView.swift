@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftData
 import SwiftUI
+import UIKit
 
 /// マーカーの編集シート。種別・害虫タグ・メモ・次回予定（繰り返し含む）を設定し、
 /// 「完了」で実施を記録して次回を自動再設定する。
@@ -16,6 +17,7 @@ struct MarkerEditView: View {
     @State private var showCamera = false
     @State private var showLibrary = false
     @State private var pickedItem: PhotosPickerItem?
+    @State private var showDeleteConfirm = false
 
     init(marker: PestMarker, planName: String) {
         self.marker = marker
@@ -57,7 +59,9 @@ struct MarkerEditView: View {
                         Button("写真を削除", role: .destructive) { marker.photoData = nil }
                     }
                     Menu {
-                        Button { showCamera = true } label: { Label("カメラで撮影", systemImage: "camera") }
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                            Button { showCamera = true } label: { Label("カメラで撮影", systemImage: "camera") }
+                        }
                         Button { showLibrary = true } label: { Label("ライブラリから選択", systemImage: "photo") }
                     } label: {
                         Label(marker.photoData == nil ? "写真を追加" : "写真を変更", systemImage: "camera.fill")
@@ -101,8 +105,12 @@ struct MarkerEditView: View {
                 }
 
                 Section {
-                    Button("このマーカーを削除", role: .destructive) { deleteMarker() }
+                    Button("このマーカーを削除", role: .destructive) { showDeleteConfirm = true }
                 }
+            }
+            .confirmationDialog("このマーカーを削除しますか？", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                Button("削除", role: .destructive) { deleteMarker() }
+                Button("キャンセル", role: .cancel) {}
             }
             .navigationTitle("マーカー")
             .navigationBarTitleDisplayMode(.inline)
