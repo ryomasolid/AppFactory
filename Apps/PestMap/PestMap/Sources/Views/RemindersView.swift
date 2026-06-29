@@ -35,9 +35,15 @@ struct RemindersView: View {
                             deniedBanner
                         }
                         Section {
-                            Text("予定 \(reminders.count) 件" + (overdueCount > 0 ? " ・ 期限切れ \(overdueCount) 件" : ""))
-                                .font(.subheadline)
-                                .foregroundStyle(overdueCount > 0 ? .red : .secondary)
+                            Group {
+                                if overdueCount > 0 {
+                                    Text("予定 \(reminders.count) 件 ・ 期限切れ \(overdueCount) 件")
+                                } else {
+                                    Text("予定 \(reminders.count) 件")
+                                }
+                            }
+                            .font(.subheadline)
+                            .foregroundStyle(overdueCount > 0 ? .red : .secondary)
                         }
                         ForEach(reminders) { marker in
                             Button {

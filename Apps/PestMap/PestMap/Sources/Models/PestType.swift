@@ -13,12 +13,12 @@ enum PestType: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .none: return "指定なし"
-        case .cockroach: return "ゴキブリ"
-        case .ant: return "アリ"
-        case .mosquito: return "蚊"
-        case .mite: return "ダニ"
-        case .other: return "その他"
+        case .none: return String(localized: "指定なし")
+        case .cockroach: return String(localized: "ゴキブリ")
+        case .ant: return String(localized: "アリ")
+        case .mosquito: return String(localized: "蚊")
+        case .mite: return String(localized: "ダニ")
+        case .other: return String(localized: "その他")
         }
     }
 }

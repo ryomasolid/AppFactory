@@ -1,0 +1,38 @@
+{
+  "sourceLanguage": "ja",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "間取り図を撮影して取り込むためにカメラを使用します。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used to take photos of floor plans to import them."
+          }
+        }
+      }
+    },
+    "NSUserTrackingUsageDescription": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなたに関連性の高い広告を表示するために使用します。許可しなくてもアプリの機能はご利用いただけます。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used to show ads that are more relevant to you. You can use the app fully even if you don’t allow this."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

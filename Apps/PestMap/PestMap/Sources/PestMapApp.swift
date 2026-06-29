@@ -85,7 +85,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let note = marker.note.isEmpty ? "" : "（\(marker.note)）"
         let planName = marker.plan?.name ?? ""
         let outcome = await NotificationService.shared.schedule(
-            title: "害虫対策のリマインド",
+            title: String(localized: "害虫対策のリマインド"),
             body: "\(planName)：\(marker.kind.label)\(note)",
             at: date,
             existingID: existingID

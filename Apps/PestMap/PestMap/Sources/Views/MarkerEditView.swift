@@ -176,11 +176,11 @@ struct MarkerEditView: View {
                 marker.notificationID = id
                 dismiss()
             case .notAuthorized:
-                alertMessage = "通知が許可されていません。設定アプリ →「PestMap」→「通知」で許可してください。"
+                alertMessage = String(localized: "通知が許可されていません。設定アプリ →「PestMap」→「通知」で許可してください。")
             case .invalidDate:
-                alertMessage = "過去の日時には設定できません。未来の日時を選んでください。"
+                alertMessage = String(localized: "過去の日時には設定できません。未来の日時を選んでください。")
             case .failed:
-                alertMessage = "通知の登録に失敗しました。時間をおいて再度お試しください。"
+                alertMessage = String(localized: "通知の登録に失敗しました。時間をおいて再度お試しください。")
             }
         } else {
             cancelReminder()
@@ -213,7 +213,7 @@ struct MarkerEditView: View {
     private func schedule(at date: Date) async -> NotificationService.ScheduleOutcome {
         let note = marker.note.isEmpty ? "" : "（\(marker.note)）"
         return await NotificationService.shared.schedule(
-            title: "害虫対策のリマインド",
+            title: String(localized: "害虫対策のリマインド"),
             body: "\(planName)：\(marker.kind.label)\(note)",
             at: date,
             existingID: marker.notificationID

@@ -42,7 +42,7 @@ struct SettingsView: View {
             let ok = await NotificationService.shared.scheduleSeasonalTips()
             if !ok {
                 seasonalTipsEnabled = false
-                alertMessage = "通知が許可されていません。設定アプリ →「PestMap」→「通知」で許可してください。"
+                alertMessage = String(localized: "通知が許可されていません。設定アプリ →「PestMap」→「通知」で許可してください。")
             }
         } else {
             NotificationService.shared.cancelSeasonalTips()

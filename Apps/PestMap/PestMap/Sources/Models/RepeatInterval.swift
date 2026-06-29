@@ -12,11 +12,11 @@ enum RepeatInterval: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .none: return "繰り返さない"
-        case .monthly: return "毎月"
-        case .every3Months: return "3ヶ月ごと"
-        case .every6Months: return "半年ごと"
-        case .yearly: return "毎年"
+        case .none: return String(localized: "繰り返さない")
+        case .monthly: return String(localized: "毎月")
+        case .every3Months: return String(localized: "3ヶ月ごと")
+        case .every6Months: return String(localized: "半年ごと")
+        case .yearly: return String(localized: "毎年")
         }
     }
 

@@ -1,0 +1,646 @@
+{
+  "sourceLanguage": "ja",
+  "strings": {
+    "はじめる": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Started"
+          }
+        }
+      }
+    },
+    "重複・類似を自動検出": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-detect duplicates & similar"
+          }
+        }
+      }
+    },
+    "似た写真をグループにまとめて表示します": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groups similar photos together."
+          }
+        }
+      }
+    },
+    "まとめて整理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean up in bulk"
+          }
+        }
+      }
+    },
+    "残す1枚を選び、ほかを一括で削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep one and delete the rest at once."
+          }
+        }
+      }
+    },
+    "完全オンデバイス": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fully on-device"
+          }
+        }
+      }
+    },
+    "写真が外部に送信されることはありません": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your photos are never sent off your device."
+          }
+        }
+      }
+    },
+    "重複・類似写真": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate & Similar Photos"
+          }
+        }
+      }
+    },
+    "スクリーンショット": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshots"
+          }
+        }
+      }
+    },
+    "大きい動画": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large Videos"
+          }
+        }
+      }
+    },
+    "似た写真をまとめて整理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidy up similar photos"
+          }
+        }
+      }
+    },
+    "溜まったスクショを一括削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulk-delete piled-up screenshots"
+          }
+        }
+      }
+    },
+    "容量の大きい動画から削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the largest videos first"
+          }
+        }
+      }
+    },
+    "写真を読み込み中…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading photos…"
+          }
+        }
+      }
+    },
+    "読み込み中…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading…"
+          }
+        }
+      }
+    },
+    "類似写真を解析中… %lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzing similar photos… %lld%%"
+          }
+        }
+      }
+    },
+    "類似写真を解析中… %lld%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzing similar photos… %lld%"
+          }
+        }
+      }
+    },
+    "類似写真は見つかりませんでした": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No similar photos found"
+          }
+        }
+      }
+    },
+    "%lld 枚をスキャンしました": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanned %lld photos"
+          }
+        }
+      }
+    },
+    "%lld 枚の類似写真": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld similar photos"
+          }
+        }
+      }
+    },
+    "各グループで残す1枚以外を選んで削除できます。タップで選択を切り替え、長押しで「残す」を変更します。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In each group, keep one photo and select the rest to delete. Tap to toggle selection; long-press to change which to keep."
+          }
+        }
+      }
+    },
+    "残す": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep"
+          }
+        }
+      }
+    },
+    "残す写真": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo to keep"
+          }
+        }
+      }
+    },
+    "選択中": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        }
+      }
+    },
+    "未選択": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not selected"
+          }
+        }
+      }
+    },
+    "削除対象として選択中": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected for deletion"
+          }
+        }
+      }
+    },
+    "全選択": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
+          }
+        }
+      }
+    },
+    "全解除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deselect All"
+          }
+        }
+      }
+    },
+    "再スキャン": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rescan"
+          }
+        }
+      }
+    },
+    "スクリーンショットはありません": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No screenshots"
+          }
+        }
+      }
+    },
+    "動画はありません": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No videos"
+          }
+        }
+      }
+    },
+    "%lld 件 ・ 合計 約 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items · about %@ total"
+          }
+        }
+      }
+    },
+    "%lld 件を確認して削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review & delete %lld"
+          }
+        }
+      }
+    },
+    "%lld 枚を確認して削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review & delete %lld"
+          }
+        }
+      }
+    },
+    "約 %@ を削減": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free %@"
+          }
+        }
+      }
+    },
+    "約 %@ を削減できます": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free up about %@"
+          }
+        }
+      }
+    },
+    "最大 約 %@ 節約できます": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save up to about %@"
+          }
+        }
+      }
+    },
+    "%lld 件を削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %lld"
+          }
+        }
+      }
+    },
+    "%lld 枚を削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %lld"
+          }
+        }
+      }
+    },
+    "%lld 件を削除する": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %lld items"
+          }
+        }
+      }
+    },
+    "%lld 枚を削除する": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %lld photos"
+          }
+        }
+      }
+    },
+    "削除しました": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted"
+          }
+        }
+      }
+    },
+    "削除に失敗しました": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletion Failed"
+          }
+        }
+      }
+    },
+    "%lld 件を削除しました。\n\n削除した項目は「最近削除した項目」に30日間残り、その間は端末の空き容量はすぐには増えません。完全に削除して容量を空けるには、写真アプリの「最近削除した項目」から削除してください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted %lld items.\n\nDeleted items stay in “Recently Deleted” for 30 days, so free space won’t increase right away. To reclaim space, delete them from “Recently Deleted” in the Photos app."
+          }
+        }
+      }
+    },
+    "%lld 枚を削除しました。\n\n削除した写真は「最近削除した項目」に30日間残り、その間は端末の空き容量はすぐには増えません。完全に削除して容量を空けるには、写真アプリの「最近削除した項目」から削除してください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted %lld photos.\n\nDeleted photos stay in “Recently Deleted” for 30 days, so free space won’t increase right away. To reclaim space, delete them from “Recently Deleted” in the Photos app."
+          }
+        }
+      }
+    },
+    "削除した項目は「最近削除した項目」に30日間残ります。その間は端末の空き容量はすぐには増えません。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted items stay in “Recently Deleted” for 30 days, so free space won’t increase right away."
+          }
+        }
+      }
+    },
+    "削除した写真は「最近削除した項目」に30日間残ります。その間は端末の空き容量はすぐには増えません。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted photos stay in “Recently Deleted” for 30 days, so free space won’t increase right away."
+          }
+        }
+      }
+    },
+    "写真ライブラリへのアクセス": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo Library Access"
+          }
+        }
+      }
+    },
+    "写真へのアクセスを許可": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Photo Access"
+          }
+        }
+      }
+    },
+    "設定を開く": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        }
+      }
+    },
+    "重複・類似した写真を端末内だけで検出します。写真が外部に送信されることはありません。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detects duplicate and similar photos entirely on your device. Your photos are never sent off your device."
+          }
+        }
+      }
+    },
+    "アクセスが許可されていません。設定アプリから写真へのアクセスを許可してください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access isn’t allowed. Please allow photo access in the Settings app."
+          }
+        }
+      }
+    },
+    "選択された写真のみにアクセスできます。すべての写真を対象にするには設定で変更してください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only selected photos are accessible. To include all photos, change this in Settings."
+          }
+        }
+      }
+    },
+    "大きい動画の整理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean up large videos"
+          }
+        }
+      }
+    },
+    "容量を最も食う動画をサイズ順に一括削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulk-delete the most space-hungry videos, sorted by size."
+          }
+        }
+      }
+    },
+    "広告を非表示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove ads"
+          }
+        }
+      }
+    },
+    "すっきり快適に": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A cleaner, smoother experience."
+          }
+        }
+      }
+    },
+    "今後の追加機能": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Future features"
+          }
+        }
+      }
+    },
+    "アップデートで増える機能もすべて": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Including everything added in future updates."
+          }
+        }
+      }
+    },
+    "購入を準備中…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing purchase…"
+          }
+        }
+      }
+    },
+    "%@ で購入": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buy for %@"
+          }
+        }
+      }
+    },
+    "購入を復元": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Purchases"
+          }
+        }
+      }
+    },
+    "あとで": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later"
+          }
+        }
+      }
+    },
+    "キャンセル": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

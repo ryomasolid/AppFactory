@@ -26,6 +26,7 @@ let project = Project(
             // 自動署名と開発チームを固定し、tuist generate で署名設定が消えないようにする。
             "DEVELOPMENT_TEAM": "8F626K46L8",
             "CODE_SIGN_STYLE": "Automatic",
+            "SWIFT_EMIT_LOC_STRINGS": "YES",
         ]
     ),
     targets: [
@@ -42,6 +43,7 @@ let project = Project(
                         "UIImageName": "",
                     ],
                     "CFBundleDisplayName": "PestMap",
+                    "CFBundleDevelopmentRegion": "ja",
                     // 間取り図を撮影して取り込むためにカメラを使う。
                     "NSCameraUsageDescription": "間取り図を撮影して取り込むためにカメラを使用します。",
                     // AdMob アプリID（本番・PestMap）。

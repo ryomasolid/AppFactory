@@ -90,8 +90,8 @@ final class NotificationService {
             components.hour = 9
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
             let content = UNMutableNotificationContent()
-            content.title = tip.title
-            content.body = tip.body
+            content.title = String(localized: String.LocalizationValue(tip.title))
+            content.body = String(localized: String.LocalizationValue(tip.body))
             content.sound = .default
             let request = UNNotificationRequest(identifier: tip.id, content: content, trigger: trigger)
             try? await center.add(request)

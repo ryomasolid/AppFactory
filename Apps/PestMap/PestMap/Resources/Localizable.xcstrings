@@ -1,0 +1,826 @@
+{
+  "sourceLanguage": "ja",
+  "strings": {
+    "はじめる": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Started"
+          }
+        }
+      }
+    },
+    "間取りを用意": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare a floor plan"
+          }
+        }
+      }
+    },
+    "間取り図を撮影、または白紙から作成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snap a floor plan photo, or start from a blank canvas"
+          }
+        }
+      }
+    },
+    "対策場所を記録": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record treatment spots"
+          }
+        }
+      }
+    },
+    "ブラックキャップなどの設置場所をマーカーで管理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Track where you place bait traps and more"
+          }
+        }
+      }
+    },
+    "次回をリマインド": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminds you next time"
+          }
+        }
+      }
+    },
+    "交換・対策のタイミングを通知でお知らせ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get notified when it’s time to replace or treat"
+          }
+        }
+      }
+    },
+    "間取りがありません": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No floor plans"
+          }
+        }
+      }
+    },
+    "右上の＋から間取りを追加できます": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a floor plan with + at the top right."
+          }
+        }
+      }
+    },
+    "マーカー %lld 件 ・ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld markers · %@"
+          }
+        }
+      }
+    },
+    "期限切れ %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld overdue"
+          }
+        }
+      }
+    },
+    "新しい間取り": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Floor Plan"
+          }
+        }
+      }
+    },
+    "名前（例: 1階キッチン）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name (e.g., 1F Kitchen)"
+          }
+        }
+      }
+    },
+    "作成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
+          }
+        }
+      }
+    },
+    "キャンセル": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "空の間取りを作成します。写真の取り込みは次の画面で行えます。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates an empty plan. You can import a photo on the next screen."
+          }
+        }
+      }
+    },
+    "無題の間取り": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled Plan"
+          }
+        }
+      }
+    },
+    "間取りを追加": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add floor plan"
+          }
+        }
+      }
+    },
+    "リマインド一覧": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders"
+          }
+        }
+      }
+    },
+    "設定": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "タップで対策・設置場所を追加": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to add a treatment/placement spot"
+          }
+        }
+      }
+    },
+    "タップで編集 ・ ドラッグで移動": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to edit · drag to move"
+          }
+        }
+      }
+    },
+    "タップで編集、ドラッグで移動": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to edit, drag to move"
+          }
+        }
+      }
+    },
+    "・リマインドあり": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · reminder set"
+          }
+        }
+      }
+    },
+    "カメラで撮影": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take Photo"
+          }
+        }
+      }
+    },
+    "ライブラリから選択": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose from Library"
+          }
+        }
+      }
+    },
+    "背景を削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove background"
+          }
+        }
+      }
+    },
+    "背景写真を追加・変更": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add or change background photo"
+          }
+        }
+      }
+    },
+    "ズームをリセット": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Zoom"
+          }
+        }
+      }
+    },
+    "マーカー": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marker"
+          }
+        }
+      }
+    },
+    "種別": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        }
+      }
+    },
+    "害虫": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pest"
+          }
+        }
+      }
+    },
+    "メモ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note"
+          }
+        }
+      }
+    },
+    "例: シンク下に設置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g., placed under the sink"
+          }
+        }
+      }
+    },
+    "設置場所の写真": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo of the spot"
+          }
+        }
+      }
+    },
+    "写真を削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Photo"
+          }
+        }
+      }
+    },
+    "写真を追加": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Photo"
+          }
+        }
+      }
+    },
+    "写真を変更": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Photo"
+          }
+        }
+      }
+    },
+    "次回の予定": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next schedule"
+          }
+        }
+      }
+    },
+    "リマインドする": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind me"
+          }
+        }
+      }
+    },
+    "日時": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date & time"
+          }
+        }
+      }
+    },
+    "繰り返し": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repeat"
+          }
+        }
+      }
+    },
+    "実施した（記録して次回へ）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark done (log & schedule next)"
+          }
+        }
+      }
+    },
+    "実施履歴": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        }
+      }
+    },
+    "このマーカーを削除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this marker"
+          }
+        }
+      }
+    },
+    "完了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "通知を設定できません": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can’t set notification"
+          }
+        }
+      }
+    },
+    "通知が許可されていません。設定アプリ →「PestMap」→「通知」で許可してください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications aren’t allowed. Enable them in Settings → “PestMap” → “Notifications.”"
+          }
+        }
+      }
+    },
+    "過去の日時には設定できません。未来の日時を選んでください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can’t choose a past time. Please pick a future date and time."
+          }
+        }
+      }
+    },
+    "通知の登録に失敗しました。時間をおいて再度お試しください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to schedule the notification. Please try again later."
+          }
+        }
+      }
+    },
+    "ブラックキャップ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bait Trap"
+          }
+        }
+      }
+    },
+    "スプレー": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spray"
+          }
+        }
+      }
+    },
+    "くん煙剤": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fumigant"
+          }
+        }
+      }
+    },
+    "その他": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        }
+      }
+    },
+    "指定なし": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        }
+      }
+    },
+    "ゴキブリ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cockroaches"
+          }
+        }
+      }
+    },
+    "アリ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ants"
+          }
+        }
+      }
+    },
+    "蚊": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mosquitoes"
+          }
+        }
+      }
+    },
+    "ダニ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mites"
+          }
+        }
+      }
+    },
+    "繰り返さない": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don’t repeat"
+          }
+        }
+      }
+    },
+    "毎月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every month"
+          }
+        }
+      }
+    },
+    "3ヶ月ごと": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every 3 months"
+          }
+        }
+      }
+    },
+    "半年ごと": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every 6 months"
+          }
+        }
+      }
+    },
+    "毎年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every year"
+          }
+        }
+      }
+    },
+    "リマインドはありません": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No reminders"
+          }
+        }
+      }
+    },
+    "マーカーに次回の予定を設定すると、ここに一覧表示されます": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set a next date on a marker and it will appear here."
+          }
+        }
+      }
+    },
+    "予定 %lld 件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld reminders"
+          }
+        }
+      }
+    },
+    "予定 %lld 件 ・ 期限切れ %lld 件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld reminders · %lld overdue"
+          }
+        }
+      }
+    },
+    "期限切れ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overdue"
+          }
+        }
+      }
+    },
+    "通知がオフです。タップして設定で許可してください。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off. Tap to allow them in Settings."
+          }
+        }
+      }
+    },
+    "閉じる": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "季節の害虫対策アドバイス": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seasonal pest control tips"
+          }
+        }
+      }
+    },
+    "春・梅雨・夏・秋の年4回、その季節に効く害虫対策のヒントを通知でお届けします。アプリを開かなくても対策のタイミングを逃しません。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get pest-control tips four times a year (spring, rainy season, summer, autumn). You won’t miss the right timing even without opening the app."
+          }
+        }
+      }
+    },
+    "害虫対策のリマインド": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pest control reminder"
+          }
+        }
+      }
+    },
+    "春の害虫対策": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spring pest control"
+          }
+        }
+      }
+    },
+    "梅雨の害虫対策": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rainy-season pest control"
+          }
+        }
+      }
+    },
+    "夏の害虫対策": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summer pest control"
+          }
+        }
+      }
+    },
+    "秋の害虫対策": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autumn pest control"
+          }
+        }
+      }
+    },
+    "気温が上がりゴキブリが活動を始める季節です。ブラックキャップの設置・交換の好機です。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As it warms up, cockroaches become active — a good time to place or replace bait traps."
+          }
+        }
+      }
+    },
+    "湿気でダニ・カビが増えやすい時期。除湿・換気とダニ対策を見直しましょう。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Humidity helps mites and mold thrive. Review dehumidifying, ventilation, and mite control."
+          }
+        }
+      }
+    },
+    "蚊やゴキブリが最盛期。設置済みの対策の効き目を確認しましょう。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mosquitoes and cockroaches peak now. Check that your existing measures still work."
+          }
+        }
+      }
+    },
+    "越冬前のこの時期の駆除が効果的。来春の発生を抑えられます。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treating now, before overwintering, is effective and curbs next spring’s outbreak."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

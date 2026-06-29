@@ -27,6 +27,8 @@ let project = Project(
             // 自動署名と開発チームを固定し、tuist generate で署名設定が消えないようにする。
             "DEVELOPMENT_TEAM": "8F626K46L8",
             "CODE_SIGN_STYLE": "Automatic",
+            // SwiftUI 等の文字列を String Catalog へ自動抽出する。
+            "SWIFT_EMIT_LOC_STRINGS": "YES",
         ]
     ),
     targets: [
@@ -43,6 +45,7 @@ let project = Project(
                         "UIImageName": "",
                     ],
                     "CFBundleDisplayName": "PhotoCleaner",
+                    "CFBundleDevelopmentRegion": "ja",
                     // 写真は完全オンデバイスで処理し、外部送信しない旨をユーザーに伝える。
                     "NSPhotoLibraryUsageDescription": "重複・類似した写真を端末内だけで検出し、削除候補として表示するために写真ライブラリにアクセスします。写真が端末外に送信されることはありません。",
                     // AdMob アプリID（本番）。

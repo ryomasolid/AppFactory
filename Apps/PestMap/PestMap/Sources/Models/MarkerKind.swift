@@ -11,10 +11,10 @@ enum MarkerKind: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .blackCap: return "ブラックキャップ"
-        case .spray: return "スプレー"
-        case .fumigation: return "くん煙剤"
-        case .other: return "その他"
+        case .blackCap: return String(localized: "ブラックキャップ")
+        case .spray: return String(localized: "スプレー")
+        case .fumigation: return String(localized: "くん煙剤")
+        case .other: return String(localized: "その他")
         }
     }
 
