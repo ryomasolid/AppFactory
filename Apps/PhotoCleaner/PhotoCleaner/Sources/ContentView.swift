@@ -3,41 +3,32 @@ import SwiftUI
 
 public struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
-    @State private var viewModel = PhotoLibraryViewModel()
-    @State private var showDeletePreview = false
+    @State private var authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     @AppStorage("pc.hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var showOnboarding = false
+
+    private let service = PhotoLibraryService()
 
     public init() {}
 
     public var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("PhotoCleaner")
-                .toolbar {
-                    if case .ready = viewModel.phase, !viewModel.groups.isEmpty {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button(viewModel.isAllSelected ? "全解除" : "全選択") {
-                                viewModel.toggleSelectAll()
-                            }
-                            .disabled(viewModel.isDeleting)
-                        }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                Task { await viewModel.rescan() }
-                            } label: {
-                                Image(systemName: "arrow.clockwise")
-                            }
-                            .accessibilityLabel("再スキャン")
-                            .disabled(viewModel.isDeleting)
-                        }
+        Group {
+            switch authStatus {
+            case .authorized, .limited:
+                CategoryHomeView()
+            default:
+                NavigationStack {
+                    PermissionView(status: authStatus) {
+                        authStatus = await service.requestAuthorization()
                     }
+                    .navigationTitle("PhotoCleaner")
                 }
+            }
         }
-        .task {
-            await viewModel.loadIfAuthorized()
+        .onAppear {
+            showOnboarding = !hasSeenOnboarding
+            authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         }
-        .onAppear { showOnboarding = !hasSeenOnboarding }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
                 hasSeenOnboarding = true
@@ -47,97 +38,8 @@ public struct ContentView: View {
         .onChange(of: scenePhase) { _, phase in
             // 設定アプリで権限を変更して戻ってきた場合に再評価する。
             if phase == .active {
-                Task { await viewModel.loadIfAuthorized() }
+                authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
             }
-        }
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch viewModel.authorizationStatus {
-        case .authorized, .limited:
-            authorizedContent
-        default:
-            PermissionView(status: viewModel.authorizationStatus) {
-                await viewModel.requestAccessAndLoad()
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var authorizedContent: some View {
-        switch viewModel.phase {
-        case .idle, .loading:
-            ProgressView("写真を読み込み中…")
-        case .scanning(let progress):
-            VStack(spacing: 12) {
-                ProgressView(value: progress)
-                    .frame(maxWidth: 240)
-                Text("類似写真を解析中… \(Int(progress * 100))%")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        case .ready:
-            if viewModel.groups.isEmpty {
-                ContentUnavailableView(
-                    "類似写真は見つかりませんでした",
-                    systemImage: "checkmark.circle",
-                    description: Text("\(viewModel.assetCount) 枚をスキャンしました")
-                )
-            } else {
-                SimilarityGridView(viewModel: viewModel)
-                    .safeAreaInset(edge: .bottom) { deleteBar }
-                    .sheet(isPresented: $showDeletePreview) {
-                        DeletionPreviewView(viewModel: viewModel)
-                    }
-                    .alert("削除しました", isPresented: $viewModel.showDeletionInfo) {
-                        Button("OK", role: .cancel) {}
-                    } message: {
-                        Text("\(viewModel.lastDeletionCount) 枚を削除しました。\n\n削除した写真は「最近削除した項目」に30日間残り、その間は端末の空き容量はすぐには増えません。完全に削除して容量を空けるには、写真アプリの「最近削除した項目」から削除してください。")
-                    }
-                    .alert("削除に失敗しました", isPresented: errorBinding) {
-                        Button("OK", role: .cancel) { viewModel.deletionError = nil }
-                    } message: {
-                        Text(viewModel.deletionError ?? "")
-                    }
-            }
-        }
-    }
-
-    private var errorBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.deletionError != nil },
-            set: { if !$0 { viewModel.deletionError = nil } }
-        )
-    }
-
-    @ViewBuilder
-    private var deleteBar: some View {
-        if viewModel.selectedCount > 0 {
-            Button {
-                showDeletePreview = true
-            } label: {
-                HStack {
-                    Image(systemName: "trash")
-                    VStack(spacing: 1) {
-                        Text("\(viewModel.selectedCount) 枚を確認して削除")
-                            .fontWeight(.semibold)
-                        if viewModel.selectedByteSize > 0 {
-                            Text("約 \(viewModel.formattedSize(viewModel.selectedByteSize)) を削減")
-                                .font(.caption)
-                                .opacity(0.9)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(.red, in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(.white)
-            }
-            .disabled(viewModel.isDeleting)
-            .padding()
-            .background(.ultraThinMaterial)
         }
     }
 }

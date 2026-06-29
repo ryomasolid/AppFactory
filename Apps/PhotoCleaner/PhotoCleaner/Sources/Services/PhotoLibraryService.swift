@@ -42,6 +42,36 @@ final class PhotoLibraryService {
         return assets
     }
 
+    /// スクリーンショットを新しい順にフェッチする。
+    func fetchScreenshots() -> [PHAsset] {
+        let options = PHFetchOptions()
+        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
+
+        let result = PHAsset.fetchAssets(with: options)
+        var assets: [PHAsset] = []
+        result.enumerateObjects { asset, _, _ in
+            if asset.mediaSubtypes.contains(.photoScreenshot) {
+                assets.append(asset)
+            }
+        }
+        return assets
+    }
+
+    /// 動画アセットをフェッチする（サイズ順の並べ替えは呼び出し側で行う）。
+    func fetchVideos() -> [PHAsset] {
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.video.rawValue)
+
+        let result = PHAsset.fetchAssets(with: options)
+        var assets: [PHAsset] = []
+        assets.reserveCapacity(result.count)
+        result.enumerateObjects { asset, _, _ in
+            assets.append(asset)
+        }
+        return assets
+    }
+
     // MARK: - Images
 
     /// ハッシュ計算用の小さな画像を**同期的に**取得する。バックグラウンドから呼ぶこと。
