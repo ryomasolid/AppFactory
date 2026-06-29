@@ -71,6 +71,39 @@ final class NotificationService {
         await center.notificationSettings().authorizationStatus == .denied
     }
 
+    // MARK: - 季節の害虫対策アドバイス（年4回・繰り返し）
+
+    private static let seasonalTips: [(id: String, month: Int, title: String, body: String)] = [
+        ("seasonal-spring", 4, "春の害虫対策", "気温が上がりゴキブリが活動を始める季節です。ブラックキャップの設置・交換の好機です。"),
+        ("seasonal-rainy", 6, "梅雨の害虫対策", "湿気でダニ・カビが増えやすい時期。除湿・換気とダニ対策を見直しましょう。"),
+        ("seasonal-summer", 7, "夏の害虫対策", "蚊やゴキブリが最盛期。設置済みの対策の効き目を確認しましょう。"),
+        ("seasonal-autumn", 10, "秋の害虫対策", "越冬前のこの時期の駆除が効果的。来春の発生を抑えられます。"),
+    ]
+
+    /// 季節アドバイス通知を毎年繰り返しでスケジュールする。許可が無ければ false。
+    func scheduleSeasonalTips() async -> Bool {
+        guard await ensureAuthorized() else { return false }
+        for tip in Self.seasonalTips {
+            var components = DateComponents()
+            components.month = tip.month
+            components.day = 1
+            components.hour = 9
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+            let content = UNMutableNotificationContent()
+            content.title = tip.title
+            content.body = tip.body
+            content.sound = .default
+            let request = UNNotificationRequest(identifier: tip.id, content: content, trigger: trigger)
+            try? await center.add(request)
+        }
+        return true
+    }
+
+    /// 季節アドバイス通知を解除する。
+    func cancelSeasonalTips() {
+        center.removePendingNotificationRequests(withIdentifiers: Self.seasonalTips.map(\.id))
+    }
+
     /// 必要に応じて許可をリクエストし、利用可能かを返す。
     private func ensureAuthorized() async -> Bool {
         let settings = await center.notificationSettings()

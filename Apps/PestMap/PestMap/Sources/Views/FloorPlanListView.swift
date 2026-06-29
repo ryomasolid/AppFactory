@@ -9,6 +9,7 @@ struct FloorPlanListView: View {
     @State private var showingNewPlanAlert = false
     @State private var newPlanName = ""
     @State private var showingReminders = false
+    @State private var showingSettings = false
     @State private var path: [FloorPlan] = []
 
     var body: some View {
@@ -45,6 +46,13 @@ struct FloorPlanListView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        showingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
                         newPlanName = ""
                         showingNewPlanAlert = true
                     } label: {
@@ -57,6 +65,9 @@ struct FloorPlanListView: View {
                     showingReminders = false
                     path = [plan]
                 }
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
             }
             .alert("新しい間取り", isPresented: $showingNewPlanAlert) {
                 TextField("名前（例: 1階キッチン）", text: $newPlanName)
