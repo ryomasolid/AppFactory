@@ -35,4 +35,14 @@ enum MarkerKind: String, CaseIterable, Identifiable {
         case .other: return .orange
         }
     }
+
+    /// 製品ごとの標準的な交換・実施周期（プリセット）。種別選択時の初期値に使う。
+    var defaultRepeat: RepeatInterval {
+        switch self {
+        case .blackCap: return .every3Months
+        case .spray: return .monthly
+        case .fumigation: return .every6Months
+        case .other: return .none
+        }
+    }
 }

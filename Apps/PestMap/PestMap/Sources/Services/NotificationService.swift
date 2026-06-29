@@ -9,6 +9,23 @@ final class NotificationService {
 
     private let center = UNUserNotificationCenter.current()
 
+    // 通知アクション用のカテゴリ／アクション識別子
+    static let categoryID = "PEST_REMINDER"
+    static let doneActionID = "DONE"
+    static let snoozeActionID = "SNOOZE"
+
+    /// 通知に「完了」「1時間後に再通知」アクションを付けるカテゴリを登録する。起動時に1回呼ぶ。
+    func registerCategories() {
+        let done = UNNotificationAction(identifier: Self.doneActionID, title: "完了", options: [])
+        let snooze = UNNotificationAction(identifier: Self.snoozeActionID, title: "1時間後に再通知", options: [])
+        let category = UNNotificationCategory(
+            identifier: Self.categoryID,
+            actions: [done, snooze],
+            intentIdentifiers: []
+        )
+        center.setNotificationCategories([category])
+    }
+
     /// スケジュール結果。失敗理由を呼び出し側に伝えてユーザーに案内できるようにする。
     enum ScheduleOutcome {
         case scheduled(id: String)
@@ -27,6 +44,7 @@ final class NotificationService {
         content.title = title
         content.body = body
         content.sound = .default
+        content.categoryIdentifier = Self.categoryID
 
         let components = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute], from: date
