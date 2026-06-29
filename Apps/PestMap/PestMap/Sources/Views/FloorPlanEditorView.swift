@@ -14,6 +14,12 @@ struct FloorPlanEditorView: View {
     @State private var bgImage: UIImage?
     @State private var selectedMarker: PestMarker?
 
+    // ズーム/パン
+    @State private var scale: CGFloat = 1
+    @State private var lastScale: CGFloat = 1
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -32,14 +38,21 @@ struct FloorPlanEditorView: View {
                 }
             }
             .contentShape(Rectangle())
-            .gesture(
+            // 追加タップは変形前に付け、座標を content 空間で受ける（ズーム時も正しい正規化座標になる）
+            .simultaneousGesture(
                 SpatialTapGesture()
                     .onEnded { value in addMarker(at: value.location, in: geo.size) }
             )
+            .scaleEffect(scale)
+            .offset(offset)
+            .gesture(panGesture)
+            .simultaneousGesture(magnifyGesture)
+            .clipped()
         }
         .navigationTitle(plan.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { photoMenu }
+        .toolbar { zoomResetButton }
         .photosPicker(isPresented: $showLibrary, selection: $pickedItem, matching: .images)
         .onChange(of: pickedItem) { _, item in Task { await loadPicked(item) } }
         .fullScreenCover(isPresented: $showCamera) {
@@ -97,6 +110,46 @@ struct FloorPlanEditorView: View {
         }
     }
 
+    private var zoomResetButton: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            if scale > 1 || offset != .zero {
+                Button {
+                    withAnimation(.spring(duration: 0.25)) {
+                        scale = 1; lastScale = 1; offset = .zero; lastOffset = .zero
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.left.and.down.right.magnifyingglass")
+                }
+            }
+        }
+    }
+
+    // MARK: - Zoom / Pan gestures
+
+    private var magnifyGesture: some Gesture {
+        MagnifyGesture()
+            .onChanged { value in
+                scale = min(max(lastScale * value.magnification, 1), 5)
+            }
+            .onEnded { _ in
+                lastScale = scale
+                if scale <= 1 {
+                    withAnimation(.spring(duration: 0.25)) { offset = .zero; lastOffset = .zero }
+                }
+            }
+    }
+
+    private var panGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                offset = CGSize(
+                    width: lastOffset.width + value.translation.width,
+                    height: lastOffset.height + value.translation.height
+                )
+            }
+            .onEnded { _ in lastOffset = offset }
+    }
+
     // MARK: - Actions
 
     private func addMarker(at point: CGPoint, in size: CGSize) {
@@ -148,7 +201,7 @@ private struct MarkerPin: View {
             .position(x: baseX + dragOffset.width, y: baseY + dragOffset.height)
             .animation(.spring(duration: 0.2), value: isDragging)
             .onTapGesture { onTap() }
-            .gesture(
+            .highPriorityGesture(
                 DragGesture(minimumDistance: 8)
                     .onChanged { value in
                         isDragging = true
