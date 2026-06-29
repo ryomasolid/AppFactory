@@ -1,5 +1,25 @@
 import ProjectDescription
 
+// AdMob 広告計測用の SKAdNetwork 識別子。Google の公式リストに合わせて随時更新する。
+// （不足しても計測範囲が狭まるだけで害はない。最新の完全なリストは AdMob のドキュメント参照）
+let skAdNetworkIDs: [String] = [
+    "cstr6suwn9.skadnetwork",
+    "4fzdc2evr5.skadnetwork",
+    "2u9pt9hc89.skadnetwork",
+    "8s468mfl3y.skadnetwork",
+    "klf5c3l5u5.skadnetwork",
+    "ppxm28t8ap.skadnetwork",
+    "424m5254lk.skadnetwork",
+    "uw77j35x4d.skadnetwork",
+    "578prtvx9j.skadnetwork",
+    "4dzt52r2t5.skadnetwork",
+    "gta9lk7p23.skadnetwork",
+    "e5fvkxwrpn.skadnetwork",
+    "zq492l623r.skadnetwork",
+    "3qcr597p9d.skadnetwork",
+    "3rd42ekr43.skadnetwork",
+]
+
 let project = Project(
     name: "PhotoCleaner",
     settings: .settings(
@@ -25,10 +45,13 @@ let project = Project(
                     "CFBundleDisplayName": "PhotoCleaner",
                     // 写真は完全オンデバイスで処理し、外部送信しない旨をユーザーに伝える。
                     "NSPhotoLibraryUsageDescription": "重複・類似した写真を端末内だけで検出し、削除候補として表示するために写真ライブラリにアクセスします。写真が端末外に送信されることはありません。",
-                    // AdMob アプリID。現在は Google のテスト用ID。本番は自分の AdMob アプリIDに差し替える。
-                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    // AdMob アプリID（本番）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~3939645937",
                     // 広告のトラッキング許可（ATT）ダイアログの説明文。
                     "NSUserTrackingUsageDescription": "あなたに関連性の高い広告を表示するために使用します。許可しなくてもアプリの機能はご利用いただけます。",
+                    "SKAdNetworkItems": .array(
+                        skAdNetworkIDs.map { .dictionary(["SKAdNetworkIdentifier": .string($0)]) }
+                    ),
                 ]
             ),
             buildableFolders: [
