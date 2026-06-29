@@ -74,12 +74,19 @@ struct FloorPlanListView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
-            .onAppear { showOnboarding = !hasSeenOnboarding }
+            .onAppear {
+                showOnboarding = !hasSeenOnboarding
+                // 広告の同意（UMP）→ ATT → AdMob 初期化を実行。
+                ConsentManager.shared.start()
+            }
             .fullScreenCover(isPresented: $showOnboarding) {
                 OnboardingView {
                     hasSeenOnboarding = true
                     showOnboarding = false
                 }
+            }
+            .safeAreaInset(edge: .bottom) {
+                BannerAdView()
             }
             .alert("新しい間取り", isPresented: $showingNewPlanAlert) {
                 TextField("名前（例: 1階キッチン）", text: $newPlanName)

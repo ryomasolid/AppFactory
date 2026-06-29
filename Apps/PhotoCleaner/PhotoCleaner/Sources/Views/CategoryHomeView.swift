@@ -54,7 +54,6 @@ struct CategoryHomeView: View {
                 // 無料ユーザーにはバナー広告を表示（Pro で非表示）。
                 if !store.isPro {
                     BannerAdView()
-                        .frame(height: 50)
                 }
             }
         }
