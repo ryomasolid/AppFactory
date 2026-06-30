@@ -78,6 +78,9 @@ struct FloorPlanListView: View {
                 showOnboarding = !hasSeenOnboarding
                 // 広告の同意（UMP）→ ATT → AdMob 初期化を実行。
                 ConsentManager.shared.start()
+                #if DEBUG
+                SampleData.seedIfNeeded(context)
+                #endif
             }
             .fullScreenCover(isPresented: $showOnboarding) {
                 OnboardingView {
