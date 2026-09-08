@@ -48,7 +48,7 @@ let project = Project(
                     "CFBundleDevelopmentRegion": "ja",
                     // App Store 審査でのリジェクト対応に伴い、ビルド番号を更新。
                     "CFBundleShortVersionString": "1.0",
-                    "CFBundleVersion": "2",
+                    "CFBundleVersion": "3",
                     "ITSAppUsesNonExemptEncryption": false,
                     // 写真は完全オンデバイスで処理し、外部送信しない旨をユーザーに伝える。
                     "NSPhotoLibraryUsageDescription": "重複・類似した写真を端末内だけで検出し、削除候補として表示するために写真ライブラリにアクセスします。写真が端末外に送信されることはありません。",

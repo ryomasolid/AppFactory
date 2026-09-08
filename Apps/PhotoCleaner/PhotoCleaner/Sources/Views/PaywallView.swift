@@ -27,14 +27,28 @@ struct PaywallView: View {
                 Button {
                     Task { await store.purchase(); if store.isPro { dismiss() } }
                 } label: {
-                    Text(store.product == nil ? "購入を準備中…" : "\(store.priceText) で購入")
+                    Text(purchaseButtonTitle)
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(store.product == nil ? AnyShapeStyle(.gray) : AnyShapeStyle(.tint), in: RoundedRectangle(cornerRadius: 14))
+                        .background(store.canPurchase ? AnyShapeStyle(.tint) : AnyShapeStyle(.gray), in: RoundedRectangle(cornerRadius: 14))
                         .foregroundStyle(.white)
                 }
-                .disabled(store.product == nil)
+                .disabled(!store.canPurchase)
+
+                // 商品の読み込みに失敗したときは、理由の表示と再読み込みの手段を用意する。
+                if !store.canPurchase, !store.isLoadingProduct {
+                    if let error = store.purchaseError {
+                        Text(error)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    Button("再読み込み") {
+                        Task { await store.loadProduct() }
+                    }
+                    .font(.subheadline)
+                }
 
                 Button("購入を復元") {
                     Task { await store.restore(); if store.isPro { dismiss() } }
@@ -48,6 +62,15 @@ struct PaywallView: View {
                 .foregroundStyle(.secondary)
                 .padding(.bottom)
         }
+        .task {
+            // 初回の読み込みに失敗していても、画面表示時に再取得を試みる。
+            if store.product == nil { await store.loadProduct() }
+        }
+    }
+
+    private var purchaseButtonTitle: String {
+        if store.canPurchase { return "\(store.priceText) で購入" }
+        return store.isLoadingProduct ? "購入を準備中…" : "購入を読み込めませんでした"
     }
 
     private func benefit(_ icon: String, _ title: String, _ subtitle: String) -> some View {

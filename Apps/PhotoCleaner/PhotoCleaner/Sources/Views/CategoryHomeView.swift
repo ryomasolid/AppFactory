@@ -50,6 +50,12 @@ struct CategoryHomeView: View {
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }
+            .onAppear {
+                // スクリーンショット撮影モードでは課金画面を自動表示する。
+                if ProcessInfo.processInfo.arguments.contains("-screenshotPaywall") {
+                    showPaywall = true
+                }
+            }
             .safeAreaInset(edge: .bottom) {
                 // 無料ユーザーにはバナー広告を表示（Pro で非表示）。
                 // 起動引数 -hideAds が指定されている場合は非表示（スクリーンショット撮影用）。

@@ -10,7 +10,12 @@ final class StoreManager {
 
     private(set) var product: Product?
     private(set) var isPro = false
+    private(set) var isLoadingProduct = false
     var purchaseError: String?
+
+    /// App Review 用スクリーンショット撮影モード。実際の課金なしで課金画面を正しく表示する。
+    /// （起動引数はデバッグ/シミュレータでのみ渡せるため、本番挙動には影響しない。`-hideAds` と同様の用途。）
+    private let screenshotMode = ProcessInfo.processInfo.arguments.contains("-screenshotPaywall")
 
     private var updatesTask: Task<Void, Never>?
 
@@ -27,11 +32,23 @@ final class StoreManager {
         }
     }
 
-    var priceText: String { product?.displayPrice ?? "" }
+    var priceText: String { screenshotMode ? "¥300" : (product?.displayPrice ?? "") }
+
+    /// 購入ボタンを有効にできるか（＝商品が読み込めているか）。
+    var canPurchase: Bool { screenshotMode || product != nil }
 
     func loadProduct() async {
+        isLoadingProduct = true
+        defer { isLoadingProduct = false }
         do {
-            product = try await Product.products(for: [Self.proID]).first
+            let products = try await Product.products(for: [Self.proID])
+            product = products.first
+            if product == nil {
+                // 商品が構成/承認されていない、または契約未締結だと空で返る。
+                purchaseError = "商品を読み込めませんでした。時間をおいて再度お試しください。"
+            } else {
+                purchaseError = nil
+            }
         } catch {
             purchaseError = error.localizedDescription
         }

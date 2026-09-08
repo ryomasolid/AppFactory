@@ -18,6 +18,10 @@ public struct ContentView: View {
             case .authorized, .limited:
                 CategoryHomeView()
                     .environment(store)
+            case _ where ProcessInfo.processInfo.arguments.contains("-screenshotPaywall"):
+                // スクリーンショット撮影モードは権限に関係なくホームを表示する。
+                CategoryHomeView()
+                    .environment(store)
             default:
                 NavigationStack {
                     PermissionView(status: authStatus) {
@@ -28,10 +32,14 @@ public struct ContentView: View {
             }
         }
         .onAppear {
-            showOnboarding = !hasSeenOnboarding
+            // スクリーンショット撮影モードでは、オンボーディング・同意ダイアログを出さない。
+            let screenshot = ProcessInfo.processInfo.arguments.contains("-screenshotPaywall")
+            showOnboarding = !hasSeenOnboarding && !screenshot
             authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
             // 広告の同意（UMP）→ ATT → AdMob 初期化を実行。
-            ConsentManager.shared.start()
+            if !screenshot {
+                ConsentManager.shared.start()
+            }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
