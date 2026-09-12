@@ -82,6 +82,12 @@ struct TimeOfDay: Codable, Equatable, Hashable, Sendable, Comparable {
         self.minute = min(max(minute, 0), 59)
     }
 
+    /// Date の時刻部分から作る（DatePicker との橋渡し）。
+    init(_ date: Date, calendar: Calendar = .current) {
+        let components = calendar.dateComponents([.hour, .minute], from: date)
+        self.init(hour: components.hour ?? 0, minute: components.minute ?? 0)
+    }
+
     /// 0時からの経過分。SwiftData には Int ひとつで保存する。
     init(minutesFromMidnight: Int) {
         let clamped = min(max(minutesFromMidnight, 0), 24 * 60 - 1)

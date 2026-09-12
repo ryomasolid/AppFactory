@@ -29,6 +29,8 @@ let project = Project(
             "CODE_SIGN_STYLE": "Automatic",
             // SwiftUI 等の文字列を String Catalog へ自動抽出する。
             "SWIFT_EMIT_LOC_STRINGS": "YES",
+            // これが無いと SwiftUI の Color.accentColor がアセットの色ではなくシステム既定(青)になる。
+            "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
         ]
     ),
     targets: [
