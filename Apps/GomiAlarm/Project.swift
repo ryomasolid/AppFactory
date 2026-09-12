@@ -52,8 +52,8 @@ let project = Project(
                     "CFBundleShortVersionString": "1.0",
                     "CFBundleVersion": "1",
                     "ITSAppUsesNonExemptEncryption": false,
-                    // TODO: AdMob で GomiAlarm 用のアプリを新規作成し、本番のアプリIDに差し替える。
-                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~0000000000",
+                    // AdMob アプリID（本番・GomiAlarm）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~3160546570",
                     // 広告のトラッキング許可（ATT）ダイアログの説明文。
                     "NSUserTrackingUsageDescription": "あなたに関連性の高い広告を表示するために使用します。許可しなくてもアプリの機能はご利用いただけます。",
                     // 縦持ち固定（カレンダー/リストのレイアウトを1パターンに絞る）。

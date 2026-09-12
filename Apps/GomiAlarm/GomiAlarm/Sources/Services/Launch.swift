@@ -19,6 +19,12 @@ enum Launch {
     /// 種類の編集画面を起動直後に表示（スクショ撮影・レイアウト確認用）。
     static var showKindEditor: Bool { args.contains("-showKindEditor") }
 
+    /// オンボーディングの開始ページ（"templates" / "notifications"）。スクショ撮影用。
+    static var onboardingStep: String? {
+        guard let i = args.firstIndex(of: "-onboardingStep"), i + 1 < args.count else { return nil }
+        return args[i + 1]
+    }
+
     /// 起動時に選択するタブ（"schedule" / "calendar" / "settings"）。
     static var startTab: String? {
         guard let i = args.firstIndex(of: "-startTab"), i + 1 < args.count else { return nil }
