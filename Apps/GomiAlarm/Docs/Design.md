@@ -311,7 +311,11 @@ Pro
 - [x] オンボーディング（テンプレ投入＋通知許可誘導）
 - [x] Pro（3種類制限・広告非表示）＋ AdMobバナー・UMP/ATT同意フロー
 - [x] 本番の AdMob アプリID（`~3160546570`）／バナーユニットID（`/4385640516`）を設定
-- [ ] App Store Connect に非消耗型 tech.sesame.gomialarm.pro を登録
+- [x] App Store Connect にApp（ID 6811343305）と非消耗型 tech.sesame.gomialarm.pro（ID 6811346316）を登録
+      価格は基準国=日本 ¥300、審査用スクショ（`Store/iap-review/`）と審査メモまで設定済み
+- [ ] **v1.0 提出時に、このアプリ内課金を提出物に含める**（`審査用に追加`）
+      最初の非消耗型はアプリバージョンと同時提出が必須。TeikiCheck はこれを忘れて
+      Guideline 2.1(b) で却下されている
 - [ ] app-ads.txt に GomiAlarm 用の記載を追加（ryomasolid.github.io でホスト・マーケティングURL必須）
 - [x] 祝日の計算（振替休日・国民の休日を含む）
 - [x] ストア一式（アイコン／スクショ5枚／プライバシーポリシー／サポートHTML／AppPrivacy.md）
