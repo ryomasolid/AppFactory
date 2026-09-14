@@ -1,0 +1,29 @@
+{
+  "identifier" : "C4E81A27",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "480",
+      "familyShareable" : false,
+      "internalID" : "PRO0000002",
+      "localizations" : [
+        {
+          "description" : "商品を無制限に登録でき、PDF・CSVで書き出せます。広告も非表示になります。",
+          "displayName" : "保証書ポケット Pro",
+          "locale" : "ja_JP"
+        }
+      ],
+      "productID" : "tech.sesame.warrantypocket.pro",
+      "referenceName" : "WarrantyPocket Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "ja_JP",
+    "_storefront" : "JPN",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [],
+  "version" : { "major" : 3, "minor" : 0 }
+}
