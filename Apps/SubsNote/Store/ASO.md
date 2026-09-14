@@ -93,12 +93,15 @@ App Store・Google Play・キャリア決済・Amazon・クレジットカード
 2. **02_trial** … 無料体験の終了通知の例（オンボーディングの2ページ目・`-forceOnboarding -onboardingStep 2`）
 3. **03_calendar** … 支払いカレンダー（`-startTab calendar`）
 4. **04_detail** … 詳細（今後の支払日と解約の手順・`-showDetail`）
-5. **05_breakdown** … カテゴリ別・支払い方法別の内訳
+5. **05_breakdown** … カテゴリ別・支払い方法別の内訳（`-showBreakdown`）
 6. **06_paywall** … Pro の内容（`-showPaywall`）
 
 ## 未確定・要対応
-- [ ] Tuist プロジェクトと実装（`Docs/Design.md`）・テスト
-- [ ] アイコン、6.9"/6.5" スクショ、IAP 審査用スクショ（1242×2688 JPEG）
+- [x] Tuist プロジェクトと実装（`Docs/Design.md`）・テスト（Swift Testing 41件）
+- [x] アイコン（`Store/makeicon.swift`）
+- [ ] プリセットの料金を各公式サイトで確認し、`ServicePreset.swift` 先頭の最終確認日を更新
+- [ ] 実機で通知（体験終了・支払日）と BGAppRefreshTask の組み直しを確認
+- [ ] 6.9"/6.5" スクショ、IAP 審査用スクショ（1242×2688 JPEG）
 - [ ] プライバシーポリシー・サポートページ（`Store/PrivacyPolicy.html` / `Store/Support.html`）を `ryomasolid.github.io` に公開
 - [ ] `Store/AppPrivacy.md`（AdMob 由来の6種類。WarrantyPocket と同じ）
 - [ ] AdMob にアプリとバナーを作成し、本番IDをコードに反映
