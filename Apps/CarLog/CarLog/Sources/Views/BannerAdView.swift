@@ -9,9 +9,7 @@ struct BannerAdView: View {
         #if DEBUG
         return "ca-app-pub-3940256099942544/2934735716"
         #else
-        // TODO: AdMob で CarLog のバナーユニットを作成し、本番のユニットIDに差し替える。
-        // 現在は Google 公式のテスト用ユニットID（この ID のままリリースしてはいけない）。
-        return "ca-app-pub-3940256099942544/2934735716"
+        return "ca-app-pub-6105029932689433/2355509014"
         #endif
     }
 

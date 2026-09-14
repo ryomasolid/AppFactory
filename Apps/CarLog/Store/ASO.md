@@ -86,8 +86,11 @@
 ## 未確定・要対応
 - [ ] AdMob に CarLog のアプリを作成し、アプリID とバナーのユニットID を取得して
       `Project.swift` / `BannerAdView.swift` のプレースホルダを差し替える
-- [ ] App Store Connect でアプリを作成（bundleId: `tech.sesame.carlog`）
-- [ ] IAP `tech.sesame.carlog.pro`（非消耗型・¥480）を登録し、審査用スクショ（1242×2688 JPEG）を添付
+- [x] App Store Connect でアプリを作成（bundleId: `tech.sesame.carlog`・Apple ID `6811741295`・SKU `tech.sesame.carlog`）
+- [x] IAP `tech.sesame.carlog.pro`（非消耗型・¥480）を登録し、審査用スクショ（1242×2688 JPEG）を添付
+      （Apple ID `6811741877`・全175地域・日本語ローカリゼーション・審査メモ入力済み。
+      「審査用に追加」はビルドのアップロード後、既存の提出物の下書きに入れる）
+- [ ] アプリ本体の価格帯・著作権・App Review 連絡先・年齢制限・プライバシー・メタデータ（`Docs/Design.md` §9 の手順は GomiAlarm を参照）
 - [ ] サポート/プライバシーポリシーのページを `ryomasolid.github.io` に追加
       （中身は `Store/Support.html` / `Store/PrivacyPolicy.html` に用意済み）
 - [x] スクリーンショット（6.9" `Store/screenshots/`・6.5" `Store/screenshots-65/`）と IAP 審査用（`Store/iap-review/`）

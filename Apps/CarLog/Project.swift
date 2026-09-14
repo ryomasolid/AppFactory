@@ -52,9 +52,8 @@ let project = Project(
                     "CFBundleShortVersionString": "1.0",
                     "CFBundleVersion": "1",
                     "ITSAppUsesNonExemptEncryption": false,
-                    // TODO: AdMob で CarLog のアプリを作成し、本番のアプリIDに差し替える。
-                    // 現在は Google 公式のテスト用アプリID（この ID のままリリースしてはいけない）。
-                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    // AdMob の本番アプリID（カーログ）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~4880977884",
                     // 広告のトラッキング許可（ATT）ダイアログの説明文。
                     "NSUserTrackingUsageDescription": "あなたに関連性の高い広告を表示するために使用します。許可しなくてもアプリの機能はご利用いただけます。",
                     // 縦持ち固定（入力フォームとグラフのレイアウトを1パターンに絞る）。
