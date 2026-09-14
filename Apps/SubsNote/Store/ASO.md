@@ -99,7 +99,8 @@ App Store・Google Play・キャリア決済・Amazon・クレジットカード
 ## 未確定・要対応
 - [x] Tuist プロジェクトと実装（`Docs/Design.md`）・テスト（Swift Testing 41件）
 - [x] アイコン（`Store/makeicon.swift`）
-- [ ] プリセットの料金を各公式サイトで確認し、`ServicePreset.swift` 先頭の最終確認日を更新
+- [x] プリセットの料金を確認（2026-09-14・`Docs/PresetPrices.md`）
+- [ ] Amazon プライムの会費を amazon.co.jp で確認（公式ページを取得できず、2023年改定の値のまま）
 - [ ] 実機で通知（体験終了・支払日）と BGAppRefreshTask の組み直しを確認
 - [ ] 6.9"/6.5" スクショ、IAP 審査用スクショ（1242×2688 JPEG）
 - [ ] プライバシーポリシー・サポートページ（`Store/PrivacyPolicy.html` / `Store/Support.html`）を `ryomasolid.github.io` に公開
