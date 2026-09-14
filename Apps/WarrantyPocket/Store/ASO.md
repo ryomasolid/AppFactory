@@ -98,9 +98,18 @@
 ※ 1回目の起動はステータスバーに「◀ 前のアプリ」が出るので、捨て撮りしてから撮る。
 
 ## 未確定・要対応
-- [ ] AdMob にアプリとバナーを作成し、`Project.swift` / `BannerAdView.swift` のIDを差し替える
-- [ ] App Store Connect でアプリを作成（bundleId: `tech.sesame.warrantypocket`）
-- [ ] IAP `tech.sesame.warrantypocket.pro`（非消耗型・¥480）を登録し、審査用スクショ（1242×2688 JPEG）を添付
-- [ ] サポート/プライバシーポリシーを `ryomasolid.github.io` に公開
-- [ ] スクリーンショット（6.9" / 6.5"）と IAP 審査用
-- [ ] App のプライバシー回答メモ（`Store/AppPrivacy.md`）
+- [x] AdMob にアプリ「保証書ポケット」とバナーを作成し、本番ID（`~3449310861` / `/1286181956`）をコードに反映
+- [x] App Store Connect でアプリを作成（bundleId: `tech.sesame.warrantypocket`・Apple ID `6811797566`・SKU `tech.sesame.warrantypocket`）
+- [x] IAP `tech.sesame.warrantypocket.pro`（非消耗型・¥480）を登録し、審査用スクショ（1242×2688 JPEG）を添付
+      （Apple ID `6811798020`・全175地域・日本語ローカリゼーション・審査メモ入力済み。
+      「審査用に追加」はビルドのアップロード後、既存の提出物の下書きに入れる）
+- [x] サポート/プライバシーポリシーを `ryomasolid.github.io`（support-warrantypocket.html / privacy-warrantypocket.html）に公開
+- [x] バージョン 1.0 のメタデータ（プロモーション用テキスト・概要・キーワード・サポート/マーケティングURL・著作権）と
+      6.5" スクショ6枚、App Review 連絡先・メモ（サインイン不要）
+- [x] アプリ情報（サブタイトル・カテゴリ ユーティリティ/ライフスタイル・コンテンツ配信権なし）
+- [x] 年齢制限指定 4+（質問票に「広告」の設問が増えている → はい。ほかは全て なし／いいえ）
+- [x] 価格 無料・175地域で配信、App のプライバシー（`AppPrivacy.md` の6種類・プライバシーポリシーURL）を公開
+- [ ] ビルド 1.0 (1) をアップロード（Release アーカイブは作成済み）
+- [ ] ビルドを選択し、バージョン 1.0 と IAP を同じ「提出物の下書き」に入れて審査へ提出
+- [x] スクリーンショット（6.9" `Store/screenshots/`・6.5" `Store/screenshots-65/`）と IAP 審査用（`Store/iap-review/`）
+- [x] App のプライバシー回答メモ（`Store/AppPrivacy.md`）

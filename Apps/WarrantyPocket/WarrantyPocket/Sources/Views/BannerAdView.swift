@@ -9,7 +9,7 @@ struct BannerAdView: View {
         #if DEBUG
         return "ca-app-pub-3940256099942544/2934735716"
         #else
-        return "ca-app-pub-3940256099942544/2934735716" // TODO: AdMob の本番ユニットIDに差し替える
+        return "ca-app-pub-6105029932689433/1286181956"
         #endif
     }
 

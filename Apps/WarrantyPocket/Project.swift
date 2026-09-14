@@ -52,8 +52,8 @@ let project = Project(
                     "CFBundleShortVersionString": "1.0",
                     "CFBundleVersion": "1",
                     "ITSAppUsesNonExemptEncryption": false,
-                    // TODO: AdMob の本番アプリID（保証書ポケット）に差し替える。今は Google のテスト用アプリID。
-                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    // AdMob の本番アプリID（保証書ポケット）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~3449310861",
                     // 書類スキャン（VisionKit）で使う。写真の取り込みは PhotosPicker なので写真ライブラリの許可は不要。
                     "NSCameraUsageDescription": "保証書やレシートを撮影して登録するために使用します。",
                     // 広告のトラッキング許可（ATT）ダイアログの説明文。
