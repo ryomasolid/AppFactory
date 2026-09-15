@@ -227,6 +227,26 @@ struct BattleTests {
         #expect(lines.allSatisfy { $0.hero != nil })
     }
 
+    /// 勇者が受けたダメージは、その行の前後の HP の差と一致する。
+    @Test func damageTakenLinesCarryHeroDamage() {
+        var rng = SeededRandomSource(seed: 21)
+        var battle = Battle(hero: Hero(), enemy: Enemy(.wolf))
+        var hpBefore = battle.hero.hp
+        var checked = 0
+        for _ in 0..<10 where battle.end == nil {
+            for line in battle.take(.attack, rng: &rng).lines {
+                if let damage = line.heroDamage {
+                    #expect(line.cue == .damage)
+                    // HP は0で止まるので、減る量は「受けたダメージ」と「残っていたHP」の小さいほう。
+                    #expect(hpBefore - (line.hero?.hp ?? hpBefore) == min(damage, hpBefore))
+                    checked += 1
+                }
+                hpBefore = line.hero?.hp ?? hpBefore
+            }
+        }
+        #expect(checked > 0)
+    }
+
     @Test func spellNeedsMP() {
         var rng = SeededRandomSource(seed: 5)
         var hero = Hero()

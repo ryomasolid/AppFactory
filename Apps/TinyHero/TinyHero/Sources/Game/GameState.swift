@@ -14,8 +14,17 @@ struct BattleSession {
     var waitingForTap = false
     /// 「たおした！」が出たら敵の絵を消す。
     var enemyDefeated = false
+    /// 勇者が受けた最新の一撃。画面はこれが変わるたびに揺れる。
+    var heroHit: HeroHit?
     /// 敵に当たった最新の一撃。画面はこれが変わるたびに敵を揺らし、ダメージの数字を出す。
     var enemyHit: EnemyHit?
+}
+
+struct HeroHit: Equatable {
+    let id: Int
+    let damage: Int
+    /// 最大HPの3分の1以上の大ダメージ（大きく揺らす）。
+    let isHeavy: Bool
 }
 
 struct EnemyHit: Equatable {
@@ -398,6 +407,11 @@ final class GameState {
             // 書き換えの最中に battle を読むと排他アクセス違反で落ちるので、次の番号は先に取り出す。
             let nextID = (battle?.enemyHit?.id ?? 0) + 1
             battle?.enemyHit = EnemyHit(id: nextID, damage: damage, isCritical: line.isCritical)
+        }
+        if let damage = line.heroDamage {
+            let nextID = (battle?.heroHit?.id ?? 0) + 1
+            let isHeavy = damage * 3 >= (line.hero?.maxHP ?? .max)
+            battle?.heroHit = HeroHit(id: nextID, damage: damage, isHeavy: isHeavy)
         }
         if let cue = line.cue {
             if cue == .victory { battle?.enemyDefeated = true }

@@ -30,6 +30,8 @@ struct BattleLine: Equatable {
     /// この行で敵に与えたダメージ（画面で敵を揺らし、数字を出すのに使う）。
     var enemyDamage: Int?
     var isCritical = false
+    /// この行で勇者が受けたダメージ（画面を揺らすのに使う）。
+    var heroDamage: Int?
     var pause: BattleLinePause = .none
     /// この行を出した時点の勇者。HP・MP・レベルの表示をメッセージに合わせて変える。
     var hero: Hero?
@@ -166,7 +168,9 @@ struct Battle {
             say("ミス！ ダメージを うけない！", .miss, into: &result)
         } else {
             hero.hp = max(0, hero.hp - damage)
-            say("\(hero.name)は \(damage)の ダメージを うけた！", .damage, into: &result)
+            result.lines.append(BattleLine(
+                text: "\(hero.name)は \(damage)の ダメージを うけた！", cue: .damage, heroDamage: damage, hero: hero
+            ))
         }
     }
 

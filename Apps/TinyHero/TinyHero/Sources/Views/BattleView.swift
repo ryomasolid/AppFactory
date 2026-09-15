@@ -39,10 +39,46 @@ struct BattleView: View {
                 }
                 .frame(height: 210, alignment: .top)
             }
+            // ダメージを受けた瞬間に画面全体を揺らし、一瞬赤く光らせる。
+            .keyframeAnimator(initialValue: ScreenShake(), trigger: session.heroHit?.id ?? 0) { content, shake in
+                content
+                    .offset(x: shake.x, y: shake.y)
+                    .overlay {
+                        Color.red.opacity(shake.flash)
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                    }
+            } keyframes: { _ in
+                let power = quakePower(session)
+                KeyframeTrack(\.x) {
+                    LinearKeyframe(10 * power, duration: 0.04)
+                    LinearKeyframe(-10 * power, duration: 0.05)
+                    LinearKeyframe(8 * power, duration: 0.05)
+                    LinearKeyframe(-6 * power, duration: 0.05)
+                    LinearKeyframe(3 * power, duration: 0.05)
+                    LinearKeyframe(0, duration: 0.05)
+                }
+                KeyframeTrack(\.y) {
+                    LinearKeyframe(-6 * power, duration: 0.05)
+                    LinearKeyframe(5 * power, duration: 0.05)
+                    LinearKeyframe(-4 * power, duration: 0.05)
+                    LinearKeyframe(2 * power, duration: 0.05)
+                    LinearKeyframe(0, duration: 0.05)
+                }
+                KeyframeTrack(\.flash) {
+                    LinearKeyframe(0.35, duration: 0.03)
+                    LinearKeyframe(0, duration: 0.25)
+                }
+            }
             // 結果のページ（▼）は画面のどこをタップしても次へ進む。
             .contentShape(Rectangle())
             .onTapGesture { game.advanceBattleMessage() }
         }
+    }
+
+    /// 大ダメージ（ボスの炎など）は大きく揺らす。
+    private func quakePower(_ session: BattleSession) -> CGFloat {
+        session.heroHit?.isHeavy == true ? 1.8 : 1
     }
 
     private func enemySprite(_ session: BattleSession) -> some View {
@@ -127,6 +163,13 @@ struct BattleView: View {
         submenu = .none
         Task { await game.command(command) }
     }
+}
+
+/// 勇者がダメージを受けたときの画面の揺れと赤いフラッシュ。
+private struct ScreenShake {
+    var x: CGFloat = 0
+    var y: CGFloat = 0
+    var flash: Double = 0
 }
 
 /// 敵が当たったときの揺れと点滅の状態。

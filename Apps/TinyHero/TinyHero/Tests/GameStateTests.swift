@@ -151,6 +151,20 @@ struct GameStateTests {
         #expect(game.battle?.end == .won(exp: 2, gold: 3))
     }
 
+    /// 敵の攻撃が当たるたびに勇者の被ダメージが記録され、画面を揺らすきっかけになる。
+    @Test func heroHitIsRecordedWhenDamaged() async {
+        let game = makeGame()
+        game.startBattle(.darkDragon)
+        #expect(game.battle?.heroHit == nil)
+        for _ in 0..<10 where game.battle?.heroHit == nil && game.battle?.end == nil {
+            await game.command(.attack)
+        }
+        let hit = game.battle?.heroHit
+        #expect((hit?.damage ?? 0) > 0)
+        // レベル1（最大HP15）にボスの一撃は大ダメージ。
+        #expect(hit?.isHeavy == true)
+    }
+
     @Test func losingRevivesInVillageWithHalfGold() async {
         let game = makeGame()
         game.hero.gold = 100
