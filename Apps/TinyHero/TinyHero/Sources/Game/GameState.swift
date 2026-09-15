@@ -92,7 +92,7 @@ final class GameState {
         case .title: .title
         case .field:
             switch mapID {
-            case .village: .village
+            case .village, .innInside, .shopInside: .village
             case .field: .overworld
             case .cave1, .cave2: .cave
             }
@@ -223,8 +223,10 @@ final class GameState {
     }
 
     private func interact() {
-        let target = position + facing.delta
         let map = map
+        var target = position + facing.delta
+        // カウンター越しに、奥にいる人と話せる。
+        if map.tile(at: target) == .counter { target = target + facing.delta }
         if let npc = map.npc(at: target) {
             playSound(.confirm)
             talk(to: npc)

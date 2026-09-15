@@ -12,6 +12,8 @@ enum World {
         case .field: field
         case .cave1: cave1
         case .cave2: cave2
+        case .innInside: innInside
+        case .shopInside: shopInside
         }
     }
 
@@ -26,7 +28,7 @@ enum World {
             "#_____________#",
             "#_HHH_____HHH_#",
             "#_HHH_____HHH_#",
-            "#__i_______s__#",
+            "#_YdW_____ZdW_#",
             "#_____www_____#",
             "#_____www__t__#",
             "#_____www_____#",
@@ -38,6 +40,9 @@ enum World {
         ],
         outside: .wall,
         warps: [
+            // 左の家が宿屋、右の家が道具屋。扉から中へ入る。
+            Point(x: 3, y: 4): Warp(to: .innInside, at: Point(x: 4, y: 4)),
+            Point(x: 11, y: 4): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
             Point(x: 6, y: 12): Warp(to: .field, at: Point(x: 4, y: 8)),
             Point(x: 7, y: 12): Warp(to: .field, at: Point(x: 4, y: 8)),
             Point(x: 8, y: 12): Warp(to: .field, at: Point(x: 4, y: 8)),
@@ -46,6 +51,44 @@ enum World {
             ["むすめ「どうくつは 川の むこう、", "きたの おかの おくに あるそうよ。", "はしを わたって すすんでね。」"],
             ["おとこ「レベルが ひくいうちは", "村の ちかくの くさはらで きたえるといい。", "もりや おかには つよい まものが でるぞ。」"],
         ]
+    )
+
+    /// 宿屋の中。主人はカウンターの奥にいて、カウンターの前から話しかける。
+    static let innInside = GameMap(
+        id: .innInside,
+        name: "やどや",
+        rows: [
+            "XXXXXXXXX",
+            "XQoQoooiX",
+            "XoooooKKX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        outside: .darkness,
+        warps: [
+            Point(x: 4, y: 5): Warp(to: .village, at: Point(x: 3, y: 5)),
+        ],
+        markerFloor: .woodFloor
+    )
+
+    /// 道具屋の中。商品棚の前に主人が立ち、カウンター越しに買い物をする。
+    static let shopInside = GameMap(
+        id: .shopInside,
+        name: "どうぐや",
+        rows: [
+            "XXXXXXXXX",
+            "XLLLsLLLX",
+            "XooKKKooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        outside: .darkness,
+        warps: [
+            Point(x: 4, y: 5): Warp(to: .village, at: Point(x: 11, y: 5)),
+        ],
+        markerFloor: .woodFloor
     )
 
     static let field = GameMap(

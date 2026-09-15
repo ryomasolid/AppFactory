@@ -40,10 +40,24 @@ enum Tile: Character, CaseIterable {
     case caveFloor = ","
     case stairsUp = "U"
     case stairsDown = "D"
+    // 建物
+    case houseWall = "W"
+    case innSign = "Y"
+    case shopSign = "Z"
+    case door = "d"
+    case woodFloor = "o"
+    /// カウンター。通れないが、越しに奥の人と話せる。
+    case counter = "K"
+    case bed = "Q"
+    case shelf = "L"
+    case innerWall = "X"
+    /// 建物の中の部屋の外側（真っ黒）。部屋だけが浮かび上がって見えるようにする。
+    case darkness = "V"
 
     var isPassable: Bool {
         switch self {
-        case .mountain, .water, .house, .fountain, .wall: false
+        case .mountain, .water, .house, .fountain, .wall,
+             .houseWall, .innSign, .shopSign, .counter, .bed, .shelf, .innerWall, .darkness: false
         default: true
         }
     }
@@ -51,6 +65,8 @@ enum Tile: Character, CaseIterable {
 
 enum MapID: String, Codable, CaseIterable {
     case village, field, cave1, cave2
+    /// 宿屋と道具屋の中。
+    case innInside, shopInside
 }
 
 struct Warp: Equatable {
@@ -121,7 +137,9 @@ struct GameMap {
         warps: [Point: Warp],
         villagers: [[String]] = [],
         chestRewards: [ChestReward] = [],
-        encounters: [Tile: [EnemyKind]] = [:]
+        encounters: [Tile: [EnemyKind]] = [:],
+        /// 人の印（i・s・e・t）の足元に敷く床。
+        markerFloor: Tile = .townFloor
     ) {
         var tiles: [[Tile]] = []
         var npcs: [NPC] = []
@@ -133,14 +151,14 @@ struct GameMap {
             for (x, char) in row.enumerated() {
                 let point = Point(x: x, y: y)
                 switch char {
-                case "i": npcs.append(NPC(position: point, role: .innkeeper)); line.append(.townFloor)
-                case "s": npcs.append(NPC(position: point, role: .shopkeeper)); line.append(.townFloor)
-                case "e": npcs.append(NPC(position: point, role: .elder)); line.append(.townFloor)
+                case "i": npcs.append(NPC(position: point, role: .innkeeper)); line.append(markerFloor)
+                case "s": npcs.append(NPC(position: point, role: .shopkeeper)); line.append(markerFloor)
+                case "e": npcs.append(NPC(position: point, role: .elder)); line.append(markerFloor)
                 case "t":
                     let lines = villagerIndex < villagers.count ? villagers[villagerIndex] : ["……"]
                     villagerIndex += 1
                     npcs.append(NPC(position: point, role: .villager(lines: lines)))
-                    line.append(.townFloor)
+                    line.append(markerFloor)
                 case "c":
                     let reward = chests.count < chestRewards.count ? chestRewards[chests.count] : .gold(10)
                     chests.append(Chest(id: "\(id.rawValue)-\(chests.count)", position: point, reward: reward))

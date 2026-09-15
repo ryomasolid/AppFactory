@@ -73,9 +73,33 @@ struct GameStateTests {
         #expect(game.position.x < 3)
     }
 
+    /// 宿屋の扉から中に入り、下の扉から村の家の前に戻る。
+    @Test func enterInnAndLeave() async {
+        let game = makeGame()
+        game.position = Point(x: 3, y: 5)
+        await game.walk(.up)
+        #expect(game.mapID == .innInside)
+        #expect(game.position == Point(x: 4, y: 4))
+        #expect(game.musicTrack == .village)
+        await game.walk(.down)
+        #expect(game.mapID == .village)
+        #expect(game.position == Point(x: 3, y: 5))
+    }
+
+    /// 宿屋の主人にはカウンター越しに話しかける。
+    @Test func innkeeperTalksAcrossCounter() {
+        let game = makeGame()
+        game.mapID = .innInside
+        game.position = Point(x: 7, y: 3)
+        game.facing = .up
+        game.pressA()
+        #expect(game.overlay == .inn)
+    }
+
     @Test func shopkeeperSellsHerb() {
         let game = makeGame()
-        game.position = Point(x: 11, y: 5)
+        game.mapID = .shopInside
+        game.position = Point(x: 4, y: 3)
         game.facing = .up
         game.pressA()
         #expect(game.overlay == .shop)

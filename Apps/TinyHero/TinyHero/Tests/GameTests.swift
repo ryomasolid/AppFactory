@@ -86,6 +86,26 @@ struct MapTests {
         }
     }
 
+    /// 宿屋と道具屋の主人は、村から歩いて行けるカウンターの前から話しかけられる。
+    @Test func keepersAreReachableAcrossCounter() {
+        let reached = reachable()
+        for id in [MapID.innInside, .shopInside] {
+            let map = World.map(id)
+            let keepers = map.npcs.filter { $0.role == .innkeeper || $0.role == .shopkeeper }
+            #expect(keepers.count == 1, "\(id) に主人がいない")
+            for keeper in keepers {
+                let talkable = Direction.allCases.contains { direction in
+                    let counter = keeper.position + Point(x: -direction.delta.x, y: -direction.delta.y)
+                    let standing = counter + Point(x: -direction.delta.x, y: -direction.delta.y)
+                    return map.tile(at: counter) == .counter && reached.contains(Place(map: id, point: standing))
+                }
+                #expect(talkable, "\(id) の主人にカウンター越しに話しかけられない")
+            }
+        }
+        // 村の外に主人は立っていない。
+        #expect(!World.village.npcs.contains { $0.role == .innkeeper || $0.role == .shopkeeper })
+    }
+
     private struct Place: Hashable {
         let map: MapID
         let point: Point

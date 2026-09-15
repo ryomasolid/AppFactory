@@ -6,6 +6,7 @@ enum SpriteID: String, CaseIterable {
     // 地形
     case grass, forest, hills, mountain, water, road, bridge, town, cave
     case townFloor, house, fountain, wall, caveFloor, stairsUp, stairsDown
+    case houseWall, innSign, shopSign, door, woodFloor, counter, bed, shelf, innerWall, darkness
     case chestClosed, chestOpen
     // 人（勇者は hero1/hero2 が下向き、ほかの向きはそれぞれ歩きの2コマ）
     case hero1, hero2, heroUp1, heroUp2, heroLeft1, heroLeft2, heroRight1, heroRight2
@@ -46,6 +47,16 @@ enum SpriteID: String, CaseIterable {
         case .caveFloor: self = .caveFloor
         case .stairsUp: self = .stairsUp
         case .stairsDown: self = .stairsDown
+        case .houseWall: self = .houseWall
+        case .innSign: self = .innSign
+        case .shopSign: self = .shopSign
+        case .door: self = .door
+        case .woodFloor: self = .woodFloor
+        case .counter: self = .counter
+        case .bed: self = .bed
+        case .shelf: self = .shelf
+        case .innerWall: self = .innerWall
+        case .darkness: self = .darkness
         }
     }
 

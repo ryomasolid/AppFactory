@@ -3,6 +3,7 @@ import Foundation
 /// 起動引数で途中の場面から始める（シミュレータでの表示確認用）。
 /// 例: `-startMap field -startX 5 -startY 8 -startFacing left` / `-startBattle darkDragon -autoAttack YES` / `-startLevel 10`
 /// / `-startOverlay shop`（menu・status・items・spells・shop・inn のウィンドウを開いた状態）
+/// / `-openedChests cave1-0,cave2-0`（開けた宝箱）
 @MainActor
 enum Launch {
     /// 戦闘で開いておくサブメニュー（`-battleSubmenu spells` / `items`）。表示確認用。
@@ -15,7 +16,8 @@ enum Launch {
         let battleName = defaults.string(forKey: "startBattle")
         let level = defaults.integer(forKey: "startLevel")
         let overlayName = defaults.string(forKey: "startOverlay")
-        guard mapName != nil || battleName != nil || level > 0 || overlayName != nil else { return }
+        let openedChests = defaults.string(forKey: "openedChests")
+        guard mapName != nil || battleName != nil || level > 0 || overlayName != nil || openedChests != nil else { return }
 
         game.newGame()
         game.say([])
@@ -31,6 +33,9 @@ enum Launch {
         }
         if let facing = defaults.string(forKey: "startFacing").flatMap(Direction.init(rawValue:)) {
             game.facing = facing
+        }
+        if let openedChests {
+            game.openedChests = Set(openedChests.split(separator: ",").map(String.init))
         }
         switch overlayName {
         case "menu": game.overlay = .menu
