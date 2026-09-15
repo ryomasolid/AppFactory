@@ -19,7 +19,7 @@ struct FieldView: View {
                         )
                         .animation(game.lastMoveWasWarp ? nil : .linear(duration: 0.15), value: game.position)
 
-                    SpriteCache.image(game.walkFrame % 2 == 0 ? .hero1 : .hero2)
+                    SpriteCache.image(.hero(facing: game.facing, step: game.walkFrame))
                         .resizable()
                         .interpolation(.none)
                         .frame(width: tile, height: tile)

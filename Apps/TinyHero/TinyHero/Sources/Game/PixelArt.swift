@@ -7,8 +7,20 @@ enum SpriteID: String, CaseIterable {
     case grass, forest, hills, mountain, water, road, bridge, town, cave
     case townFloor, house, fountain, wall, caveFloor, stairsUp, stairsDown
     case chestClosed, chestOpen
-    // 人
-    case hero1, hero2, elder, innkeeper, shopkeeper, villager
+    // 人（勇者は hero1/hero2 が下向き、ほかの向きはそれぞれ歩きの2コマ）
+    case hero1, hero2, heroUp1, heroUp2, heroLeft1, heroLeft2, heroRight1, heroRight2
+    case elder, innkeeper, shopkeeper, villager
+
+    /// 向きと歩数から勇者の絵を選ぶ（1歩ごとに2コマを交互に）。
+    static func hero(facing: Direction, step: Int) -> SpriteID {
+        let second = step % 2 != 0
+        switch facing {
+        case .down: return second ? .hero2 : .hero1
+        case .up: return second ? .heroUp2 : .heroUp1
+        case .left: return second ? .heroLeft2 : .heroLeft1
+        case .right: return second ? .heroRight2 : .heroRight1
+        }
+    }
     // 敵
     case bigRat, mushroom, bat, wolf, goblin, skeleton, golem, darkDragon
 

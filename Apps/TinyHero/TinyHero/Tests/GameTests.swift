@@ -19,6 +19,29 @@ struct SpriteTests {
     }
 }
 
+struct HeroSpriteTests {
+
+    @Test func rightFacingIsMirrorOfLeft() {
+        #expect(SpriteID.art[.heroRight1] == CharacterArt.mirrored(CharacterArt.heroLeft1))
+        #expect(SpriteID.art[.heroRight2] == CharacterArt.mirrored(CharacterArt.heroLeft2))
+    }
+
+    @Test func eachDirectionHasItsOwnTwoFrames() {
+        var seen: Set<SpriteID> = []
+        for direction in Direction.allCases {
+            let first = SpriteID.hero(facing: direction, step: 0)
+            let second = SpriteID.hero(facing: direction, step: 1)
+            #expect(first != second)
+            #expect(SpriteID.hero(facing: direction, step: 2) == first)
+            seen.insert(first)
+            seen.insert(second)
+        }
+        #expect(seen.count == 8)
+        // 下向きの1コマ目はタイトルなどで使う従来の絵のまま。
+        #expect(SpriteID.hero(facing: .down, step: 0) == .hero1)
+    }
+}
+
 struct MapTests {
 
     @Test func mapsAreRectangular() {

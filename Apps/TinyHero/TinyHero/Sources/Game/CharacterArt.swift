@@ -1,6 +1,90 @@
-/// 人物のドット絵（16×16・`.` は透明）。勇者は歩きの2コマ。
+/// 人物のドット絵（16×16・`.` は透明）。勇者は4方向×歩きの2コマ（右向きは左向きの左右反転）。
 enum CharacterArt {
+    /// 左向き（横顔。マントは背中側＝右に出る）。
+    static let heroLeft1: [String] = [
+        "................",
+        "......NNNNN.....",
+        ".....NNNNNNN....",
+        ".....sssNNNN....",
+        "....skssssNN....",
+        ".....sssssN.....",
+        "......sss.......",
+        ".....bbbbbrr....",
+        ".....bbbbbrrr...",
+        ".....sbbbbrrr...",
+        ".....bbbbbrrr...",
+        ".....nnnnnrr....",
+        "......bbbb......",
+        "......bbbb......",
+        ".....NNN.NN.....",
+        "................",
+    ]
+
+    static let heroLeft2: [String] = [
+        "................",
+        "......NNNNN.....",
+        ".....NNNNNNN....",
+        ".....sssNNNN....",
+        "....skssssNN....",
+        ".....sssssN.....",
+        "......sss.......",
+        ".....bbbbbrr....",
+        ".....bbbbbrrr...",
+        ".....sbbbbrrr...",
+        ".....bbbbbrrr...",
+        ".....nnnnnrr....",
+        ".....bb..bb.....",
+        "....bb....bb....",
+        "...NNN....NN....",
+        "................",
+    ]
+
+    static func mirrored(_ rows: [String]) -> [String] {
+        rows.map { String($0.reversed()) }
+    }
+
     static let all: [SpriteID: [String]] = [
+        .heroLeft1: heroLeft1,
+        .heroLeft2: heroLeft2,
+        .heroRight1: mirrored(heroLeft1),
+        .heroRight2: mirrored(heroLeft2),
+        // 上向き（後ろ姿。顔は見えず、マントが背中いっぱい）。
+        .heroUp1: [
+            "................",
+            "......NNNN......",
+            ".....NNNNNN.....",
+            ".....NNNNNN.....",
+            ".....NNNNNN.....",
+            ".....sNNNNs.....",
+            "......ssss......",
+            "....rrrrrrrr....",
+            "...rrrrrrrrrr...",
+            "...srrrrrrrrs...",
+            "...rrrrRRrrrr...",
+            "....nnnnnnnn....",
+            "....bbb..bbb....",
+            "....bbb..bbb....",
+            "....NNN..NNN....",
+            "................",
+        ],
+        .heroUp2: [
+            "................",
+            "......NNNN......",
+            ".....NNNNNN.....",
+            ".....NNNNNN.....",
+            ".....NNNNNN.....",
+            ".....sNNNNs.....",
+            "......ssss......",
+            "....rrrrrrrr....",
+            "...rrrrrrrrrr...",
+            "...srrrrrrrrs...",
+            "...rrrrRRrrrr...",
+            "....nnnnnnnn....",
+            "....bbb...bbb...",
+            "...bbb....bbb...",
+            "...NNN.....NNN..",
+            "................",
+        ],
         .hero1: [
             "................",
             "......NNNN......",
