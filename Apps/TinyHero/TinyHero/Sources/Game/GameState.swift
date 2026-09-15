@@ -8,6 +8,8 @@ struct BattleSession {
     var log: [String]
     var isPlaying = false
     var end: BattleEnd?
+    /// 勝利・全滅のジングルが鳴ったら戦闘の BGM を止める。
+    var musicStopped = false
 }
 
 @MainActor
@@ -43,11 +45,39 @@ final class GameState {
     /// 1歩の時間と戦闘メッセージの間隔。テストではゼロにする。
     @ObservationIgnored var stepDuration: Duration = .milliseconds(150)
     @ObservationIgnored var messageInterval: Duration = .milliseconds(420)
+    /// 効果音を鳴らす先。アプリでは AudioManager につなぎ、テストでは記録に使う。
+    @ObservationIgnored var playSound: (SoundCue) -> Void = { _ in }
+
+    static let soundKey = "tinyhero.soundEnabled"
+    /// 音のオン・オフ（メニューで切り替え、端末に保存する）。
+    var soundEnabled = UserDefaults.standard.object(forKey: GameState.soundKey) as? Bool ?? true {
+        didSet { UserDefaults.standard.set(soundEnabled, forKey: Self.soundKey) }
+    }
 
     var map: GameMap { World.map(mapID) }
     var currentPage: [String]? { pages.first }
     var innPrice: Int { 2 + hero.level * 3 }
     var canWalk: Bool { screen == .field && pages.isEmpty && overlay == .none && !isWalking }
+
+    /// いま流す BGM。場面から決まる。
+    var musicTrack: MusicTrack? {
+        switch screen {
+        case .title: .title
+        case .field:
+            switch mapID {
+            case .village: .village
+            case .field: .overworld
+            case .cave1, .cave2: .cave
+            }
+        case .battle:
+            if let battle, !battle.musicStopped {
+                battle.battle.enemy.kind.isBoss ? .boss : .battle
+            } else {
+                nil
+            }
+        case .ending: .ending
+        }
+    }
 
     // MARK: - タイトル
 
@@ -116,7 +146,7 @@ final class GameState {
         guard canWalk else { return }
         facing = direction
         let next = position + direction.delta
-        guard map.isWalkable(next) else { return }
+        guard map.isWalkable(next) else { return playSound(.bump) }
         isWalking = true
         lastMoveWasWarp = false
         walkFrame += 1
@@ -129,6 +159,7 @@ final class GameState {
     private func arrived() {
         if let warp = map.warps[position] {
             lastMoveWasWarp = true
+            playSound(.stairs)
             mapID = warp.to
             position = warp.at
             stepsSinceBattle = 0
@@ -152,6 +183,7 @@ final class GameState {
     func pressB() {
         if !pages.isEmpty { return advanceMessage() }
         guard screen == .field, !isWalking else { return }
+        playSound(.cursor)
         switch overlay {
         case .none: overlay = .menu
         case .menu: overlay = .none
@@ -167,14 +199,17 @@ final class GameState {
         let target = position + facing.delta
         let map = map
         if let npc = map.npc(at: target) {
+            playSound(.confirm)
             talk(to: npc)
         } else if let chest = map.chest(at: target) {
             open(chest)
         } else if map.boss == target {
+            playSound(.confirm)
             say(["グルルル……", "ヤミドラゴン「ちいさき ゆうしゃよ、", "よくぞ ここまで きた。", "わが ほのおで もえつきるがよい！」"]) { [weak self] in
                 self?.startBattle(.darkDragon)
             }
         } else {
+            playSound(.cursor)
             say(["\(hero.name)は あしもとを しらべた。", "しかし なにも みつからなかった。"])
         }
     }
@@ -197,6 +232,7 @@ final class GameState {
             return say(["たからばこは からっぽだ。"])
         }
         openedChests.insert(chest.id)
+        playSound(.chest)
         switch chest.reward {
         case .gold(let amount):
             hero.gold += amount
@@ -217,6 +253,7 @@ final class GameState {
 
     func advanceMessage() {
         guard !pages.isEmpty else { return }
+        playSound(.cursor)
         pages.removeFirst()
         if pages.isEmpty { finishMessages() }
     }
@@ -237,6 +274,7 @@ final class GameState {
         hero.gold -= innPrice
         hero.restoreFully()
         save()
+        playSound(.inn)
         say(["やどや「ゆっくり おやすみください。」", "……", "おはようございます。 ぼうけんの きろくを かきとめました。"])
     }
 
@@ -249,6 +287,7 @@ final class GameState {
         }
         hero.gold -= item.price
         hero.receive(item)
+        playSound(.coin)
         if item.kind == .consumable {
             say(["どうぐや「まいどあり！」", "\(item.name)を てにいれた。"])
         } else {
@@ -262,6 +301,7 @@ final class GameState {
         }
         hero.mp -= spell.mpCost
         let healed = hero.heal(rng.next(in: spell.power))
+        playSound(.heal)
         overlay = .none
         say(["\(hero.name)は \(spell.name)を となえた！", "HPが \(healed) かいふくした！"])
     }
@@ -269,6 +309,7 @@ final class GameState {
     func useHerbInField() {
         guard hero.consume(.herb) else { return say(["どうぐが ない！"]) }
         let healed = hero.heal(rng.next(in: Item.herbPower))
+        playSound(.heal)
         overlay = .none
         say(["\(hero.name)は 薬草を つかった！", "HPが \(healed) かいふくした！"])
     }
@@ -280,6 +321,7 @@ final class GameState {
 
     func saveFromMenu() {
         save()
+        playSound(.confirm)
         overlay = .none
         say(["ぼうけんの きろくを かきとめました。"])
     }
@@ -289,6 +331,7 @@ final class GameState {
     func startBattle(_ kind: EnemyKind) {
         let enemy = Enemy(kind)
         heldDirection = nil
+        playSound(.encounter)
         battle = BattleSession(battle: Battle(hero: hero, enemy: enemy), log: ["\(enemy.name)が あらわれた！"])
         overlay = .none
         screen = .battle
@@ -300,8 +343,12 @@ final class GameState {
         session.log = []
         session.isPlaying = true
         battle = session
-        for message in result.messages {
-            battle?.log.append(message)
+        for line in result.lines {
+            battle?.log.append(line.text)
+            if let cue = line.cue {
+                if cue == .victory || cue == .gameOver { battle?.musicStopped = true }
+                playSound(cue)
+            }
             if let count = battle?.log.count, count > 4 { battle?.log.removeFirst(count - 4) }
             // HPの表示はメッセージが流れ終わってから反映する（先にバーだけ減るのを避ける）。
             try? await Task.sleep(for: messageInterval)

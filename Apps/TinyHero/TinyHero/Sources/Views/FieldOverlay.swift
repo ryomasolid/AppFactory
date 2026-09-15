@@ -15,6 +15,7 @@ struct FieldOverlay: View {
                 RetroChoice(title: "つよさ") { game.overlay = .status }
                 RetroChoice(title: "じゅもん", isEnabled: !hero.spells.isEmpty) { game.overlay = .spells }
                 RetroChoice(title: "どうぐ") { game.overlay = .items }
+                RetroChoice(title: "おと", detail: game.soundEnabled ? "ON" : "OFF") { game.soundEnabled.toggle() }
                 RetroChoice(title: "セーブ") { game.saveFromMenu() }
                 RetroChoice(title: "とじる") { game.closeOverlay() }
             }

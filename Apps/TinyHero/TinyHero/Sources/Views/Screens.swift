@@ -11,6 +11,7 @@ struct TinyHeroApp: App {
 
 struct ContentView: View {
     @State private var game = GameState()
+    @State private var audio = AudioManager()
 
     var body: some View {
         ZStack {
@@ -23,6 +24,15 @@ struct ContentView: View {
             }
         }
         .environment(game)
+        .onAppear {
+            game.playSound = { [audio] cue in audio.play(cue) }
+        }
+        .onChange(of: game.soundEnabled, initial: true) { _, enabled in
+            audio.isEnabled = enabled
+        }
+        .onChange(of: game.musicTrack, initial: true) { _, track in
+            audio.playMusic(track)
+        }
         .task { Launch.apply(to: game) }
         .preferredColorScheme(.dark)
         .statusBarHidden()
@@ -58,13 +68,17 @@ struct RetroWindow<Content: View>: View {
 
 /// ウィンドウ内の選択肢。
 struct RetroChoice: View {
+    @Environment(GameState.self) private var game
     let title: String
     var detail: String?
     var isEnabled = true
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            game.playSound(.cursor)
+            action()
+        } label: {
             HStack {
                 Text("▶ \(title)")
                 Spacer()

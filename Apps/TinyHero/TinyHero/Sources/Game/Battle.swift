@@ -13,9 +13,18 @@ enum BattleEnd: Equatable {
     case fled
 }
 
+/// 戦闘メッセージの1行と、その行を出すときに鳴らす音。
+struct BattleLine: Equatable {
+    let text: String
+    var cue: SoundCue?
+}
+
 struct TurnResult: Equatable {
-    var messages: [String] = []
+    var lines: [BattleLine] = []
     var end: BattleEnd?
+
+    var messages: [String] { lines.map(\.text) }
+    var cues: [SoundCue] { lines.compactMap(\.cue) }
 }
 
 /// 1対1のコマンド戦闘。画面から切り離した純粋なロジックで、1コマンドごとに1ターン進める。
@@ -64,10 +73,10 @@ struct Battle {
     private mutating func heroAct(_ command: BattleCommand, rng: inout some RandomSource, into result: inout TurnResult) {
         switch command {
         case .attack:
-            result.messages.append("\(hero.name)の こうげき！")
+            result.say("\(hero.name)の こうげき！", .attack)
             let damage: Int
             if rng.chance(16) {
-                result.messages.append("かいしんの いちげき！")
+                result.say("かいしんの いちげき！", .critical)
                 damage = rng.next(in: max(1, hero.attack * 3 / 4)...hero.attack)
             } else {
                 damage = Self.damage(attack: hero.attack, defense: enemy.kind.stats.defense, rng: &rng)
@@ -76,68 +85,68 @@ struct Battle {
 
         case .spell(let spell):
             guard hero.spells.contains(spell), hero.mp >= spell.mpCost else {
-                result.messages.append("MPが たりない！")
+                result.say("MPが たりない！", .miss)
                 return
             }
             hero.mp -= spell.mpCost
-            result.messages.append("\(hero.name)は \(spell.name)を となえた！")
+            result.say("\(hero.name)は \(spell.name)を となえた！", .spell)
             let amount = rng.next(in: spell.power)
             if spell.isHealing {
-                result.messages.append("HPが \(hero.heal(amount)) かいふくした！")
+                result.say("HPが \(hero.heal(amount)) かいふくした！", .heal)
             } else {
                 hit(enemyFor: amount, into: &result)
             }
 
         case .item(let item):
             guard hero.consume(item) else {
-                result.messages.append("どうぐが ない！")
+                result.say("どうぐが ない！", .miss)
                 return
             }
-            result.messages.append("\(hero.name)は \(item.name)を つかった！")
-            result.messages.append("HPが \(hero.heal(rng.next(in: Item.herbPower))) かいふくした！")
+            result.say("\(hero.name)は \(item.name)を つかった！")
+            result.say("HPが \(hero.heal(rng.next(in: Item.herbPower))) かいふくした！", .heal)
 
         case .run:
             if enemy.kind.isBoss {
-                result.messages.append("しかし まわりこまれてしまった！")
+                result.say("しかし まわりこまれてしまった！", .miss)
                 return
             }
             let escaped = hero.agility >= enemy.kind.stats.agility ? !rng.chance(4) : rng.chance(2)
             if escaped {
-                result.messages.append("\(hero.name)は にげだした！")
+                result.say("\(hero.name)は にげだした！", .run)
                 end = .fled
             } else {
-                result.messages.append("\(hero.name)は にげだした！")
-                result.messages.append("しかし まわりこまれてしまった！")
+                result.say("\(hero.name)は にげだした！", .run)
+                result.say("しかし まわりこまれてしまった！", .miss)
             }
         }
     }
 
     private mutating func enemyAct(rng: inout some RandomSource, into result: inout TurnResult) {
         if enemy.kind.isBoss, rng.chance(3) {
-            result.messages.append("\(enemy.name)は ほのおを はいた！")
+            result.say("\(enemy.name)は ほのおを はいた！", .fire)
             hit(heroFor: rng.next(in: EnemyKind.breathPower), into: &result)
             return
         }
-        result.messages.append("\(enemy.name)の こうげき！")
+        result.say("\(enemy.name)の こうげき！")
         let damage = Self.damage(attack: enemy.kind.stats.attack, defense: hero.defense, rng: &rng)
         hit(heroFor: damage, into: &result)
     }
 
     private mutating func hit(enemyFor damage: Int, into result: inout TurnResult) {
         if damage == 0 {
-            result.messages.append("ミス！ ダメージを あたえられない！")
+            result.say("ミス！ ダメージを あたえられない！", .miss)
         } else {
             enemy.hp = max(0, enemy.hp - damage)
-            result.messages.append("\(enemy.name)に \(damage)の ダメージ！")
+            result.say("\(enemy.name)に \(damage)の ダメージ！", .hit)
         }
     }
 
     private mutating func hit(heroFor damage: Int, into result: inout TurnResult) {
         if damage == 0 {
-            result.messages.append("ミス！ ダメージを うけない！")
+            result.say("ミス！ ダメージを うけない！", .miss)
         } else {
             hero.hp = max(0, hero.hp - damage)
-            result.messages.append("\(hero.name)は \(damage)の ダメージを うけた！")
+            result.say("\(hero.name)は \(damage)の ダメージを うけた！", .damage)
         }
     }
 
@@ -146,17 +155,25 @@ struct Battle {
         if end == .fled { return .fled }
         if enemy.isDead {
             let stats = enemy.kind.stats
-            result.messages.append("\(enemy.name)を たおした！")
-            if stats.exp > 0 { result.messages.append("けいけんち \(stats.exp)ポイント かくとく") }
-            if stats.gold > 0 { result.messages.append("\(stats.gold)ゴールドを てにいれた！") }
+            result.say("\(enemy.name)を たおした！", .victory)
+            if stats.exp > 0 { result.say("けいけんち \(stats.exp)ポイント かくとく") }
+            if stats.gold > 0 { result.say("\(stats.gold)ゴールドを てにいれた！") }
             hero.gold += stats.gold
-            result.messages += hero.gainExp(stats.exp)
+            for message in hero.gainExp(stats.exp) {
+                result.say(message, message.contains("あがった") ? .levelUp : nil)
+            }
             return .won(exp: stats.exp, gold: stats.gold)
         }
         if hero.isDead {
-            result.messages.append("\(hero.name)は ちからつきた…")
+            result.say("\(hero.name)は ちからつきた…", .gameOver)
             return .lost
         }
         return nil
+    }
+}
+
+private extension TurnResult {
+    mutating func say(_ text: String, _ cue: SoundCue? = nil) {
+        lines.append(BattleLine(text: text, cue: cue))
     }
 }
