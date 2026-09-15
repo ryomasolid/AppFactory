@@ -100,12 +100,23 @@ App Store・Google Play・キャリア決済・Amazon・クレジットカード
 - [x] Tuist プロジェクトと実装（`Docs/Design.md`）・テスト（Swift Testing 41件）
 - [x] アイコン（`Store/makeicon.swift`）
 - [x] プリセットの料金を確認（2026-09-14・`Docs/PresetPrices.md`）
-- [ ] Amazon プライムの会費を amazon.co.jp で確認（公式ページを取得できず、2023年改定の値のまま）
+- [x] Amazon プライムの会費を amazon.co.jp で確認（2026-09-15・月 ¥600／年 ¥5,900 でプリセットと一致）
 - [ ] 実機で通知（体験終了・支払日）と BGAppRefreshTask の組み直しを確認
-- [ ] 6.9"/6.5" スクショ、IAP 審査用スクショ（1242×2688 JPEG）
-- [ ] プライバシーポリシー・サポートページ（`Store/PrivacyPolicy.html` / `Store/Support.html`）を `ryomasolid.github.io` に公開
-- [ ] `Store/AppPrivacy.md`（AdMob 由来の6種類。WarrantyPocket と同じ）
-- [ ] AdMob にアプリとバナーを作成し、本番IDをコードに反映
-- [ ] App Store Connect でアプリを作成（bundleId: `tech.sesame.subsnote`）・IAP `tech.sesame.subsnote.pro`（非消耗型・¥480）
-- [ ] メタデータ・スクショ・審査連絡先/メモ・アプリ情報・年齢制限（「広告」は はい）・価格・プライバシー
+- [x] 6.9" スクショ（`Store/screenshots/`）・6.5"（`Store/screenshots-65/`）、IAP 審査用（`Store/iap-review/`・1242×2688 JPEG）
+- [x] プライバシーポリシー・サポートページを `ryomasolid.github.io` に公開（privacy-subsnote.html / support-subsnote.html）
+- [x] `Store/AppPrivacy.md`（AdMob 由来の6種類。WarrantyPocket と同じ）
+- [x] AdMob にアプリ「サブスク帳」とバナー「サブスク帳 バナー」を作成し、本番ID（`~2049734758` / `/9095945673`）をコードに反映（2026-09-15）
+      AdMob 側は「要審査」。App Store で公開されたら AdMob アプリにストア情報をリンクする
+- [x] Developer サイトに App ID を登録（名前 `SubsNote`・Explicit `tech.sesame.subsnote`・追加の Capability なし）（2026-09-15）
+- [x] App Store Connect でアプリを作成（名前 `サブスク帳 解約忘れ防止・更新日を通知`・Apple ID `6812152838`・SKU `tech.sesame.subsnote`・プライマリ言語 日本語）
+- [x] IAP `tech.sesame.subsnote.pro`（非消耗型・参照名 `SubsNote Pro`・Apple ID `6812154740`）
+      全175地域・基準 日本 ¥480・日本語ローカリゼーション（`サブスク帳 Pro`）・審査メモ入力済み。**審査用スクショは未添付**
+- [x] バージョン 1.0 のメタデータ（プロモーション用テキスト・概要・キーワード・著作権 `2026 oga.sesame.tech`）と
+      App Review 連絡先・メモ（サインイン不要）。**サポートURL・スクショは未入力**（ページ未公開・未撮影のため）
+- [x] アプリ情報（サブタイトル・カテゴリ ファイナンス/ユーティリティ・コンテンツ配信権なし）
+- [x] 年齢制限指定 4+（「広告」は はい。ほかは全て なし／いいえ）
+- [x] 価格 無料・175地域で配信
+- [x] App のプライバシーのデータタイプ（`Store/AppPrivacy.md` の6種類）を回答・保存
+- [ ] App のプライバシーにプライバシーポリシーURLを入れて「公開」（ページ公開後）
+- [ ] バージョンにサポートURL（とマーケティングURL）を入力、6.5" スクショ6枚を追加、IAP に審査用スクショを添付
 - [ ] ビルドのアップロード → バージョンを「審査用に追加」→ IAP ページを**再読み込みして ▾ が出てから**同じ下書きに追加 → 審査へ提出

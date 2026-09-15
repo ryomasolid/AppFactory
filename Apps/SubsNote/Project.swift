@@ -52,8 +52,7 @@ let project = Project(
                     "CFBundleShortVersionString": "1.0",
                     "CFBundleVersion": "1",
                     "ITSAppUsesNonExemptEncryption": false,
-                    // TODO: AdMob にアプリを作成したら本番のアプリIDに差し替える（今は Google のテスト用アプリID）。
-                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~2049734758",
                     // 広告のトラッキング許可（ATT）ダイアログの説明文。
                     "NSUserTrackingUsageDescription": "あなたに関連性の高い広告を表示するために使用します。許可しなくてもアプリの機能はご利用いただけます。",
                     // 縦持ち固定（一覧とカレンダーのレイアウトを1パターンに絞る）。

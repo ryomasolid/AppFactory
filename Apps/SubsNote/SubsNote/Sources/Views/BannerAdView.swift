@@ -9,8 +9,7 @@ struct BannerAdView: View {
         #if DEBUG
         return "ca-app-pub-3940256099942544/2934735716"
         #else
-        // TODO: AdMob にサブスク帳のバナーを作成したら本番ユニットIDに差し替える（Info.plist のアプリIDも）。
-        return "ca-app-pub-3940256099942544/2934735716"
+        return "ca-app-pub-6105029932689433/9095945673"
         #endif
     }
 
