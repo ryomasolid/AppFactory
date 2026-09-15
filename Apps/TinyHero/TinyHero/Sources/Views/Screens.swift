@@ -60,7 +60,8 @@ struct RetroWindow<Content: View>: View {
         .foregroundStyle(.white)
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.black.opacity(0.92), in: RoundedRectangle(cornerRadius: 8))
+        // 後ろのマップが透けると文字に模様が重なって読みにくいので、塗りつぶす。
+        .background(Color.black, in: RoundedRectangle(cornerRadius: 8))
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white, lineWidth: 3))
         .padding(6)
     }
@@ -90,6 +91,21 @@ struct RetroChoice: View {
         .buttonStyle(RetroChoiceStyle())
         .foregroundStyle(isEnabled ? .white : .gray)
         .disabled(!isEnabled)
+    }
+}
+
+/// ウィンドウ内の「項目名 … 値」の行。選択肢と頭がそろうよう、▶ の幅を空けておく。
+struct RetroRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("▶").hidden()
+            Text(label)
+            Spacer()
+            Text(value)
+        }
     }
 }
 

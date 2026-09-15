@@ -70,6 +70,13 @@ struct BattleView: View {
                     LinearKeyframe(0, duration: 0.25)
                 }
             }
+            .onAppear {
+                switch Launch.battleSubmenu {
+                case "spells": submenu = .spells
+                case "items": submenu = .items
+                default: break
+                }
+            }
             // 結果のページ（▼）は画面のどこをタップしても次へ進む。
             .contentShape(Rectangle())
             .onTapGesture { game.advanceBattleMessage() }

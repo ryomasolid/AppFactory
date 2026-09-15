@@ -55,10 +55,18 @@ struct FieldOverlay: View {
 
         case .items:
             RetroWindow {
-                RetroChoice(title: Item.herb.name, detail: "×\(hero.herbCount)", isEnabled: hero.herbCount > 0) {
-                    game.useHerbInField()
+                heading("どうぐ")
+                if hero.herbCount > 0 {
+                    RetroChoice(title: Item.herb.name, detail: "×\(hero.herbCount)") {
+                        game.useHerbInField()
+                    }
+                    note("つかうと HPが \(Item.herbPower.lowerBound)〜\(Item.herbPower.upperBound) かいふく")
+                } else {
+                    note("なにも もっていない")
                 }
-                row("そうび", "\(hero.weapon.name)・\(hero.armor.name)")
+                heading("そうび")
+                row("ぶき", "\(hero.weapon.name)（こうげき+\(hero.weapon.power)）")
+                row("よろい", "\(hero.armor.name)（しゅび+\(hero.armor.power)）")
                 RetroChoice(title: "もどる") { game.overlay = .menu }
             }
 
@@ -85,10 +93,24 @@ struct FieldOverlay: View {
     }
 
     private func row(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            Text(value)
+        RetroRow(label: label, value: value)
+    }
+
+    /// まとまりの見出し（どうぐ・そうび）。
+    private func heading(_ title: String) -> some View {
+        Text(title)
+            .font(Retro.font(14))
+            .foregroundStyle(.yellow)
+            .padding(.top, 2)
+    }
+
+    /// 選択肢の下に添える小さな説明。
+    private func note(_ text: String) -> some View {
+        HStack(spacing: 6) {
+            Text("▶").hidden()
+            Text(text)
+                .font(Retro.font(13))
+                .foregroundStyle(.gray)
         }
     }
 }

@@ -135,6 +135,14 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         }
     }
 
+    /// 装備の上がり幅（武器はこうげき、鎧はしゅび）。消耗品は0。
+    var power: Int {
+        switch kind {
+        case .consumable: 0
+        case .weapon(let power), .armor(let power): power
+        }
+    }
+
     /// 薬草の回復量。
     static let herbPower: ClosedRange<Int> = 25...35
 }
