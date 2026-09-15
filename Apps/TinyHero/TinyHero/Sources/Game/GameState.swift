@@ -10,6 +10,19 @@ struct BattleSession {
     var end: BattleEnd?
     /// 勝利・全滅のジングルが鳴ったら戦闘の BGM を止める。
     var musicStopped = false
+    /// 結果のページで ▼ を出してタップを待っている。
+    var waitingForTap = false
+    /// 「たおした！」が出たら敵の絵を消す。
+    var enemyDefeated = false
+    /// 敵に当たった最新の一撃。画面はこれが変わるたびに敵を揺らし、ダメージの数字を出す。
+    var enemyHit: EnemyHit?
+}
+
+struct EnemyHit: Equatable {
+    /// 何発目か（同じダメージが続いても動きを出し直すため）。
+    let id: Int
+    let damage: Int
+    let isCritical: Bool
 }
 
 @MainActor
@@ -44,7 +57,12 @@ final class GameState {
     @ObservationIgnored var rng = AnyRandomSource(SystemRandomSource())
     /// 1歩の時間と戦闘メッセージの間隔。テストではゼロにする。
     @ObservationIgnored var stepDuration: Duration = .milliseconds(150)
-    @ObservationIgnored var messageInterval: Duration = .milliseconds(420)
+    @ObservationIgnored var messageInterval: Duration = .milliseconds(450)
+    /// 行動が変わるときの間（読んでから枠を空ける）。
+    @ObservationIgnored var beatPause: Duration = .milliseconds(900)
+    /// 戦いの結果のページでタップを待つか（テストでは待たない）。
+    @ObservationIgnored var waitsForTap = true
+    @ObservationIgnored private var tapContinuation: CheckedContinuation<Void, Never>?
     /// 効果音を鳴らす先。アプリでは AudioManager につなぎ、テストでは記録に使う。
     @ObservationIgnored var playSound: (SoundCue) -> Void = { _ in }
 
@@ -344,18 +362,64 @@ final class GameState {
         session.isPlaying = true
         battle = session
         for line in result.lines {
-            battle?.log.append(line.text)
-            if let cue = line.cue {
-                if cue == .victory || cue == .gameOver { battle?.musicStopped = true }
-                playSound(cue)
-            }
-            if let count = battle?.log.count, count > 4 { battle?.log.removeFirst(count - 4) }
-            // HPの表示はメッセージが流れ終わってから反映する（先にバーだけ減るのを避ける）。
-            try? await Task.sleep(for: messageInterval)
+            await pace(before: line)
+            show(line)
         }
+        // 最後の行を読む間を置いてからコマンドに戻す。
+        try? await Task.sleep(for: messageInterval)
         hero = session.battle.hero
         battle?.isPlaying = false
         battle?.end = result.end
+    }
+
+    /// 行の前の間。同じ場面の続きは少し待って下に足し、行動が変わるときは長めに待って枠を空ける。
+    /// 戦いの結果（経験値・レベルアップ）は ▼ を出してタップを待ってから次のページへ。
+    private func pace(before line: BattleLine) async {
+        guard let log = battle?.log, !log.isEmpty else { return }
+        switch line.pause {
+        case .none:
+            try? await Task.sleep(for: messageInterval)
+        case .beat:
+            try? await Task.sleep(for: beatPause)
+            battle?.log = []
+        case .page:
+            try? await Task.sleep(for: messageInterval)
+            await waitForTap()
+            battle?.log = []
+        }
+    }
+
+    private func show(_ line: BattleLine) {
+        battle?.log.append(line.text)
+        if let count = battle?.log.count, count > 4 { battle?.log.removeFirst(count - 4) }
+        // HP・MP・レベルの表示は、その行が出たときに合わせて変える。
+        if let snapshot = line.hero { hero = snapshot }
+        if let damage = line.enemyDamage {
+            // 書き換えの最中に battle を読むと排他アクセス違反で落ちるので、次の番号は先に取り出す。
+            let nextID = (battle?.enemyHit?.id ?? 0) + 1
+            battle?.enemyHit = EnemyHit(id: nextID, damage: damage, isCritical: line.isCritical)
+        }
+        if let cue = line.cue {
+            if cue == .victory { battle?.enemyDefeated = true }
+            if cue == .victory || cue == .gameOver { battle?.musicStopped = true }
+            playSound(cue)
+        }
+    }
+
+    private func waitForTap() async {
+        guard waitsForTap else { return }
+        battle?.waitingForTap = true
+        await withCheckedContinuation { continuation in
+            tapContinuation = continuation
+        }
+        battle?.waitingForTap = false
+    }
+
+    /// 戦闘メッセージの ▼ でタップされたら次のページへ。
+    func advanceBattleMessage() {
+        let continuation = tapContinuation
+        tapContinuation = nil
+        continuation?.resume()
     }
 
     func finishBattle() {

@@ -203,6 +203,30 @@ struct BattleTests {
         #expect(battle.hero.hp == 0)
     }
 
+    /// 行動の区切りで枠を空け、結果は別ページ、HP の表示はその行に合わせる。
+    @Test func linesArePacedByActionAndCarryHeroState() {
+        var rng = SeededRandomSource(seed: 7)
+        var hero = Hero()
+        // レベル1だとゴブリンに一撃で倒されて結果のページが出ないので、勝てる強さにする。
+        _ = hero.gainExp(LevelTable.row(5).exp)
+        hero.receive(.steelSword)
+        var battle = Battle(hero: hero, enemy: Enemy(.goblin))
+        var lines: [BattleLine] = []
+        for _ in 0..<10 where battle.end == nil {
+            lines += battle.take(.attack, rng: &rng).lines
+        }
+        for line in lines where line.text.hasSuffix("の こうげき！") {
+            #expect(line.pause == .beat, "\(line.text)")
+        }
+        let reward = try? #require(lines.first { $0.text.hasPrefix("けいけんち") })
+        #expect(reward?.pause == .page)
+        if let damaged = lines.first(where: { $0.cue == .damage }) {
+            #expect((damaged.hero?.hp ?? hero.maxHP) < hero.maxHP)
+        }
+        #expect(battle.end == .won(exp: 14, gold: 20))
+        #expect(lines.allSatisfy { $0.hero != nil })
+    }
+
     @Test func spellNeedsMP() {
         var rng = SeededRandomSource(seed: 5)
         var hero = Hero()

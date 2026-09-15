@@ -76,6 +76,20 @@ struct BattleSoundTests {
         #expect(cues.contains(.victory))
     }
 
+    @Test func damageLinesCarryEnemyDamage() {
+        var rng = SeededRandomSource(seed: 11)
+        var hero = Hero()
+        _ = hero.gainExp(LevelTable.row(5).exp)
+        var battle = Battle(hero: hero, enemy: Enemy(.golem))
+        let before = battle.enemy.hp
+        let result = battle.take(.attack, rng: &rng)
+        let dealt = result.lines.compactMap(\.enemyDamage).reduce(0, +)
+        #expect(dealt == before - battle.enemy.hp)
+        for line in result.lines where line.enemyDamage != nil {
+            #expect(line.cue == .hit)
+        }
+    }
+
     @Test func levelUpAndGameOverCues() {
         var rng = SeededRandomSource(seed: 3)
         var weak = Battle(hero: Hero(), enemy: Enemy(.darkDragon))
@@ -104,6 +118,8 @@ struct GameSoundTests {
         let game = GameState()
         game.stepDuration = .zero
         game.messageInterval = .zero
+        game.beatPause = .zero
+        game.waitsForTap = false
         game.newGame()
         game.say([])
         var played: [SoundCue] = []

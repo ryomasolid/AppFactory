@@ -1,7 +1,7 @@
 import Foundation
 
 /// 起動引数で途中の場面から始める（シミュレータでの表示確認用）。
-/// 例: `-startMap field -startX 5 -startY 8 -startFacing left` / `-startBattle darkDragon` / `-startLevel 10`
+/// 例: `-startMap field -startX 5 -startY 8 -startFacing left` / `-startBattle darkDragon -autoAttack YES` / `-startLevel 10`
 @MainActor
 enum Launch {
     static func apply(to game: GameState, defaults: UserDefaults = .standard) {
@@ -27,6 +27,13 @@ enum Launch {
         }
         if let battleName, let kind = EnemyKind(rawValue: battleName) {
             game.startBattle(kind)
+            // 攻撃の動きを撮るため、少し待ってから自動でこうげきする。
+            if defaults.bool(forKey: "autoAttack") {
+                Task {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    await game.command(.attack)
+                }
+            }
         }
     }
 }

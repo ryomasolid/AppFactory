@@ -10,6 +10,8 @@ struct GameStateTests {
         let game = GameState()
         game.stepDuration = .zero
         game.messageInterval = .zero
+        game.beatPause = .zero
+        game.waitsForTap = false
         game.rng = AnyRandomSource(SeededRandomSource(seed: 42))
         game.newGame()
         game.say([])
@@ -107,6 +109,46 @@ struct GameStateTests {
         #expect(game.screen == .field)
         #expect(game.hero.gold == 23)
         #expect(game.hero.exp == 2)
+    }
+
+    /// 攻撃が当たるたびに「何発目か・ダメージ・会心か」が更新され、画面の動きのきっかけになる。
+    @Test func enemyHitIsRecordedForEachDamagingLine() async {
+        let game = makeGame()
+        _ = game.hero.gainExp(LevelTable.row(5).exp)
+        game.startBattle(.golem)
+        #expect(game.battle?.enemyHit == nil)
+        var lastID = 0
+        for _ in 0..<6 where game.battle?.end == nil {
+            let hpBefore = game.battle?.battle.enemy.hp ?? 0
+            await game.command(.attack)
+            let hpAfter = game.battle?.battle.enemy.hp ?? 0
+            if hpAfter < hpBefore {
+                let hit = try? #require(game.battle?.enemyHit)
+                #expect(hit?.damage == hpBefore - hpAfter)
+                #expect((hit?.id ?? 0) > lastID)
+                lastID = hit?.id ?? lastID
+            }
+        }
+        #expect(lastID > 0)
+    }
+
+    /// 経験値のページでは ▼ を出してタップを待ち、タップすると先へ進む。
+    @Test func rewardPageWaitsForTap() async throws {
+        let game = makeGame()
+        game.waitsForTap = true
+        game.hero.receive(.steelSword)
+        game.startBattle(.bigRat)
+        let turn = Task { await game.command(.attack) }
+        for _ in 0..<100 where game.battle?.waitingForTap != true {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(game.battle?.waitingForTap == true)
+        #expect(game.battle?.isPlaying == true)
+        #expect(game.battle?.enemyDefeated == true)
+        game.advanceBattleMessage()
+        await turn.value
+        #expect(game.battle?.waitingForTap == false)
+        #expect(game.battle?.end == .won(exp: 2, gold: 3))
     }
 
     @Test func losingRevivesInVillageWithHalfGold() async {
