@@ -80,16 +80,29 @@ struct RetroChoice: View {
             action()
         } label: {
             HStack {
-                Text("▶ \(title)")
+                Text(title)
                 Spacer()
                 if let detail { Text(detail) }
             }
             .contentShape(Rectangle())
             .padding(.vertical, 4)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(RetroChoiceStyle())
         .foregroundStyle(isEnabled ? .white : .gray)
         .disabled(!isEnabled)
+    }
+}
+
+/// 押している間だけ左に ▶ を出す。
+/// ▶ は「いま選んでいる1つ」を指す印なので、全部の選択肢に並べると意味がなくなる。
+/// 印の分の幅は常に空けておき、押したときに文字がずれないようにする。
+private struct RetroChoiceStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 6) {
+            Text("▶")
+                .opacity(configuration.isPressed ? 1 : 0)
+            configuration.label
+        }
     }
 }
 
