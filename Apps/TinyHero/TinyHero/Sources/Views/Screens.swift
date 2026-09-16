@@ -300,15 +300,22 @@ struct TitleView: View {
     private var content: some View {
         VStack(spacing: 28) {
             Spacer()
-            VStack(spacing: 8) {
-                Text("ちいさな勇者")
-                    .font(Retro.font(40))
+            VStack(spacing: 6) {
+                // 題は2行に分ける。1行にすると 小さい画面で はみ出すため。
+                Text("地理の勇者")
+                    .font(Retro.font(42))
                     .foregroundStyle(Retro.accent)
                     // ドット絵に合わせて、ぼかさない影で縁取る。
                     .shadow(color: .black, radius: 0, x: 3, y: 3)
+                Text("R P G")
+                    .font(Retro.font(20))
+                    .tracking(4)
+                    .foregroundStyle(Retro.accent)
+                    .shadow(color: .black, radius: 0, x: 2, y: 2)
                 Text("〜 北海道 守護神 かいほう編 〜")
                     .font(Retro.font(13))
                     .foregroundStyle(Retro.dim)
+                    .padding(.top, 6)
             }
             HStack(spacing: 40) {
                 SpriteCache.image(.hero1).resizable().interpolation(.none).frame(width: 96, height: 96)

@@ -23,7 +23,7 @@ let project = Project(
                         "UIColorName": "",
                         "UIImageName": "",
                     ],
-                    "CFBundleDisplayName": "ちいさな勇者",
+                    "CFBundleDisplayName": "地理の勇者",
                     "CFBundleDevelopmentRegion": "ja",
                     "CFBundleShortVersionString": "0.1",
                     "CFBundleVersion": "1",
