@@ -7,6 +7,8 @@ enum SpriteID: String, CaseIterable {
     case grass, forest, hills, mountain, water, road, bridge, town, cave
     case townFloor, house, innRoof, shopRoof, fountain, wall, caveFloor, stairsUp, stairsDown
     case houseWall, innSign, shopSign, door, woodFloor, counter, bed, shelf, innerWall, darkness
+    /// 街と ほらあなを 1マスより大きく描くための、背景を透かした版。
+    case townLarge, caveLarge
     case chestClosed, chestOpen
     // 人（勇者は hero1/hero2 が下向き、ほかの向きはそれぞれ歩きの2コマ）
     case hero1, hero2, heroUp1, heroUp2, heroLeft1, heroLeft2, heroRight1, heroRight2

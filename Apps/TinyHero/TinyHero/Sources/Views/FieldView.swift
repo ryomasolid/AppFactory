@@ -74,11 +74,12 @@ struct MapLayer: View {
     /// 中心から何マスぶん描くか。
     let radius: Int
 
-    /// 大きく描く地形と、その倍率。
-    static func landmarkScale(_ tile: Tile) -> CGFloat? {
+    /// 大きく描く地形と、その絵・倍率。
+    /// 絵は背景を透かした版を使う。不透明のままだと まわりのマス（海や道）を塗りつぶしてしまう。
+    static func landmark(_ tile: Tile) -> (sprite: SpriteID, scale: CGFloat)? {
         switch tile {
-        case .town: 2.0
-        case .cave: 1.7
+        case .town: (.townLarge, 2.0)
+        case .cave: (.caveLarge, 1.7)
         default: nil
         }
     }
@@ -106,7 +107,7 @@ struct MapLayer: View {
                     let rect = CGRect(x: CGFloat(x + pad) * tile, y: CGFloat(y + pad) * tile, width: tile, height: tile)
                     let kind = map.tile(at: point)
                     // 街と ほらあなは あとでまとめて大きく描くので、ここでは地面だけ敷く。
-                    let ground = MapLayer.landmarkScale(kind) == nil ? kind : .grass
+                    let ground = MapLayer.landmark(kind) == nil ? kind : .grass
                     context.draw(SpriteCache.image(SpriteID(tile: ground)), in: rect)
                 }
             }
@@ -116,9 +117,9 @@ struct MapLayer: View {
                 for x in xRange {
                     let point = Point(x: x, y: y)
                     let kind = map.tile(at: point)
-                    guard let scale = MapLayer.landmarkScale(kind) else { continue }
+                    guard let mark = MapLayer.landmark(kind) else { continue }
                     let rect = CGRect(x: CGFloat(x + pad) * tile, y: CGFloat(y + pad) * tile, width: tile, height: tile)
-                    context.draw(SpriteCache.image(SpriteID(tile: kind)), in: MapLayer.standing(rect, scale: scale))
+                    context.draw(SpriteCache.image(mark.sprite), in: MapLayer.standing(rect, scale: mark.scale))
                 }
             }
             for chest in map.chests {

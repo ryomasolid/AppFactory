@@ -58,6 +58,27 @@ struct EncounterTests {
         }
     }
 
+    /// フィールドの宝箱は 海ぎわ（端っこ）に置く。歩きまわった ごほうびにするため。
+    @Test func fieldChestsSitOnTheCoast() {
+        let field = World.map(.field)
+        #expect(field.chests.count >= 3, "フィールドに宝箱が \(field.chests.count) 個しかない")
+
+        for chest in field.chests {
+            let nearSea = (-2...2).contains { dx in
+                (-2...2).contains { dy in
+                    field.tile(at: Point(x: chest.position.x + dx, y: chest.position.y + dy)) == .water
+                }
+            }
+            #expect(nearSea, "宝箱 \(chest.id) が 海から はなれている（端っこでない）")
+        }
+    }
+
+    /// 宝箱の中身は ばらばらにする（同じものばかりにしない）。
+    @Test func fieldChestsHoldDifferentThings() {
+        let rewards = World.map(.field).chests.map(\.reward)
+        #expect(Set(rewards.map { "\($0)" }).count == rewards.count, "同じ中身の宝箱がある")
+    }
+
     /// ボスは遭遇テーブルに混ぜない（話しかけて始まる戦闘なので）。
     @Test func bossNeverAppearsRandomly() {
         let used = Set(allTables.flatMap(\.2))

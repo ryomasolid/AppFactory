@@ -1,6 +1,43 @@
 /// 地形のドット絵（16×16）。色は `Palette` を参照。
 enum TileArt {
     static let all: [SpriteID: [String]] = [
+        .townLarge: [
+            "................",
+            "...rrrr.........",
+            "..rrrrrr........",
+            ".rrrrrrrr.......",
+            "..wwwwww........",
+            "..wwNNww........",
+            "..wwNNww.rrrr...",
+            "........rrrrrr..",
+            ".......rrrrrrrr.",
+            "........wwwwww..",
+            "........wwNNww..",
+            "........wwNNww..",
+            "................",
+            "................",
+            "................",
+            "................",
+        ],
+        .caveLarge: [
+            "................",
+            "......aaaa......",
+            "....aaaAAaaa....",
+            "...aaAAaaAAaa...",
+            "..aaAaaaaaaAaa..",
+            ".aaAaaaaaaaaAaa.",
+            ".aAaaaakkaaaaAa.",
+            "aaAaaakkkkaaaAaa",
+            "aAaaakkkkkkaaaAa",
+            "aAaaakkkkkkaaaAa",
+            "AAaaakkkkkkaaaAA",
+            "AAAAAkkkkkkAAAAA",
+            ".....tttttt.....",
+            "................",
+            "................",
+            "................",
+        ],
+
         .innRoof: [
             "BBBBBBBBBBBBBBBB",
             "bbbbbbbBbbbbbbbB",
