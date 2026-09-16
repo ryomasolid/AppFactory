@@ -108,7 +108,7 @@ struct FieldOverlay: View {
 
         case .inn:
             RetroWindow {
-                speech("やどや", ["ひとばん \(game.innPrice)ゴールドです。", "おとまりに なりますか？"])
+                speech("やどや", "ひとばん \(game.innPrice)ゴールドです。")
                 divider()
                 RetroChoice(title: "はい") { game.stayAtInn() }
                 RetroChoice(title: "いいえ") { game.closeOverlay() }
@@ -228,23 +228,20 @@ struct FieldOverlay: View {
 
     // MARK: - 道具屋
 
-    /// 話し手の名前と せりふを 行で分ける（「どうぐや「〜」」だと読みにくいため）。
+    /// 話し手の名前と せりふ。せりふは折り返さないよう、1行で収まる短さにする。
     @ViewBuilder
-    private func speech(_ name: String, _ lines: [String]) -> some View {
+    private func speech(_ name: String, _ line: String) -> some View {
         Text(name)
             .font(Retro.font(14))
             .foregroundStyle(Retro.accent)
-        ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-            let head = index == 0 ? "「" : "　"
-            let tail = index == lines.count - 1 ? "」" : ""
-            Text(head + line + tail)
-        }
+        Text("「\(line)」")
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     /// 店に入って最初に出る選択。
     @ViewBuilder
     private func shopMenu(hero: Hero) -> some View {
-        speech("どうぐや", ["いらっしゃい。", "かうかい？ それとも うるのかい？"])
+        speech("どうぐや", "いらっしゃい！")
         divider()
         RetroChoice(title: "かう") { shopPanel = .buying }
         RetroChoice(title: "うる", isEnabled: hero.belongings.isEmpty == false) { shopPanel = .selling }
@@ -255,7 +252,7 @@ struct FieldOverlay: View {
     /// 売れるもの一覧。そうび中のものは 外さないと売れない。
     @ViewBuilder
     private func sellList(hero: Hero) -> some View {
-        speech("どうぐや", ["どれを うるんだい？"])
+        speech("どうぐや", "どれを うるんだい？")
         divider()
         ForEach(hero.belongings, id: \.item) { entry in
             let equipped = hero.isEquipped(entry.item)
@@ -275,7 +272,7 @@ struct FieldOverlay: View {
     @ViewBuilder
     private func sellConfirm(_ item: Item, hero: Hero) -> some View {
         let paid = Hero.sellPrice(of: item)
-        speech("どうぐや", ["\(item.name)なら", "\(paid)ゴールドで ひきとるよ。いいかい？"])
+        speech("どうぐや", "\(item.name)なら \(paid)ゴールドだね。")
         if case .consumable = item.kind {
             note("のこり ×\(hero.inventory[item, default: 0])")
         }
@@ -292,7 +289,7 @@ struct FieldOverlay: View {
     /// 商品一覧。もちきんは商品と混ざらないよう、上に出して線で区切る。
     @ViewBuilder
     private func shopStock(hero: Hero) -> some View {
-        speech("どうぐや", ["なにが ほしいんだい？"])
+        speech("どうぐや", "なにが ほしいんだい？")
         divider()
         ForEach(GameState.shopStock) { item in
             // もう持っている装備は、はいを押しても断られるので最初から選ばせない。
@@ -312,7 +309,7 @@ struct FieldOverlay: View {
     /// 買うまえの確認。いきなり買わずに はい／いいえ を選ばせる。
     @ViewBuilder
     private func purchaseConfirm(_ item: Item, hero: Hero) -> some View {
-        speech("どうぐや", ["\(item.name)だね。", "\(item.price)ゴールドに なるが、かうかい？"])
+        speech("どうぐや", "\(item.name)は \(item.price)ゴールドだよ。")
         // 装備は「いまの値 → 買ったあとの値」だけを大きく出す。
         // 品物の素の強さ（+16 など）も並べると、買い替えの本当の伸び（+8）と食い違って紛らわしい。
         if case .consumable = item.kind {
