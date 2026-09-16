@@ -142,6 +142,24 @@ struct GameMap {
         contains(point) ? tiles[point.y][point.x] : outside
     }
 
+    /// そのマスで出る敵。
+    /// **道と橋は まわりの地形の表を借りる**。道の上だけ安全だと、街から街まで無傷で歩けてしまう。
+    func encounterTable(at point: Point) -> [EnemyKind]? {
+        let here = tile(at: point)
+        if let table = encounters[here] { return table }
+        guard here == .road || here == .bridge else { return nil }
+        var counts: [Tile: Int] = [:]
+        for dy in -2...2 {
+            for dx in -2...2 {
+                let neighbour = tile(at: Point(x: point.x + dx, y: point.y + dy))
+                if encounters[neighbour] != nil { counts[neighbour, default: 0] += 1 }
+            }
+        }
+        // 同数のときは地形の文字でそろえて、遊ぶたびに変わらないようにする。
+        let best = counts.max { ($0.value, $0.key.rawValue) < ($1.value, $1.key.rawValue) }?.key
+        return best.flatMap { encounters[$0] }
+    }
+
     func npc(at point: Point) -> NPC? { npcs.first { $0.position == point } }
     func chest(at point: Point) -> Chest? { chests.first { $0.position == point } }
 

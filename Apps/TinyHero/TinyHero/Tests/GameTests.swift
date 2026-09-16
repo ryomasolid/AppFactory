@@ -106,6 +106,39 @@ struct MapTests {
         #expect(!World.hakodate.npcs.contains { $0.role == .innkeeper || $0.role == .shopkeeper })
     }
 
+    /// 街と街は 歩きごたえのある距離をあける（近いと すぐ着いてしまう）。
+    @Test func townsAreFarApart() throws {
+        let field = World.map(.field)
+        func landing(_ id: MapID) throws -> Point {
+            let entrance = try #require(field.warps.first { $0.value.to == id })
+            return entrance.key + Point(x: 0, y: 1)
+        }
+        let hakodate = try landing(.hakodate)
+        let sapporo = try landing(.sapporo)
+        let rausu = try landing(.rausu)
+        let toSapporo = try #require(steps(on: field, from: hakodate, to: sapporo))
+        let toRausu = try #require(steps(on: field, from: sapporo, to: rausu))
+        #expect(toSapporo >= 20, "函館から札幌が \(toSapporo) 歩しかない")
+        #expect(toRausu >= 30, "札幌から知床が \(toRausu) 歩しかない")
+    }
+
+    /// フィールドで歩ける2点の距離（歩数）。
+    private func steps(on map: GameMap, from: Point, to: Point) -> Int? {
+        var seen: Set<Point> = [from]
+        var queue = [(from, 0)]
+        var head = 0
+        while head < queue.count {
+            let (point, distance) = queue[head]; head += 1
+            if point == to { return distance }
+            for direction in Direction.allCases {
+                let next = point + direction.delta
+                guard map.tile(at: next).isPassable, seen.insert(next).inserted else { continue }
+                queue.append((next, distance + 1))
+            }
+        }
+        return nil
+    }
+
     private struct Place: Hashable {
         let map: MapID
         let point: Point

@@ -272,7 +272,7 @@ final class GameState {
             await openCurtain()
             return
         }
-        guard let table = map.encounters[map.tile(at: position)], !table.isEmpty else { return }
+        guard let table = map.encounterTable(at: position), !table.isEmpty else { return }
         stepsSinceBattle += 1
         if stepsSinceBattle > Self.safeSteps, rng.chance(Self.encounterDenominator) {
             startBattle(EnemyGroup.random(from: table, rng: &rng).map(\.kind))

@@ -143,4 +143,31 @@ struct EncounterTests {
         #expect(first?.requires == nil, "はじめの ほらあなに 関所がある")
     }
 
+    /// 道の上でも敵は出る。道だけ安全だと 街から街まで無傷で歩けてしまう。
+    @Test func roadsAreNotASafeCorridor() {
+        let field = World.map(.field)
+        var roads = 0
+        for y in 0..<field.height {
+            for x in 0..<field.width where [.road, .bridge].contains(field.tile(at: Point(x: x, y: y))) {
+                let point = Point(x: x, y: y)
+                roads += 1
+                let table = field.encounterTable(at: point) ?? []
+                #expect(!table.isEmpty, "みち (\(x), \(y)) で敵が出ない")
+            }
+        }
+        #expect(roads > 0, "フィールドに みちがない")
+    }
+
+    /// 奥へ行くほど手ごわくなる。ほらあなの入口で出る敵の経験値で見る。
+    @Test func theJourneyGetsHarder() throws {
+        let field = World.map(.field)
+        func toughness(_ id: MapID) throws -> Int {
+            let entrance = try #require(field.warps.first { $0.value.to == id })
+            let table = try #require(field.encounterTable(at: entrance.key + Point(x: 0, y: 1)))
+            return table.map(\.stats.exp).max() ?? 0
+        }
+        let first = try toughness(.hakodateyama)
+        let last = try toughness(.rausudake1)
+        #expect(last > first, "羅臼岳のまわり(\(last)) が 函館山のまわり(\(first)) より楽になっている")
+    }
 }
