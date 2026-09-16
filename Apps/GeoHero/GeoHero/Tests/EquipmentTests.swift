@@ -1,5 +1,5 @@
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// そうび・はずす・売る。
 struct EquipmentTests {

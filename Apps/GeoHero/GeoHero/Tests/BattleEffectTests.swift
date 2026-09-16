@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// 呪文・道具を使ったときに、画面の演出の合図が行に乗るか。
 struct BattleEffectTests {

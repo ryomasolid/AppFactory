@@ -1,5 +1,5 @@
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// 敵は1〜3体で出てくる。3体に囲まれても回復なしで勝ちきれること。
 struct GroupBattleTests {

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// 画面から触る流れ（歩く・話す・買う・戦う・全滅）を GameState 単位で通す。
 @MainActor

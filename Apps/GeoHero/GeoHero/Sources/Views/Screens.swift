@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct TinyHeroApp: App {
+struct GeoHeroApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

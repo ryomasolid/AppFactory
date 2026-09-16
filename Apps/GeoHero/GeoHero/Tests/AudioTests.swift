@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 struct MMLTests {
 

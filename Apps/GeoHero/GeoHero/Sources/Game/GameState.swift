@@ -107,7 +107,7 @@ final class GameState {
     /// 効果音を鳴らす先。アプリでは AudioManager につなぎ、テストでは記録に使う。
     @ObservationIgnored var playSound: (SoundCue) -> Void = { _ in }
 
-    static let soundKey = "tinyhero.soundEnabled"
+    static let soundKey = "geohero.soundEnabled"
     /// 音のオン・オフ（メニューで切り替え、端末に保存する）。
     var soundEnabled = UserDefaults.standard.object(forKey: GameState.soundKey) as? Bool ?? true {
         didSet { UserDefaults.standard.set(soundEnabled, forKey: Self.soundKey) }

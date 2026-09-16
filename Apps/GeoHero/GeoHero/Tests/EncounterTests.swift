@@ -1,5 +1,5 @@
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// 遭遇テーブルの組み方を守る。
 /// 1つのエリアに強さの違いすぎる敵を混ぜると、同じ場所なのに歯ごたえがバラバラになる。

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// 出入りの暗転と、宿屋の ねむり。
 @MainActor

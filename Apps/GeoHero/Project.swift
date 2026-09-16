@@ -1,7 +1,7 @@
 import ProjectDescription
 
 let project = Project(
-    name: "TinyHero",
+    name: "GeoHero",
     settings: .settings(
         base: [
             // 自動署名と開発チームを固定し、tuist generate で署名設定が消えないようにする。
@@ -12,10 +12,10 @@ let project = Project(
     ),
     targets: [
         .target(
-            name: "TinyHero",
+            name: "GeoHero",
             destinations: [.iPhone],
             product: .app,
-            bundleId: "tech.sesame.tinyhero",
+            bundleId: "tech.sesame.geohero",
             deploymentTargets: .iOS("17.0"),
             infoPlist: .extendingDefault(
                 with: [
@@ -35,28 +35,28 @@ let project = Project(
                 ]
             ),
             buildableFolders: [
-                "TinyHero/Sources",
-                "TinyHero/Resources",
+                "GeoHero/Sources",
+                "GeoHero/Resources",
             ]
         ),
         .target(
-            name: "TinyHeroTests",
+            name: "GeoHeroTests",
             destinations: [.iPhone],
             product: .unitTests,
-            bundleId: "tech.sesame.tinyhero.tests",
+            bundleId: "tech.sesame.geohero.tests",
             infoPlist: .default,
             buildableFolders: [
-                "TinyHero/Tests"
+                "GeoHero/Tests"
             ],
-            dependencies: [.target(name: "TinyHero")]
+            dependencies: [.target(name: "GeoHero")]
         ),
     ],
     schemes: [
         .scheme(
-            name: "TinyHero",
+            name: "GeoHero",
             shared: true,
-            buildAction: .buildAction(targets: ["TinyHero"]),
-            testAction: .targets(["TinyHeroTests"])
+            buildAction: .buildAction(targets: ["GeoHero"]),
+            testAction: .targets(["GeoHeroTests"])
         ),
     ]
 )

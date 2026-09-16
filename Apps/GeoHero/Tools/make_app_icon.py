@@ -16,8 +16,8 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "TinyHero/Sources/Game"
-OUT = ROOT / "TinyHero/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+SRC = ROOT / "GeoHero/Sources/Game"
+OUT = ROOT / "GeoHero/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
 
 GRID = 64          # アイコンを 64x64 の「大きなドット」で組む
 CELL = 16          # 1ドット = 16px → 1024px

@@ -1,5 +1,5 @@
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// レベルアップの見せ方と、会心の一撃の威力。
 struct LevelUpTests {

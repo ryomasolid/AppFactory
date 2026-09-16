@@ -11,6 +11,6 @@ import PackageDescription
 
 // 試作段階なので外部依存なし（広告・課金は公開を決めてから足す）。
 let package = Package(
-    name: "TinyHero",
+    name: "GeoHero",
     dependencies: []
 )

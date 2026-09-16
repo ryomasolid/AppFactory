@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// ドット絵の書き間違い（行の長さ違い・未定義の色）を捕まえる。
 struct SpriteTests {
@@ -351,7 +351,7 @@ struct BattleTests {
 struct SaveTests {
 
     @Test func roundTrip() throws {
-        let defaults = try #require(UserDefaults(suiteName: "tinyhero.tests.\(UUID().uuidString)"))
+        let defaults = try #require(UserDefaults(suiteName: "geohero.tests.\(UUID().uuidString)"))
         var hero = Hero()
         _ = hero.gainExp(120)
         hero.receive(.chainMail)

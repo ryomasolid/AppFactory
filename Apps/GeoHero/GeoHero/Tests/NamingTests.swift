@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import TinyHero
+@testable import GeoHero
 
 /// 勇者の名前を決める流れ。
 @MainActor

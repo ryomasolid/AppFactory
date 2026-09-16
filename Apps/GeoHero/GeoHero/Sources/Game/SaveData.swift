@@ -12,7 +12,7 @@ struct SaveData: Codable, Equatable {
 
 enum SaveStore {
     // 進みぐあいの持ちかたを変えたので v2。古いセーブは読まない。
-    static let key = "tinyhero.save.v2"
+    static let key = "geohero.save.v2"
 
     static func load(from defaults: UserDefaults = .standard) -> SaveData? {
         guard let data = defaults.data(forKey: key) else { return nil }
