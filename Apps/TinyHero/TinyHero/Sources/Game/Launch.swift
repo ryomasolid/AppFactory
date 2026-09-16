@@ -12,7 +12,7 @@ import Foundation
 /// / `-startOverlay shop -shopConfirm herb`（道具屋の「かうかい？」を出した状態）
 /// / `-startOverlay items -selectItem copperSword`（どうぐ画面で1つ選んだ状態）
 /// / `-startOverlay shop -shopSell YES`（道具屋の「うる」一覧を出した状態）
-/// / `-openedChests cave1-0,cave2-0`（開けた宝箱）
+/// / `-openedChests hakodateyama-0,moiwa1-0`（開けた宝箱）
 @MainActor
 enum Launch {
     /// 戦闘で開いておくサブメニュー（`-battleSubmenu spells` / `items`）。表示確認用。

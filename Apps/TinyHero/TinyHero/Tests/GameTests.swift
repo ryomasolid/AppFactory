@@ -73,9 +73,9 @@ struct MapTests {
 
     @Test func bossAndChestsAreReachableFromStart() {
         let reached = reachable()
-        let cave2 = World.cave2
+        let cave2 = World.rausudake2
         let boss = try! #require(cave2.boss)
-        let nextToBoss = Direction.allCases.contains { reached.contains(Place(map: .cave2, point: boss + $0.delta)) }
+        let nextToBoss = Direction.allCases.contains { reached.contains(Place(map: .rausudake2, point: boss + $0.delta)) }
         #expect(nextToBoss, "ボスの隣まで歩けない")
 
         for id in MapID.allCases {
@@ -103,7 +103,7 @@ struct MapTests {
             }
         }
         // 村の外に主人は立っていない。
-        #expect(!World.village.npcs.contains { $0.role == .innkeeper || $0.role == .shopkeeper })
+        #expect(!World.hakodate.npcs.contains { $0.role == .innkeeper || $0.role == .shopkeeper })
     }
 
     private struct Place: Hashable {
@@ -289,7 +289,7 @@ struct SaveTests {
         var hero = Hero()
         _ = hero.gainExp(120)
         hero.receive(.chainMail)
-        let save = SaveData(hero: hero, map: .cave1, position: Point(x: 3, y: 4), openedChests: ["cave1-0"])
+        let save = SaveData(hero: hero, map: .rausudake1, position: Point(x: 3, y: 4), openedChests: ["cave1-0"])
         SaveStore.save(save, to: defaults)
         #expect(SaveStore.load(from: defaults) == save)
         SaveStore.delete(from: defaults)

@@ -85,39 +85,62 @@ struct EncounterTests {
         #expect(used.contains(.guardian) == false)
     }
 
-    /// エリアを進むほど強くなる（弱いほうへ戻らない）。
-    @Test func areasGetHarderInOrder() {
-        let ladder: [(String, [EnemyKind])] = [
-            ("くさち", World.map(.field).encounters[.grass] ?? []),
-            ("もり", World.map(.field).encounters[.forest] ?? []),
-            ("おか", World.map(.field).encounters[.hills] ?? []),
-            ("どうくつB1", World.map(.cave1).encounters[.caveFloor] ?? []),
-            ("どうくつB2", World.map(.cave2).encounters[.caveFloor] ?? []),
+    /// 実際にたどる順番。函館 → 函館山 → もり → 藻岩山 → おか → 羅臼岳。
+    private var route: [(String, [EnemyKind])] {
+        func table(_ id: MapID, _ tile: Tile) -> [EnemyKind] {
+            World.map(id).encounters[tile] ?? []
+        }
+        return [
+            ("くさち", table(.field, .grass)),
+            ("函館山", table(.hakodateyama, .caveFloor)),
+            ("もり", table(.field, .forest)),
+            ("藻岩山B1", table(.moiwa1, .caveFloor)),
+            ("藻岩山B2", table(.moiwa2, .caveFloor)),
+            ("おか", table(.field, .hills)),
+            ("羅臼岳B1", table(.rausudake1, .caveFloor)),
+            ("羅臼岳B2", table(.rausudake2, .caveFloor)),
         ]
+    }
+
+    /// 進むほど強くなる（弱いほうへ戻らない）。同じ強さが続くのは許す。
+    @Test func areasGetHarderAlongTheRoute() {
+        let ladder = route
         for (index, step) in ladder.enumerated() where index > 0 {
             let previous = ladder[index - 1]
-            let previousTop = exps(previous.1).max() ?? 0
-            let currentTop = exps(step.1).max() ?? 0
-            let currentLow = exps(step.1).min() ?? 0
-            #expect(currentTop > previousTop, "\(step.0) が \(previous.0) より強くなっていない")
-            // となりのエリアより下には戻らない（弱すぎる敵を混ぜない）。
-            let previousLow = exps(previous.1).min() ?? 0
-            #expect(currentLow >= previousLow, "\(step.0) に \(previous.0) より弱い敵がいる")
+            #expect((exps(step.1).max() ?? 0) >= (exps(previous.1).max() ?? 0),
+                    "\(step.0) が \(previous.0) より弱くなっている")
+            #expect((exps(step.1).min() ?? 0) >= (exps(previous.1).min() ?? 0),
+                    "\(step.0) に \(previous.0) より弱い敵がいる")
+        }
+        // 最後は いちばん強い。
+        #expect((exps(ladder.last!.1).max() ?? 0) > (exps(ladder.first!.1).max() ?? 0))
+    }
+
+    /// となりの場所とは 少なくとも1種 重ねて、地続きにする。
+    @Test func neighbouringAreasOverlap() {
+        let ladder = route
+        for index in 1..<ladder.count {
+            let shared = Set(ladder[index].1).intersection(Set(ladder[index - 1].1))
+            #expect(shared.isEmpty == false,
+                    "\(ladder[index].0) と \(ladder[index - 1].0) に 共通の敵がいない")
         }
     }
 
-    /// となりのエリアとは1種だけ重ねて、地続きにする。
-    @Test func neighbouringAreasOverlapByOne() {
-        let ladder: [[EnemyKind]] = [
-            World.map(.field).encounters[.grass] ?? [],
-            World.map(.field).encounters[.forest] ?? [],
-            World.map(.field).encounters[.hills] ?? [],
-            World.map(.cave1).encounters[.caveFloor] ?? [],
-            World.map(.cave2).encounters[.caveFloor] ?? [],
-        ]
-        for index in 1..<ladder.count {
-            let shared = Set(ladder[index]).intersection(Set(ladder[index - 1]))
-            #expect(shared.count == 1, "\(index) 番目のエリアの重なりが \(shared.count) 種")
-        }
+    /// ほらあなは3つ、それぞれに ボスがいる（街→ほらあな→ボス を3回くりかえす）。
+    @Test func thereAreThreeBosses() {
+        let bosses = MapID.allCases.compactMap { World.map($0).bossKind }
+        #expect(Set(bosses) == [.squidLord, .bearLord, .guardian], "ボスが 3体そろっていない: \(bosses)")
+        #expect(bosses.count == 3, "ボスのいるマップが \(bosses.count) つ")
     }
+
+    /// 前のボスを倒すまで つぎの ほらあなに入れない。
+    @Test func cavesOpenInOrder() {
+        let warps = World.map(.field).warps.values
+        let gated = warps.compactMap(\.requires)
+        #expect(Set(gated) == [.squidLord, .bearLord], "ほらあなの関所が そろっていない: \(gated)")
+        // 最初の ほらあな（函館山）には いつでも入れる。
+        let first = warps.first { $0.to == .hakodateyama }
+        #expect(first?.requires == nil, "はじめの ほらあなに 関所がある")
+    }
+
 }

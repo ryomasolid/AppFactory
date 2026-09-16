@@ -68,14 +68,30 @@ enum Tile: Character, CaseIterable {
 }
 
 enum MapID: String, Codable, CaseIterable {
-    case village, field, cave1, cave2
-    /// 宿屋と道具屋の中。
+    case field
+    /// 街。南から 函館 → 札幌 → 知床 の順にたどる。
+    case hakodate, sapporo, rausu
+    /// ほらあな。街ごとに ちかくの山へ入る。
+    case hakodateyama
+    case moiwa1, moiwa2
+    case rausudake1, rausudake2
+    /// 宿屋と道具屋の中。どの街から入っても ここを使い、出るときに元の街へ戻る。
     case innInside, shopInside
+
+    /// 街かどうか（宿屋・道具屋から戻る先になれるか）。
+    var isTown: Bool {
+        switch self {
+        case .hakodate, .sapporo, .rausu: true
+        default: false
+        }
+    }
 }
 
 struct Warp: Equatable {
     let to: MapID
     let at: Point
+    /// この敵を倒していないと入れない。順番に進ませるための関所。
+    var requires: EnemyKind?
 }
 
 enum NPCRole: Equatable {
@@ -110,6 +126,8 @@ struct GameMap {
     let npcs: [NPC]
     let chests: [Chest]
     let boss: Point?
+    /// そのマップのボス。`boss` のマスで話しかけると この敵と戦う。
+    let bossKind: EnemyKind?
     /// 地形ごとに出る敵。載っていない地形では遭遇しない。
     let encounters: [Tile: [EnemyKind]]
 
@@ -141,8 +159,9 @@ struct GameMap {
         warps: [Point: Warp],
         villagers: [[String]] = [],
         chestRewards: [ChestReward] = [],
+        bossKind: EnemyKind? = nil,
         encounters: [Tile: [EnemyKind]] = [:],
-        /// 人の印（i・s・e・t）の足元に敷く床。
+        /// 人・宝箱の印（i・s・e・t・c）の足元に敷く床。
         markerFloor: Tile = .townFloor
     ) {
         var tiles: [[Tile]] = []
@@ -166,7 +185,7 @@ struct GameMap {
                 case "c":
                     let reward = chests.count < chestRewards.count ? chestRewards[chests.count] : .gold(10)
                     chests.append(Chest(id: "\(id.rawValue)-\(chests.count)", position: point, reward: reward))
-                    line.append(.caveFloor)
+                    line.append(markerFloor)
                 case "B": boss = point; line.append(.caveFloor)
                 default: line.append(Tile(rawValue: char) ?? outside)
                 }
@@ -180,6 +199,7 @@ struct GameMap {
         self.warps = warps
         self.npcs = npcs
         self.chests = chests
+        self.bossKind = bossKind
         self.boss = boss
         self.encounters = encounters
     }

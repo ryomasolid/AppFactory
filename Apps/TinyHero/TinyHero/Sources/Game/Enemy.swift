@@ -9,6 +9,11 @@ enum EnemyKind: String, Codable, CaseIterable {
     case cod
     case snowman
     case iceGolem
+    /// 函館山のボス。
+    case squidLord
+    /// 藻岩山のボス。
+    case bearLord
+    /// 羅臼岳のラスボス。
     case guardian
 
     struct Stats: Equatable {
@@ -39,11 +44,22 @@ enum EnemyKind: String, Codable, CaseIterable {
         case .cod: Stats(name: "タラこぞう", maxHP: 13, attack: 12, defense: 8, agility: 3, exp: 11, gold: 16)
         case .snowman: Stats(name: "ゆきおとこ", maxHP: 14, attack: 22, defense: 18, agility: 9, exp: 22, gold: 30)
         case .iceGolem: Stats(name: "りゅうひょうゴーレム", maxHP: 20, attack: 28, defense: 30, agility: 3, exp: 35, gold: 45)
-        case .guardian: Stats(name: "知床の守護神", maxHP: 180, attack: 42, defense: 28, agility: 12, exp: 0, gold: 0)
+        case .squidLord: Stats(name: "イカのぬし", maxHP: 70, attack: 20, defense: 10, agility: 6, exp: 60, gold: 80)
+        case .bearLord: Stats(name: "ヒグマのぬし", maxHP: 130, attack: 32, defense: 20, agility: 8, exp: 150, gold: 200)
+        case .guardian: Stats(name: "知床の守護神", maxHP: 240, attack: 42, defense: 28, agility: 12, exp: 0, gold: 0)
         }
     }
 
-    var isBoss: Bool { self == .guardian }
+    /// ボスは 話しかけて始まる戦闘。群れず、逃げられない。
+    var isBoss: Bool {
+        switch self {
+        case .squidLord, .bearLord, .guardian: true
+        default: false
+        }
+    }
+
+    /// 最後の相手。倒すと物語が終わる。
+    var isFinalBoss: Bool { self == .guardian }
 
     /// 守護神の ふぶき のダメージ（守備力を無視）。
     static let breathPower: ClosedRange<Int> = 14...20

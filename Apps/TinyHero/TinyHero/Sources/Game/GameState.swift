@@ -69,6 +69,10 @@ final class GameState {
     var walkFrame = 0
     /// 直前の位置変更がワープだったか。ワープではスクロールのアニメーションをしない。
     var lastMoveWasWarp = true
+    /// 倒したボス。つぎの ほらあなに入れるかの判定に使う。
+    var defeatedBosses: Set<EnemyKind> = []
+    /// 宿屋・道具屋から出たときに戻る街。
+    var lastTown: MapID = World.startMap
     var hasSave = SaveStore.load() != nil
 
     /// 表示中の会話（1ページ最大3行）。
@@ -122,9 +126,9 @@ final class GameState {
         case .title, .naming: .title
         case .field:
             switch mapID {
-            case .village, .innInside, .shopInside: .village
+            case .hakodate, .sapporo, .rausu, .innInside, .shopInside: .village
             case .field: .overworld
-            case .cave1, .cave2: .cave
+            case .hakodateyama, .moiwa1, .moiwa2, .rausudake1, .rausudake2: .cave
             }
         case .battle:
             if let battle, !battle.musicStopped {
@@ -154,6 +158,8 @@ final class GameState {
         position = World.startPoint
         facing = .down
         openedChests = []
+        defeatedBosses = []
+        lastTown = World.startMap
         enterField()
         say([
             "まおうが この国の 5つの地方の",
@@ -161,8 +167,9 @@ final class GameState {
             "まものは ふえ、地は あれはてた。",
             "ちょうろう「おお \(hero.name)よ。",
             "そなたには いにしえの ゆうしゃの ちが ながれておる。",
-            "まずは この北海道の 守護神を 解きはなつのじゃ。",
-            "きたの ほらあなの おくに おわす。」",
+            "この北海道の 守護神は 知床の おくに とらわれておる。",
+            "だが 道には まおうの てさきが 3ひき。",
+            "まずは 函館山の ぬしを たおすのじゃ。」",
             "（十字キーで あるき、Aで はなす・しらべる、",
             "Bで メニューを ひらけます）",
         ])
@@ -174,6 +181,8 @@ final class GameState {
         mapID = save.map
         position = save.position
         openedChests = save.openedChests
+        defeatedBosses = save.defeatedBosses
+        if mapID.isTown { lastTown = mapID }
         facing = .down
         enterField()
     }
@@ -244,11 +253,20 @@ final class GameState {
 
     private func arrived() async {
         if let warp = map.warps[position] {
+            // まだ前のボスを倒していない ほらあなには入れない。
+            if let needed = warp.requires, !defeatedBosses.contains(needed) {
+                playSound(.bump)
+                say(["つよい かぜが ふきつけて さきへ すすめない。",
+                     "（\(needed.stats.name)を たおすと 道がひらける）"])
+                return
+            }
             // 出入りは 暗転をはさんで「移った」と分かるようにする。
             playSound(.stairs)
             await drawCurtain()
             lastMoveWasWarp = true
-            mapID = warp.to
+            if mapID.isTown { lastTown = mapID }
+            // 宿屋・道具屋から出るときは 入ってきた街へ戻す。
+            mapID = (mapID == .innInside || mapID == .shopInside) ? lastTown : warp.to
             position = warp.at
             stepsSinceBattle = 0
             await openCurtain()
@@ -294,16 +312,10 @@ final class GameState {
             talk(to: npc)
         } else if let chest = map.chest(at: target) {
             open(chest)
-        } else if map.boss == target {
+        } else if map.boss == target, let kind = map.bossKind {
             playSound(.confirm)
-            say([
-                "ゴゴゴ……",
-                "知床の守護神「……ちが、ながれて いる な。",
-                "だが われは まおうの もの。",
-                "ふぶきの なかで ねむるが よい！」",
-                "（あやつられた 守護神が おそいかかってきた！）",
-            ]) { [weak self] in
-                self?.startBattle(.guardian)
+            say(GameState.bossGreeting(kind)) { [weak self] in
+                self?.startBattle(kind)
             }
         } else {
             playSound(.cursor)
@@ -314,7 +326,7 @@ final class GameState {
     private func talk(to npc: NPC) {
         switch npc.role {
         case .elder:
-            say(["ちょうろう「守護神は ふぶきを おこす。", "HPに よゆうを もって いどむのじゃ。", "ヒールを おぼえたら わすれずに つかうのじゃぞ。」"])
+            say(elderHint())
         case .villager(let lines):
             say(lines)
         case .innkeeper:
@@ -411,7 +423,10 @@ final class GameState {
     }
 
     func save() {
-        SaveStore.save(SaveData(hero: hero, map: mapID, position: position, openedChests: openedChests))
+        SaveStore.save(SaveData(
+            hero: hero, map: mapID, position: position,
+            openedChests: openedChests, defeatedBosses: defeatedBosses
+        ))
         hasSave = true
     }
 
@@ -424,6 +439,60 @@ final class GameState {
         try? await Task.sleep(for: sleepDuration)
         await openCurtain()
         say(["おはようございます。", "HPと MPが かいふくした！", "ぼうけんの きろくを かきとめました。"])
+    }
+
+    /// 長老の助言。どこまで進んだかで 言うことを変える。
+    private func elderHint() -> [String] {
+        if !defeatedBosses.contains(.squidLord) {
+            ["ちょうろう「函館山の ぬしは すみを はく。",
+             "　レベルを あげてから いどむのじゃ。」"]
+        } else if !defeatedBosses.contains(.bearLord) {
+            ["ちょうろう「よくぞ ぬしを たおした。",
+             "　つぎは さっぽろの 藻岩山じゃ。",
+             "　ヒールを おぼえたら わすれずに つかうのじゃぞ。」"]
+        } else if !defeatedBosses.contains(.guardian) {
+            ["ちょうろう「のこるは 羅臼岳の 守護神。",
+             "　ふぶきを おこす。HPに よゆうを もって いどむのじゃ。」"]
+        } else {
+            ["ちょうろう「よくぞ 守護神を 解きはなった。",
+             "　つぎの地方が そなたを まっておる。」"]
+        }
+    }
+
+    // MARK: - ボスのせりふ
+
+    static func bossGreeting(_ kind: EnemyKind) -> [String] {
+        switch kind {
+        case .squidLord:
+            ["シュルルル……",
+             "イカのぬし「みなとの さかなは わたしのものだ。",
+             "　すみで まっくろに してやろう！」"]
+        case .bearLord:
+            ["グオオオ……",
+             "ヒグマのぬし「この山は とおさん。",
+             "　まおうさまの じゃまは させん！」"]
+        default:
+            ["ゴゴゴ……",
+             "知床の守護神「……ちが、ながれて いる な。",
+             "　だが われは まおうの もの。",
+             "　ふぶきの なかで ねむるが よい！」",
+             "（あやつられた 守護神が おそいかかってきた！）"]
+        }
+    }
+
+    static func bossDefeated(_ kind: EnemyKind) -> [String] {
+        switch kind {
+        case .squidLord:
+            ["イカのぬしを たおした！",
+             "みなとに さかなが もどってきた。",
+             "北へ 街道が つづいている。つぎは さっぽろへ。"]
+        case .bearLord:
+            ["ヒグマのぬしを たおした！",
+             "藻岩山に しずけさが もどった。",
+             "のこるは 知床。羅臼岳へ 向かおう。"]
+        default:
+            []
+        }
     }
 
     // MARK: - そうびと 売り買い
@@ -574,8 +643,15 @@ final class GameState {
         stepsSinceBattle = 0
         switch end {
         case .won where session.battle.isBoss:
+            let kind = session.battle.enemies.first?.kind
+            if let kind { defeatedBosses.insert(kind) }
             battle = nil
-            screen = .ending
+            if kind?.isFinalBoss == true {
+                screen = .ending
+            } else {
+                screen = .field
+                if let kind { say(GameState.bossDefeated(kind)) }
+            }
         case .won, .fled:
             battle = nil
             screen = .field

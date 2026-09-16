@@ -6,10 +6,13 @@ struct SaveData: Codable, Equatable {
     var map: MapID
     var position: Point
     var openedChests: Set<String>
+    /// 倒したボス。どこまで進んだかを覚えておく。
+    var defeatedBosses: Set<EnemyKind> = []
 }
 
 enum SaveStore {
-    static let key = "tinyhero.save.v1"
+    // 進みぐあいの持ちかたを変えたので v2。古いセーブは読まない。
+    static let key = "tinyhero.save.v2"
 
     static func load(from defaults: UserDefaults = .standard) -> SaveData? {
         guard let data = defaults.data(forKey: key) else { return nil }

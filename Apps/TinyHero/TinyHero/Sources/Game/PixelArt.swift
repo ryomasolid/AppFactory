@@ -25,7 +25,9 @@ enum SpriteID: String, CaseIterable {
         }
     }
     // 敵
-    case potato, kelpSlime, scallop, fox, cod, snowman, iceGolem, guardian
+    case potato, kelpSlime, scallop, fox, cod, snowman, iceGolem
+    /// ボス3体（函館山・藻岩山・羅臼岳）。
+    case squidLord, bearLord, guardian
 
     static let art: [SpriteID: [String]] = TileArt.all
         .merging(CharacterArt.all) { first, _ in first }
@@ -73,6 +75,8 @@ enum SpriteID: String, CaseIterable {
         case .cod: self = .cod
         case .snowman: self = .snowman
         case .iceGolem: self = .iceGolem
+        case .squidLord: self = .squidLord
+        case .bearLord: self = .bearLord
         case .guardian: self = .guardian
         }
     }

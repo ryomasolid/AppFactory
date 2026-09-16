@@ -32,7 +32,7 @@ struct GameStateTests {
     @Test func walkOutOfVillageToField() async {
         let game = makeGame()
         // 着地点は村の出口のワープ定義から引く（地図を広げても落ちないように）。
-        let exit = World.map(.village).warps.first { $0.value.to == .field }
+        let exit = World.map(.hakodate).warps.first { $0.value.to == .field }
         let landing = try! #require(exit?.value.at)
         for _ in 0..<3 { await game.walk(.down) }
         #expect(game.mapID == .field)
@@ -97,7 +97,7 @@ struct GameStateTests {
         #expect(game.position == Point(x: 4, y: 4))
         #expect(game.musicTrack == .village)
         await game.walk(.down)
-        #expect(game.mapID == .village)
+        #expect(game.mapID == .hakodate)
         #expect(game.position == Point(x: 3, y: 5))
     }
 
@@ -123,16 +123,23 @@ struct GameStateTests {
         #expect(game.hero.herbCount == 3)
     }
 
-    @Test func chestOpensOnlyOnce() {
+    @Test func chestOpensOnlyOnce() throws {
         let game = makeGame()
-        game.mapID = .cave1
-        game.position = Point(x: 8, y: 4)
+        // 函館山の ほらあなの宝箱（ゴールド）。中身はマップから読む。
+        let chest = try #require(World.map(.hakodateyama).chests.first)
+        guard case .gold(let amount) = chest.reward else {
+            Issue.record("この宝箱はゴールドではない")
+            return
+        }
+        let before = game.hero.gold
+        game.mapID = .hakodateyama
+        game.position = chest.position + Point(x: 0, y: 1)
         game.facing = .up
         game.pressA()
-        #expect(game.hero.gold == 170)
+        #expect(game.hero.gold == before + amount)
         while game.currentPage != nil { game.advanceMessage() }
         game.pressA()
-        #expect(game.hero.gold == 170)
+        #expect(game.hero.gold == before + amount)
     }
 
     @Test func winningBattleReturnsToField() async {
@@ -207,7 +214,7 @@ struct GameStateTests {
     @Test func losingRevivesInVillageWithHalfGold() async {
         let game = makeGame()
         game.hero.gold = 100
-        game.mapID = .cave2
+        game.mapID = .rausudake2
         game.startBattle(.guardian)
         for _ in 0..<30 where game.battle?.end == nil {
             await game.command(.attack)
@@ -215,8 +222,51 @@ struct GameStateTests {
         #expect(game.battle?.end == .lost)
         await game.finishBattle()
         #expect(game.screen == .field)
-        #expect(game.mapID == .village)
+        #expect(game.mapID == .hakodate)
         #expect(game.hero.gold == 50)
         #expect(game.hero.hp == game.hero.maxHP)
+    }
+
+    /// 前のボスを倒すまで つぎの ほらあなに入れない。倒すと通れる。
+    @Test func gatedCaveOpensAfterItsBoss() async throws {
+        let field = World.map(.field)
+        let (gate, warp) = try #require(field.warps.first { $0.value.requires != nil })
+        let needed = try #require(warp.requires)
+
+        let game = makeGame()
+        game.mapID = .field
+        game.position = gate + Point(x: 0, y: 1)
+        game.facing = .up
+        await game.walk(.up)
+        #expect(game.mapID == .field, "ボスを倒す前なのに \(warp.to) へ入れてしまう")
+        #expect(game.currentPage != nil, "通れない理由が出ていない")
+
+        while game.currentPage != nil { game.advanceMessage() }
+        game.defeatedBosses.insert(needed)
+        game.position = gate + Point(x: 0, y: 1)
+        game.facing = .up
+        await game.walk(.up)
+        #expect(game.mapID == warp.to, "ボスを倒したのに 道がひらかない")
+    }
+
+    /// 途中のボスを倒しても終わらない。ラスボスだけが エンディングにつながる。
+    @Test func onlyTheFinalBossEndsTheAdventure() async {
+        for kind in [EnemyKind.squidLord, .bearLord, .guardian] {
+            let game = makeGame()
+            game.mapID = .rausudake2
+            // 確実に勝てるように、最高レベルで そうびも ととのえておく。
+            _ = game.hero.gainExp(1_000_000)
+            game.hero.receive(.steelSword)
+            game.hero.receive(.chainMail)
+            game.startBattle(kind)
+            for _ in 0..<80 where game.battle?.end == nil {
+                // 減ってきたら回復する（ラスボスは殴るだけでは倒せない）。
+                let low = game.hero.hp < game.hero.maxHP * 3 / 5
+                await game.command(low && game.hero.mp >= Spell.highHeal.mpCost ? .spell(.highHeal) : .attack)
+            }
+            await game.finishBattle()
+            #expect(game.defeatedBosses.contains(kind))
+            #expect((game.screen == .ending) == kind.isFinalBoss, "\(kind) で エンディングの出かたが おかしい")
+        }
     }
 }
