@@ -67,7 +67,7 @@ struct BattleSoundTests {
         var rng = SeededRandomSource(seed: 7)
         var hero = Hero()
         hero.receive(.steelSword)
-        var battle = Battle(hero: hero, enemy: Enemy(.bigRat))
+        var battle = Battle(hero: hero, enemy: Enemy(.potato))
         var cues: [SoundCue] = []
         for _ in 0..<10 where battle.end == nil {
             cues += battle.take(.attack, rng: &rng).cues
@@ -80,7 +80,7 @@ struct BattleSoundTests {
         var rng = SeededRandomSource(seed: 11)
         var hero = Hero()
         _ = hero.gainExp(LevelTable.row(5).exp)
-        var battle = Battle(hero: hero, enemy: Enemy(.golem))
+        var battle = Battle(hero: hero, enemy: Enemy(.iceGolem))
         let before = battle.enemy.hp
         let result = battle.take(.attack, rng: &rng)
         let dealt = result.lines.compactMap(\.enemyDamage).reduce(0, +)
@@ -92,7 +92,7 @@ struct BattleSoundTests {
 
     @Test func levelUpAndGameOverCues() {
         var rng = SeededRandomSource(seed: 3)
-        var weak = Battle(hero: Hero(), enemy: Enemy(.darkDragon))
+        var weak = Battle(hero: Hero(), enemy: Enemy(.guardian))
         var cues: [SoundCue] = []
         for _ in 0..<20 where weak.end == nil {
             cues += weak.take(.attack, rng: &rng).cues
@@ -102,7 +102,7 @@ struct BattleSoundTests {
         var hero = Hero()
         hero.exp = LevelTable.row(2).exp - 1
         hero.receive(.steelSword)
-        var battle = Battle(hero: hero, enemy: Enemy(.bigRat))
+        var battle = Battle(hero: hero, enemy: Enemy(.potato))
         cues = []
         for _ in 0..<10 where battle.end == nil {
             cues += battle.take(.attack, rng: &rng).cues
@@ -131,7 +131,7 @@ struct GameSoundTests {
         #expect(played.last == .bump)
 
         game.hero.receive(.steelSword)
-        game.startBattle(.bigRat)
+        game.startBattle(.potato)
         #expect(played.last == .encounter)
         #expect(game.musicTrack == .battle)
         for _ in 0..<10 where game.battle?.end == nil {
@@ -140,7 +140,7 @@ struct GameSoundTests {
         #expect(played.contains(.victory))
         // 勝利のジングルが鳴ったら戦闘の BGM は止める。
         #expect(game.musicTrack == nil)
-        game.finishBattle()
+        await game.finishBattle()
         #expect(game.musicTrack == .village)
     }
 }

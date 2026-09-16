@@ -148,30 +148,47 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
 }
 
 struct Hero: Codable, Equatable {
-    var name = "ゆうしゃ"
+    /// 名前を決めずに始めたときの名前。
+    static let defaultName = "そら"
+    /// 名前の長さの上限。
+    static let maxNameLength = 6
+
+    var name = Hero.defaultName
     var level = 1
     var exp = 0
     var gold = 20
     var hp = LevelTable.row(1).maxHP
     var mp = LevelTable.row(1).maxMP
-    var weapon: Item = .woodStick
-    var armor: Item = .clothes
-    var inventory: [Item: Int] = [.herb: 2]
+    /// そうび中のぶき。はずしていれば nil（素手）。
+    var weapon: Item? = .woodStick
+    /// そうび中のよろい。はずしていれば nil。
+    var armor: Item? = .clothes
+    /// 持ちもの。買った・拾った装備も、はずしたあと売れるようにここに残る。
+    var inventory: [Item: Int] = [.herb: 2, .woodStick: 1, .clothes: 1]
 
     var base: LevelRow { LevelTable.row(level) }
     var maxHP: Int { base.maxHP }
     var maxMP: Int { base.maxMP }
     var agility: Int { base.agility }
 
-    var attack: Int {
-        if case .weapon(let power) = weapon.kind { return base.attack + power }
-        return base.attack
+    var attack: Int { base.attack + (weapon?.power ?? 0) }
+    var defense: Int { base.defense + (armor?.power ?? 0) }
+
+    /// そうび中のぶき・よろいの名前（はずしていれば「なし」）。
+    var weaponName: String { weapon?.name ?? "なし" }
+    var armorName: String { armor?.name ?? "なし" }
+
+    /// 持っているもの。消耗品・ぶき・よろいの順に並べる。
+    var belongings: [(item: Item, count: Int)] {
+        let order: [Item] = [.herb, .woodStick, .copperSword, .steelSword, .clothes, .leatherArmor, .chainMail]
+        return order.compactMap { item in
+            let count = inventory[item, default: 0]
+            return count > 0 ? (item, count) : nil
+        }
     }
 
-    var defense: Int {
-        if case .armor(let power) = armor.kind { return base.defense + power }
-        return base.defense
-    }
+    func owns(_ item: Item) -> Bool { inventory[item, default: 0] > 0 }
+    func isEquipped(_ item: Item) -> Bool { weapon == item || armor == item }
 
     var spells: [Spell] { Spell.allCases.filter { $0.learnLevel <= level } }
 
@@ -190,17 +207,29 @@ struct Hero: Codable, Equatable {
         return hp - before
     }
 
-    /// 経験値を足し、上がったレベルと覚えた呪文のメッセージを返す。
-    /// 上がった分の最大HP/MPは今のHP/MPにも足す（レベルアップで回復したように見せる）。
+    /// レベルアップの前後で見せる能力値（つよさの画面と同じ、装備こみの値）。
+    private struct StatLine: Equatable {
+        let maxHP: Int, maxMP: Int, attack: Int, defense: Int, agility: Int
+
+        init(_ hero: Hero) {
+            maxHP = hero.maxHP; maxMP = hero.maxMP
+            attack = hero.attack; defense = hero.defense; agility = hero.agility
+        }
+    }
+
+    /// 経験値を足し、上がったレベル・伸びた能力値・覚えた呪文のメッセージを返す。
+    /// レベルが上がったら HP と MP は全快する（つぎの戦いに向かいやすくする）。
     mutating func gainExp(_ amount: Int) -> [String] {
         exp += amount
         var messages: [String] = []
         while level < LevelTable.maxLevel, exp >= LevelTable.row(level + 1).exp {
-            let old = base
+            let before = StatLine(self)
             level += 1
-            hp += base.maxHP - old.maxHP
-            mp += base.maxMP - old.maxMP
+            let after = StatLine(self)
+            restoreFully()
+
             messages.append("\(name)は レベル\(level)に あがった！")
+            messages += Hero.growthLines(from: before, to: after)
             for spell in Spell.allCases where spell.learnLevel == level {
                 messages.append("\(spell.name)を おぼえた！")
             }
@@ -208,12 +237,64 @@ struct Hero: Codable, Equatable {
         return messages
     }
 
+    /// 「もとの値 → あがった値」で、どれだけ伸びたかが分かるようにする。
+    private static func growthLines(from before: StatLine, to after: StatLine) -> [String] {
+        func grew(_ label: String, _ old: Int, _ new: Int) -> String? {
+            guard new > old else { return nil }
+            return "\(label) \(old)→\(new)"
+        }
+        let hp = [grew("さいだいHP", before.maxHP, after.maxHP), grew("MP", before.maxMP, after.maxMP)]
+        let power = [grew("こうげき", before.attack, after.attack), grew("しゅび", before.defense, after.defense)]
+        let speed = [grew("すばやさ", before.agility, after.agility)]
+        return [hp, power, speed]
+            .map { $0.compactMap { $0 }.joined(separator: "  ") }
+            .filter { !$0.isEmpty }
+    }
+
     /// 装備は買うとすぐ付け替える（前の装備は手放す）。消耗品は道具袋へ。
+    /// 手に入れる。装備は持ちものに加えたうえで、そのまま身につける。
     mutating func receive(_ item: Item) {
+        inventory[item, default: 0] += 1
         switch item.kind {
-        case .consumable: inventory[item, default: 0] += 1
+        case .consumable: break
         case .weapon: weapon = item
         case .armor: armor = item
+        }
+    }
+
+    /// 持っている装備を身につける。
+    mutating func equip(_ item: Item) {
+        guard owns(item) else { return }
+        switch item.kind {
+        case .consumable: break
+        case .weapon: weapon = item
+        case .armor: armor = item
+        }
+    }
+
+    /// 身につけているものをはずす。持ちものには残る。
+    mutating func unequip(_ item: Item) {
+        if weapon == item { weapon = nil }
+        if armor == item { armor = nil }
+    }
+
+    /// 売り値。買い値の半分（最低 1）。
+    static func sellPrice(of item: Item) -> Int { max(1, item.price / 2) }
+
+    /// 売る。そうび中のものは売れない。売れたら受け取ったゴールドを返す。
+    mutating func sell(_ item: Item) -> Int? {
+        guard owns(item), !isEquipped(item) else { return nil }
+        inventory[item, default: 0] -= 1
+        if inventory[item] == 0 { inventory[item] = nil }
+        let paid = Hero.sellPrice(of: item)
+        gold += paid
+        return paid
+    }
+
+    /// 古いセーブ用。身につけているものが持ちものに無ければ足す。
+    mutating func normalizeInventory() {
+        for item in [weapon, armor].compactMap({ $0 }) where !owns(item) {
+            inventory[item, default: 0] += 1
         }
     }
 

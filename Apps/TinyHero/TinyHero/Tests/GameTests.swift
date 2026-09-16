@@ -145,11 +145,14 @@ struct HeroTests {
         #expect(messages.contains("ファイアを おぼえた！"))
     }
 
-    @Test func levelUpAddsGainedMaxHP() {
+    /// レベルアップしたら HP・MP は全快する（差分を足すだけだった頃からの変更）。
+    @Test func levelUpRefillsHPAndMP() {
         var hero = Hero()
         hero.hp = 5
+        hero.mp = 0
         _ = hero.gainExp(LevelTable.row(2).exp)
-        #expect(hero.hp == 5 + LevelTable.row(2).maxHP - LevelTable.row(1).maxHP)
+        #expect(hero.hp == LevelTable.row(2).maxHP)
+        #expect(hero.mp == LevelTable.row(2).maxMP)
     }
 
     @Test func levelStopsAtMax() {
@@ -192,7 +195,7 @@ struct BattleTests {
         _ = hero.gainExp(LevelTable.row(LevelTable.maxLevel).exp)
         hero.restoreFully()
         for _ in 0..<20 {
-            var battle = Battle(hero: hero, enemy: Enemy(.darkDragon))
+            var battle = Battle(hero: hero, enemy: Enemy(.guardian))
             let result = battle.take(.run, rng: &rng)
             #expect(result.end != .fled)
         }
@@ -202,7 +205,7 @@ struct BattleTests {
         var rng = SeededRandomSource(seed: 7)
         var hero = Hero()
         hero.receive(.steelSword)
-        var battle = Battle(hero: hero, enemy: Enemy(.bigRat))
+        var battle = Battle(hero: hero, enemy: Enemy(.potato))
         var end: BattleEnd?
         for _ in 0..<10 where end == nil {
             end = battle.take(.attack, rng: &rng).end
@@ -214,7 +217,7 @@ struct BattleTests {
 
     @Test func weakHeroLosesToBoss() {
         var rng = SeededRandomSource(seed: 3)
-        var battle = Battle(hero: Hero(), enemy: Enemy(.darkDragon))
+        var battle = Battle(hero: Hero(), enemy: Enemy(.guardian))
         var end: BattleEnd?
         for _ in 0..<20 where end == nil {
             end = battle.take(.attack, rng: &rng).end
@@ -230,7 +233,7 @@ struct BattleTests {
         // レベル1だとゴブリンに一撃で倒されて結果のページが出ないので、勝てる強さにする。
         _ = hero.gainExp(LevelTable.row(5).exp)
         hero.receive(.steelSword)
-        var battle = Battle(hero: hero, enemy: Enemy(.goblin))
+        var battle = Battle(hero: hero, enemy: Enemy(.cod))
         var lines: [BattleLine] = []
         for _ in 0..<10 where battle.end == nil {
             lines += battle.take(.attack, rng: &rng).lines
@@ -243,14 +246,15 @@ struct BattleTests {
         if let damaged = lines.first(where: { $0.cue == .damage }) {
             #expect((damaged.hero?.hp ?? hero.maxHP) < hero.maxHP)
         }
-        #expect(battle.end == .won(exp: 14, gold: 20))
+        let stats = EnemyKind.cod.stats
+        #expect(battle.end == .won(exp: stats.exp, gold: stats.gold))
         #expect(lines.allSatisfy { $0.hero != nil })
     }
 
     /// 勇者が受けたダメージは、その行の前後の HP の差と一致する。
     @Test func damageTakenLinesCarryHeroDamage() {
         var rng = SeededRandomSource(seed: 21)
-        var battle = Battle(hero: Hero(), enemy: Enemy(.wolf))
+        var battle = Battle(hero: Hero(), enemy: Enemy(.fox))
         var hpBefore = battle.hero.hp
         var checked = 0
         for _ in 0..<10 where battle.end == nil {
@@ -272,7 +276,7 @@ struct BattleTests {
         var hero = Hero()
         _ = hero.gainExp(LevelTable.row(2).exp)
         hero.mp = 0
-        var battle = Battle(hero: hero, enemy: Enemy(.mushroom))
+        var battle = Battle(hero: hero, enemy: Enemy(.kelpSlime))
         let result = battle.take(.spell(.heal), rng: &rng)
         #expect(result.messages.contains("MPが たりない！"))
         #expect(battle.hero.mp == 0)

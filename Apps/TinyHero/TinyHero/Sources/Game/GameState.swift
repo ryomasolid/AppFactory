@@ -18,6 +18,14 @@ struct BattleSession {
     var heroHit: HeroHit?
     /// 敵に当たった最新の一撃。画面はこれが変わるたびに敵を揺らし、ダメージの数字を出す。
     var enemyHit: EnemyHit?
+    /// 呪文・道具の最新の演出。画面はこれが変わるたびに粒や炎を出す。
+    var effect: EffectCue?
+}
+
+/// 呪文・道具の演出と、その通し番号（同じ演出が続いても出し直すため）。
+struct EffectCue: Equatable {
+    let id: Int
+    let kind: BattleEffect
 }
 
 struct HeroHit: Equatable {
@@ -37,7 +45,7 @@ struct EnemyHit: Equatable {
 @MainActor
 @Observable
 final class GameState {
-    enum Screen: Equatable { case title, field, battle, ending }
+    enum Screen: Equatable { case title, naming, field, battle, ending }
     enum Overlay: Equatable { case none, menu, status, items, spells, shop, inn }
 
     static let shopStock: [Item] = [.herb, .copperSword, .leatherArmor, .steelSword, .chainMail]
@@ -65,6 +73,23 @@ final class GameState {
     @ObservationIgnored private var stepsSinceBattle = 0
     @ObservationIgnored var rng = AnyRandomSource(SystemRandomSource())
     /// 1歩の時間と戦闘メッセージの間隔。テストではゼロにする。
+    /// 画面をおおう黒幕の濃さ（0＝見えない、1＝まっくら）。濃さを変えるのは画面側のアニメーション。
+    private(set) var curtain: Double = 0
+    /// 黒幕の上に出す文字（宿屋の「Zzz」など）。
+    private(set) var curtainCaption: String?
+    /// 黒幕を上げ下げしているあいだは操作を受け付けない。
+    private(set) var isTransitioning = false
+
+    /// 黒幕の濃さが変わるのにかかる時間。画面側のアニメーションと同じ値にする。
+    @ObservationIgnored var fadeDuration: Duration = .milliseconds(280)
+    /// 画面側のアニメーションに渡す秒数。
+    var fadeSeconds: Double {
+        let parts = fadeDuration.components
+        return Double(parts.seconds) + Double(parts.attoseconds) / 1e18
+    }
+    /// 宿屋でまっくらなまま眠っている時間（ジングルを聴かせる）。
+    @ObservationIgnored var sleepDuration: Duration = .milliseconds(1600)
+
     @ObservationIgnored var stepDuration: Duration = .milliseconds(150)
     @ObservationIgnored var messageInterval: Duration = .milliseconds(450)
     /// 行動が変わるときの間（読んでから枠を空ける）。
@@ -84,12 +109,13 @@ final class GameState {
     var map: GameMap { World.map(mapID) }
     var currentPage: [String]? { pages.first }
     var innPrice: Int { 2 + hero.level * 3 }
-    var canWalk: Bool { screen == .field && pages.isEmpty && overlay == .none && !isWalking }
+    var canWalk: Bool { screen == .field && pages.isEmpty && overlay == .none && !isWalking && !isTransitioning }
 
     /// いま流す BGM。場面から決まる。
     var musicTrack: MusicTrack? {
         switch screen {
-        case .title: .title
+        // 名前を決めているあいだも タイトルの曲を流し続ける。
+        case .title, .naming: .title
         case .field:
             switch mapID {
             case .village, .innInside, .shopInside: .village
@@ -108,18 +134,31 @@ final class GameState {
 
     // MARK: - タイトル
 
-    func newGame() {
+    /// タイトルの「はじめから」。まず名前を決める。
+    func beginNaming() {
+        playSound(.confirm)
+        screen = .naming
+    }
+
+    /// 名前を決めて冒険を始める。空なら既定の名前。
+    func newGame(name: String? = nil) {
         hero = Hero()
+        if let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty {
+            hero.name = String(trimmed.prefix(Hero.maxNameLength))
+        }
         mapID = World.startMap
         position = World.startPoint
         facing = .down
         openedChests = []
         enterField()
         say([
-            "ちょうろう「おお ゆうしゃよ、よくぞ きてくれた。",
-            "ひがしの どうくつに ヤミドラゴンが すみつき、",
-            "村の まわりにも まものが ふえておる。",
-            "どうか ドラゴンを たおしてくれ！」",
+            "まおうが この国の 5つの地方の",
+            "守護神を すべて あやつって しまった。",
+            "まものは ふえ、地は あれはてた。",
+            "ちょうろう「おお \(hero.name)よ。",
+            "そなたには いにしえの ゆうしゃの ちが ながれておる。",
+            "まずは この北海道の 守護神を 解きはなつのじゃ。",
+            "きたの ほらあなの おくに おわす。」",
             "（十字キーで あるき、Aで はなす・しらべる、",
             "Bで メニューを ひらけます）",
         ])
@@ -180,16 +219,35 @@ final class GameState {
         position = next
         try? await Task.sleep(for: stepDuration)
         isWalking = false
-        arrived()
+        await arrived()
     }
 
-    private func arrived() {
+    /// 黒幕を下ろす（まっくらにする）。
+    private func drawCurtain(caption: String? = nil) async {
+        isTransitioning = true
+        curtainCaption = caption
+        curtain = 1
+        try? await Task.sleep(for: fadeDuration)
+    }
+
+    /// 黒幕を上げる（明るくもどす）。
+    private func openCurtain() async {
+        curtainCaption = nil
+        curtain = 0
+        try? await Task.sleep(for: fadeDuration)
+        isTransitioning = false
+    }
+
+    private func arrived() async {
         if let warp = map.warps[position] {
-            lastMoveWasWarp = true
+            // 出入りは 暗転をはさんで「移った」と分かるようにする。
             playSound(.stairs)
+            await drawCurtain()
+            lastMoveWasWarp = true
             mapID = warp.to
             position = warp.at
             stepsSinceBattle = 0
+            await openCurtain()
             return
         }
         guard let table = map.encounters[map.tile(at: position)], !table.isEmpty else { return }
@@ -203,13 +261,13 @@ final class GameState {
 
     func pressA() {
         if !pages.isEmpty { return advanceMessage() }
-        guard screen == .field, overlay == .none, !isWalking else { return }
+        guard screen == .field, overlay == .none, !isWalking, !isTransitioning else { return }
         interact()
     }
 
     func pressB() {
         if !pages.isEmpty { return advanceMessage() }
-        guard screen == .field, !isWalking else { return }
+        guard screen == .field, !isWalking, !isTransitioning else { return }
         playSound(.cursor)
         switch overlay {
         case .none: overlay = .menu
@@ -234,8 +292,14 @@ final class GameState {
             open(chest)
         } else if map.boss == target {
             playSound(.confirm)
-            say(["グルルル……", "ヤミドラゴン「ちいさき ゆうしゃよ、", "よくぞ ここまで きた。", "わが ほのおで もえつきるがよい！」"]) { [weak self] in
-                self?.startBattle(.darkDragon)
+            say([
+                "ゴゴゴ……",
+                "知床の守護神「……ちが、ながれて いる な。",
+                "だが われは まおうの もの。",
+                "ふぶきの なかで ねむるが よい！」",
+                "（あやつられた 守護神が おそいかかってきた！）",
+            ]) { [weak self] in
+                self?.startBattle(.guardian)
             }
         } else {
             playSound(.cursor)
@@ -246,7 +310,7 @@ final class GameState {
     private func talk(to npc: NPC) {
         switch npc.role {
         case .elder:
-            say(["ちょうろう「ヤミドラゴンは ほのおを はく。", "HPに よゆうを もって いどむのじゃ。", "ヒールを おぼえたら わすれずに つかうのじゃぞ。」"])
+            say(["ちょうろう「守護神は ふぶきを おこす。", "HPに よゆうを もって いどむのじゃ。", "ヒールを おぼえたら わすれずに つかうのじゃぞ。」"])
         case .villager(let lines):
             say(lines)
         case .innkeeper:
@@ -301,18 +365,17 @@ final class GameState {
             return say(["やどや「おかねが たりない ようですね。」"])
         }
         hero.gold -= innPrice
-        hero.restoreFully()
-        save()
-        playSound(.inn)
-        say(["やどや「ゆっくり おやすみください。」", "……", "おはようございます。 ぼうけんの きろくを かきとめました。"])
+        say(["やどや「ゆっくり おやすみください。」"]) { [weak self] in
+            Task { await self?.sleepAtInn() }
+        }
     }
 
     func buy(_ item: Item) {
         guard hero.gold >= item.price else {
             return say(["どうぐや「おかねが たりないよ。」"])
         }
-        if item == hero.weapon || item == hero.armor {
-            return say(["どうぐや「それは もう そうびしているよ。」"])
+        if hero.owns(item), item.kind != .consumable {
+            return say(["どうぐや「それは もう もっているよ。」"])
         }
         hero.gold -= item.price
         hero.receive(item)
@@ -346,6 +409,44 @@ final class GameState {
     func save() {
         SaveStore.save(SaveData(hero: hero, map: mapID, position: position, openedChests: openedChests))
         hasSave = true
+    }
+
+    /// 宿屋で眠る。画面をまっくらにして、ジングルのあいだ寝かせてから朝にする。
+    private func sleepAtInn() async {
+        await drawCurtain(caption: "……Zzz……")
+        playSound(.inn)
+        hero.restoreFully()
+        save()
+        try? await Task.sleep(for: sleepDuration)
+        await openCurtain()
+        say(["おはようございます。", "HPと MPが かいふくした！", "ぼうけんの きろくを かきとめました。"])
+    }
+
+    // MARK: - そうびと 売り買い
+
+    func equip(_ item: Item) {
+        hero.equip(item)
+        playSound(.confirm)
+        overlay = .none
+        say(["\(item.name)を そうびした。"])
+    }
+
+    func unequip(_ item: Item) {
+        hero.unequip(item)
+        playSound(.cursor)
+        overlay = .none
+        say(["\(item.name)を はずした。"])
+    }
+
+    /// 売れるのは どうぐやの中だけ。
+    func sell(_ item: Item) {
+        guard overlay == .shop else { return }
+        guard let paid = hero.sell(item) else {
+            return say(["どうぐや「それは そうびしたままだよ。」"])
+        }
+        playSound(.coin)
+        // 続けて売れるよう、店は開けたままにする（買うときと同じ）。
+        say(["どうぐや「まいどあり！」", "\(item.name)を うって \(paid)ゴールドに なった。"])
     }
 
     func saveFromMenu() {
@@ -415,6 +516,11 @@ final class GameState {
             let isHeavy = damage * 3 >= (line.hero?.maxHP ?? .max)
             battle?.heroHit = HeroHit(id: nextID, damage: damage, isHeavy: isHeavy)
         }
+        if let kind = line.effect {
+            // 書き換えの最中に battle を読むと排他アクセス違反で落ちるので、次の番号は先に取り出す。
+            let nextID = (battle?.effect?.id ?? 0) + 1
+            battle?.effect = EffectCue(id: nextID, kind: kind)
+        }
         if let cue = line.cue {
             if cue == .victory { battle?.enemyDefeated = true }
             if cue == .victory || cue == .gameOver { battle?.musicStopped = true }
@@ -438,7 +544,7 @@ final class GameState {
         continuation?.resume()
     }
 
-    func finishBattle() {
+    func finishBattle() async {
         guard let session = battle, let end = session.end else { return }
         hero = session.battle.hero
         stepsSinceBattle = 0
@@ -450,12 +556,15 @@ final class GameState {
             battle = nil
             screen = .field
         case .lost:
+            // 気を失って村で目を覚ますので、暗転をはさむ。
+            await drawCurtain()
             hero.gold /= 2
             hero.restoreFully()
             mapID = World.revivePoint.map
             position = World.revivePoint.point
             facing = .up
             enterField()
+            await openCurtain()
             say(["\(hero.name)は 村の いりぐちで めを さました。", "もっていた ゴールドが はんぶんに なった……"])
         }
     }

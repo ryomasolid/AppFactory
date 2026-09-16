@@ -22,12 +22,12 @@ enum World {
 
     static let village = GameMap(
         id: .village,
-        name: "はじまりの村",
+        name: "さっぽろの村",
         rows: [
             "###############",
             "#_____________#",
-            "#_HHH_____HHH_#",
-            "#_HHH_____HHH_#",
+            "#_III_____SSS_#",
+            "#_III_____SSS_#",
             "#_YdW_____ZdW_#",
             "#_____www_____#",
             "#_____www__t__#",
@@ -40,15 +40,15 @@ enum World {
         ],
         outside: .wall,
         warps: [
-            // 左の家が宿屋、右の家が道具屋。扉から中へ入る。
+            // 左の家（青い屋根・ベッドの看板）が宿屋、右の家（緑の屋根・お金のふくろ）が道具屋。
             Point(x: 3, y: 4): Warp(to: .innInside, at: Point(x: 4, y: 4)),
             Point(x: 11, y: 4): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
-            Point(x: 6, y: 12): Warp(to: .field, at: Point(x: 4, y: 8)),
-            Point(x: 7, y: 12): Warp(to: .field, at: Point(x: 4, y: 8)),
-            Point(x: 8, y: 12): Warp(to: .field, at: Point(x: 4, y: 8)),
+            Point(x: 6, y: 12): Warp(to: .field, at: Point(x: 5, y: 12)),
+            Point(x: 7, y: 12): Warp(to: .field, at: Point(x: 5, y: 12)),
+            Point(x: 8, y: 12): Warp(to: .field, at: Point(x: 5, y: 12)),
         ],
         villagers: [
-            ["むすめ「どうくつは 川の むこう、", "きたの おかの おくに あるそうよ。", "はしを わたって すすんでね。」"],
+            ["むすめ「守護神の ほらあなは 川の むこう、", "きたの おかの おくに あるそうよ。", "はしを わたって すすんでね。」"],
             ["おとこ「レベルが ひくいうちは", "村の ちかくの くさはらで きたえるといい。", "もりや おかには つよい まものが でるぞ。」"],
         ]
     )
@@ -93,38 +93,49 @@ enum World {
 
     static let field = GameMap(
         id: .field,
-        name: "ひろの",
+        name: "いしかりの野",
         rows: [
-            "~~~~~~~~~~~~~~~~~~~~~~~~",
-            "~MMMMMMMMMMMMMMMMMMMMMM~",
-            "~M.......~~.hhhhhhhhhhM~",
-            "~M..ff...~~.hhhhMMMhhhM~",
-            "~M.fff...~~.hhhhMChhhhM~",
-            "~M..f....~~..hhhhhhhhMM~",
-            "~M.......~~...fff.hhhMM~",
-            "~M..T====bb===ffff..MMM~",
-            "~M.......~~...fff.....M~",
-            "~M..ff...~~.....ffff..M~",
-            "~M.ffff..~~....ffffff.M~",
-            "~M..ff...~~.....fff...M~",
-            "~MM......~~..........MM~",
-            "~~MMMMMMMMMMMMMMMMMMMM~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "~MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM~",
+            "~M...........~~....hhhhhhhhhhhhhhhM~",
+            "~M...........~~....hhhhhhMMMhhhhhhM~",
+            "~M..ffff.....~~....hhhhhhMCMhhhhhhM~",
+            "~M..ffff.....~~....hhhhhhhhhhhMMhhM~",
+            "~M..ffff.....~~....hhhhhhhhhhhMMhhM~",
+            "~M...........~~....hhhhhhhhhhhhhhhM~",
+            "~M......ff...~~.......hhhhhhhhhhhhM~",
+            "~M......ff...~~.......hhhhhhhhhhhhM~",
+            "~M...........~~...................M~",
+            "~M...T=======bb======.....fffff...M~",
+            "~M...........~~...........fffff...M~",
+            "~M...........~~...fffffff.fffff...M~",
+            "~M.ffff......~~...fffffff.fffff...M~",
+            "~M.ffff......~~...fffffff.........M~",
+            "~M.ffff......~~...fffffff.........M~",
+            "~M.ffff...MMM~~...fffffff......MMMM~",
+            "~M........MMM~~................MMMM~",
+            "~M...........~~...................M~",
+            "~MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
         ],
         outside: .water,
         warps: [
-            Point(x: 4, y: 7): Warp(to: .village, at: Point(x: 7, y: 11)),
-            Point(x: 17, y: 4): Warp(to: .cave1, at: Point(x: 6, y: 11)),
+            Point(x: 5, y: 11): Warp(to: .village, at: Point(x: 7, y: 11)),
+            Point(x: 26, y: 4): Warp(to: .cave1, at: Point(x: 6, y: 11)),
         ],
+        // 1つのエリアに強さの違う敵を混ぜすぎない。
+        // 経験値のはしご: くさち 2〜4 → もり 4〜9 → おか 9〜14 → ほらあな1 14〜22 → ほらあな2 22〜35。
+        // となりのエリアと1種だけ重ねて、進んだ実感と地続き感を両立させる。
         encounters: [
-            .grass: [.bigRat, .mushroom, .bat],
-            .forest: [.bat, .wolf, .mushroom],
-            .hills: [.wolf, .goblin],
+            .grass: [.potato, .kelpSlime, .scallop],
+            .forest: [.scallop, .fox],
+            .hills: [.fox, .cod],
         ]
     )
 
     static let cave1 = GameMap(
         id: .cave1,
-        name: "ヤミのどうくつ B1",
+        name: "知床のほらあな B1",
         rows: [
             "###############",
             "#,,,,#,,,,,,,,#",
@@ -142,18 +153,18 @@ enum World {
         ],
         outside: .wall,
         warps: [
-            Point(x: 7, y: 11): Warp(to: .field, at: Point(x: 17, y: 5)),
+            Point(x: 7, y: 11): Warp(to: .field, at: Point(x: 26, y: 5)),
             Point(x: 3, y: 9): Warp(to: .cave2, at: Point(x: 6, y: 9)),
         ],
         chestRewards: [.gold(150)],
         encounters: [
-            .caveFloor: [.goblin, .bat, .skeleton],
+            .caveFloor: [.cod, .snowman],
         ]
     )
 
     static let cave2 = GameMap(
         id: .cave2,
-        name: "ヤミのどうくつ B2",
+        name: "知床のほらあな B2",
         rows: [
             "#############",
             "#,,,,,B,,,,,#",
@@ -173,7 +184,7 @@ enum World {
         ],
         chestRewards: [.item(.steelSword)],
         encounters: [
-            .caveFloor: [.skeleton, .golem, .goblin],
+            .caveFloor: [.snowman, .iceGolem],
         ]
     )
 }

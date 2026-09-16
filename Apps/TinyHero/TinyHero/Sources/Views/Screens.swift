@@ -18,10 +18,15 @@ struct ContentView: View {
             Color.black.ignoresSafeArea()
             switch game.screen {
             case .title: TitleView()
+            case .naming: NameEntryView()
             case .field: FieldView()
             case .battle: BattleView()
             case .ending: EndingView()
             }
+
+            // 場面の切り替えと 宿屋の ねむり。濃さは GameState、動きはここ。
+            Curtain(opacity: game.curtain, caption: game.curtainCaption)
+                .animation(.easeInOut(duration: game.fadeSeconds), value: game.curtain)
         }
         .environment(game)
         .onAppear {
@@ -40,11 +45,114 @@ struct ContentView: View {
     }
 }
 
+/// 画面をおおう黒い幕。出入りのときや 宿屋で眠るときに下ろす。
+struct Curtain: View {
+    let opacity: Double
+    let caption: String?
+
+    var body: some View {
+        ZStack {
+            Color.black
+            if let caption {
+                Text(caption)
+                    .font(Retro.font(20))
+                    .foregroundStyle(Retro.ink)
+            }
+        }
+        .opacity(opacity)
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+    }
+}
+
 // MARK: - 共通部品
 
 enum Retro {
     static func font(_ size: CGFloat = 17) -> Font {
         .system(size: size, weight: .bold, design: .monospaced)
+    }
+
+    // 画面じゅうで使う色。ばらばらに書かず、ここから引く。
+    static let ink = Color.white
+    static let dim = Color(white: 0.62)
+    static let accent = Color(red: 0.98, green: 0.85, blue: 0.28)
+    static let hp = Color(red: 0.36, green: 0.85, blue: 0.40)
+    static let hpLow = Color(red: 0.95, green: 0.42, blue: 0.30)
+    static let heal = Color(red: 0.45, green: 1.00, blue: 0.50)
+    static let ember = Color(red: 1.00, green: 0.55, blue: 0.15)
+    /// 戦闘の空と地面。ボス戦は暗いほうを使う。
+    static let sky = Color(red: 0.30, green: 0.55, blue: 0.85)
+    static let ground = Color(red: 0.85, green: 0.91, blue: 0.97)
+    static let bossSky = Color(red: 0.08, green: 0.05, blue: 0.16)
+    static let bossGround = Color(red: 0.16, green: 0.16, blue: 0.26)
+}
+
+/// HP などの棒グラフ。残りが 1/4 を切ると色が変わる。
+struct RetroBar: View {
+    let value: Int
+    let maximum: Int
+    var tint: Color = Retro.hp
+    var width: CGFloat = 92
+    var height: CGFloat = 8
+
+    private var ratio: Double {
+        guard maximum > 0 else { return 0 }
+        return min(1, max(0, Double(value) / Double(maximum)))
+    }
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            Rectangle().fill(Color(white: 0.22))
+            Rectangle()
+                .fill(ratio <= 0.25 ? Retro.hpLow : tint)
+                .frame(width: width * ratio)
+        }
+        .frame(width: width, height: height)
+        .overlay(Rectangle().strokeBorder(Retro.ink.opacity(0.7), lineWidth: 1))
+        .animation(.easeOut(duration: 0.25), value: value)
+    }
+}
+
+/// 夜空と山なみ。タイトルの背景に使う。
+struct NightSkyBackdrop: View {
+    var body: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let height = geometry.size.height
+            ZStack {
+                LinearGradient(
+                    colors: [Color(red: 0.03, green: 0.04, blue: 0.13), Color(red: 0.12, green: 0.16, blue: 0.36)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                Canvas { context, size in
+                    // 星の位置は固定にして、毎回同じ空にする。
+                    var seed = SeededRandomSource(seed: 20_260_916)
+                    for _ in 0..<70 {
+                        let x = CGFloat(seed.next(in: 0...max(1, Int(size.width))))
+                        let y = CGFloat(seed.next(in: 0...max(1, Int(size.height * 0.62))))
+                        let dot = CGFloat(seed.next(in: 1...2))
+                        context.fill(
+                            Path(CGRect(x: x, y: y, width: dot, height: dot)),
+                            with: .color(.white.opacity(0.5 + Double(seed.next(in: 0...4)) / 10))
+                        )
+                    }
+                }
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: height))
+                    path.addLine(to: CGPoint(x: 0, y: height * 0.74))
+                    path.addLine(to: CGPoint(x: width * 0.22, y: height * 0.58))
+                    path.addLine(to: CGPoint(x: width * 0.40, y: height * 0.70))
+                    path.addLine(to: CGPoint(x: width * 0.62, y: height * 0.52))
+                    path.addLine(to: CGPoint(x: width * 0.82, y: height * 0.68))
+                    path.addLine(to: CGPoint(x: width, y: height * 0.60))
+                    path.addLine(to: CGPoint(x: width, y: height))
+                    path.closeSubpath()
+                }
+                .fill(Color(red: 0.06, green: 0.09, blue: 0.20))
+            }
+        }
+        .ignoresSafeArea()
     }
 }
 
@@ -173,28 +281,108 @@ struct TitleView: View {
     @Environment(GameState.self) private var game
 
     var body: some View {
+        ZStack {
+            NightSkyBackdrop()
+            content
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 28) {
             Spacer()
-            Text("ちいさな勇者")
-                .font(Retro.font(40))
-                .foregroundStyle(.yellow)
+            VStack(spacing: 8) {
+                Text("ちいさな勇者")
+                    .font(Retro.font(40))
+                    .foregroundStyle(Retro.accent)
+                    // ドット絵に合わせて、ぼかさない影で縁取る。
+                    .shadow(color: .black, radius: 0, x: 3, y: 3)
+                Text("〜 北海道 守護神 かいほう編 〜")
+                    .font(Retro.font(13))
+                    .foregroundStyle(Retro.dim)
+            }
             HStack(spacing: 40) {
                 SpriteCache.image(.hero1).resizable().interpolation(.none).frame(width: 96, height: 96)
-                SpriteCache.image(.darkDragon).resizable().interpolation(.none).frame(width: 120, height: 120)
+                SpriteCache.image(.guardian).resizable().interpolation(.none).frame(width: 120, height: 120)
             }
             Spacer()
             VStack(spacing: 12) {
                 if game.hasSave {
                     RetroChoice(title: "つづきから") { game.continueGame() }
                 }
-                RetroChoice(title: "はじめから") { game.newGame() }
+                RetroChoice(title: "はじめから") { game.beginNaming() }
             }
             .font(Retro.font(22))
-            .foregroundStyle(.white)
+            .foregroundStyle(Retro.ink)
             .frame(width: 220)
+            .padding(.vertical, 6)
+            .background(Color.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Retro.ink, lineWidth: 3))
             Spacer()
         }
         .padding()
+    }
+}
+
+/// 勇者の名前を決める画面。
+struct NameEntryView: View {
+    @Environment(GameState.self) private var game
+    @State private var name = Hero.defaultName
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        ZStack {
+            NightSkyBackdrop()
+
+            VStack(spacing: 24) {
+                Spacer()
+
+                SpriteCache.image(.hero1)
+                    .resizable().interpolation(.none)
+                    .frame(width: 96, height: 96)
+
+                Text("ゆうしゃの なまえを きめてください")
+                    .font(Retro.font(15))
+                    .foregroundStyle(Retro.ink)
+
+                RetroWindow {
+                    VStack(alignment: .leading, spacing: 12) {
+                        TextField("", text: $name)
+                            .font(Retro.font(24))
+                            .foregroundStyle(Retro.accent)
+                            .textFieldStyle(.plain)
+                            .multilineTextAlignment(.center)
+                            .focused($isFocused)
+                            .submitLabel(.done)
+                            .onSubmit(decide)
+                            .padding(.vertical, 4)
+                            .overlay(alignment: .bottom) {
+                                Rectangle().fill(Retro.ink).frame(height: 2)
+                            }
+                        Text("\(Hero.maxNameLength)文字まで。あとから かえられません。")
+                            .font(Retro.font(11))
+                            .foregroundStyle(Retro.dim)
+                    }
+                }
+                .frame(maxWidth: 300)
+
+                RetroWindow {
+                    RetroChoice(title: "けってい", action: decide)
+                }
+                .frame(width: 180)
+
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+        }
+        .onAppear { isFocused = true }
+        .onChange(of: name) { _, value in
+            if value.count > Hero.maxNameLength { name = String(value.prefix(Hero.maxNameLength)) }
+        }
+    }
+
+    private func decide() {
+        isFocused = false
+        game.newGame(name: name)
     }
 }
 
@@ -206,12 +394,13 @@ struct EndingView: View {
             Spacer()
             SpriteCache.image(.hero1).resizable().interpolation(.none).frame(width: 120, height: 120)
             RetroWindow {
-                Text("ヤミドラゴンを たおした！")
-                Text("村に へいわが もどった。")
-                Text("ちいさな勇者の なは")
-                Text("いつまでも かたりつがれるだろう。")
+                Text("知床の守護神は 正気を とりもどした！")
+                Text("守護神「よくぞ 解きはなってくれた。")
+                Text("　まおうは まだ 4つの地方を あやつっている。")
+                Text("　つぎの地方へ いそぐのだ。」")
+                Text("北海道に へいわが もどった。")
             }
-            Text("THE END").font(Retro.font(34)).foregroundStyle(.yellow)
+            Text("つづく").font(Retro.font(34)).foregroundStyle(Retro.accent)
             Text("LV \(game.hero.level)  \(game.hero.gold)G").font(Retro.font(16)).foregroundStyle(.white)
             Spacer()
             RetroChoice(title: "タイトルへ") { game.backToTitle() }

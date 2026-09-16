@@ -3,8 +3,31 @@ import SwiftUI
 /// フィールドで開くウィンドウ（メニュー・つよさ・じゅもん・どうぐ・店・宿屋）。
 struct FieldOverlay: View {
     @Environment(GameState.self) private var game
+    /// 道具屋でいま開いている画面。
+    @State private var shopPanel: ShopPanel = .menu
+
+    /// 道具屋の流れ。かう／うる を選んでから、一覧 → 確認と進む。
+    private enum ShopPanel: Equatable {
+        case menu
+        case buying
+        case confirmBuy(Item)
+        case selling
+        case confirmSell(Item)
+    }
+    /// どうぐ画面で選んでいる持ちもの。nil なら一覧。
+    @State private var selectedItem: Item?
 
     var body: some View {
+        content
+            // 店を離れたら、確認の途中状態を残さない。
+            .onChange(of: game.overlay) { _, screen in
+                if screen != .shop { shopPanel = .menu }
+                if screen != .items { selectedItem = nil }
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         let hero = game.hero
         switch game.overlay {
         case .none:
@@ -34,8 +57,8 @@ struct FieldOverlay: View {
                 if hero.level < LevelTable.maxLevel {
                     row("つぎのLVまで", "\(LevelTable.row(hero.level + 1).exp - hero.exp)")
                 }
-                row("ぶき", hero.weapon.name)
-                row("よろい", hero.armor.name)
+                row("ぶき", hero.weaponName)
+                row("よろい", hero.armorName)
                 RetroChoice(title: "もどる") { game.overlay = .menu }
             }
 
@@ -55,31 +78,32 @@ struct FieldOverlay: View {
 
         case .items:
             RetroWindow {
-                heading("どうぐ")
-                if hero.herbCount > 0 {
-                    RetroChoice(title: Item.herb.name, detail: "×\(hero.herbCount)") {
-                        game.useHerbInField()
-                    }
-                    note("つかうと HPが \(Item.herbPower.lowerBound)〜\(Item.herbPower.upperBound) かいふく")
+                if let item = selectedItem {
+                    itemActions(item, hero: hero)
                 } else {
-                    note("なにも もっていない")
+                    belongings(hero: hero)
                 }
-                heading("そうび")
-                row("ぶき", "\(hero.weapon.name)（こうげき+\(hero.weapon.power)）")
-                row("よろい", "\(hero.armor.name)（しゅび+\(hero.armor.power)）")
-                RetroChoice(title: "もどる") { game.overlay = .menu }
+            }
+            .onAppear {
+                // 表示確認用の起動引数。ふだんは nil。
+                if selectedItem == nil { selectedItem = Launch.selectItem }
             }
 
         case .shop:
             RetroWindow {
-                Text("どうぐや「なにを かっていくかね？」")
-                ForEach(GameState.shopStock) { item in
-                    RetroChoice(title: item.name, detail: "\(item.price)G", isEnabled: hero.gold >= item.price) {
-                        game.buy(item)
-                    }
+                switch shopPanel {
+                case .menu: shopMenu(hero: hero)
+                case .buying: shopStock(hero: hero)
+                case let .confirmBuy(item): purchaseConfirm(item, hero: hero)
+                case .selling: sellList(hero: hero)
+                case let .confirmSell(item): sellConfirm(item, hero: hero)
                 }
-                row("もちきん", "\(hero.gold)G")
-                RetroChoice(title: "やめる") { game.closeOverlay() }
+            }
+            .onAppear {
+                // 表示確認用の起動引数。ふだんは .menu のまま。
+                guard shopPanel == .menu else { return }
+                if let item = Launch.shopConfirm { shopPanel = .confirmBuy(item) }
+                else if Launch.shopSell { shopPanel = .selling }
             }
 
         case .inn:
@@ -91,6 +115,222 @@ struct FieldOverlay: View {
             }
         }
     }
+
+    // MARK: - どうぐ
+
+    /// 持ちもの一覧。そうび中のものには印を付ける。
+    @ViewBuilder
+    private func belongings(hero: Hero) -> some View {
+        heading("もちもの")
+        purse(hero.gold)
+        divider()
+        if hero.belongings.isEmpty {
+            note("なにも もっていない")
+        } else {
+            ForEach(hero.belongings, id: \.item) { entry in
+                RetroChoice(title: entry.item.name, detail: detail(for: entry, hero: hero)) {
+                    selectedItem = entry.item
+                }
+            }
+        }
+        divider()
+        RetroChoice(title: "もどる") { game.overlay = .menu }
+    }
+
+    /// 一覧の右側。そうび中か、持っている数。
+    private func detail(for entry: (item: Item, count: Int), hero: Hero) -> String {
+        if hero.isEquipped(entry.item) { return "そうび中" }
+        if entry.item.kind == .consumable { return "×\(entry.count)" }
+        return entry.count > 1 ? "×\(entry.count)" : ""
+    }
+
+    /// 選んだ持ちものに対してできること。
+    @ViewBuilder
+    private func itemActions(_ item: Item, hero: Hero) -> some View {
+        heading(item.name)
+        // 説明は1行だけにする。品物の素の強さと 差し引きの伸びを並べると食い違って見える。
+        if case .consumable = item.kind {
+            note(effectNote(item))
+            RetroChoice(title: "つかう", isEnabled: hero.hp < hero.maxHP) {
+                selectedItem = nil
+                game.useHerbInField()
+            }
+        } else if hero.isEquipped(item) {
+            note(equippedNote(item))
+            RetroChoice(title: "はずす") {
+                selectedItem = nil
+                game.unequip(item)
+            }
+        } else {
+            note(equipPreview(item, hero: hero))
+            RetroChoice(title: "そうびする") {
+                selectedItem = nil
+                game.equip(item)
+            }
+        }
+        divider()
+        note("うるのは どうぐやで")
+        RetroChoice(title: "やめる") { selectedItem = nil }
+    }
+
+    /// いま そうびしているものが どれだけ足してくれているか。
+    private func equippedNote(_ item: Item) -> String {
+        switch item.kind {
+        case .consumable: return ""
+        case .weapon(let power): return "いま こうげきを +\(power) している"
+        case .armor(let power): return "いま しゅびを +\(power) している"
+        }
+    }
+
+    /// そうびしたら どれだけ変わるか。
+    private func equipPreview(_ item: Item, hero: Hero) -> String {
+        switch item.kind {
+        case .consumable: return ""
+        case .weapon(let power):
+            let now = hero.attack
+            return "そうびすると こうげき \(now)→\(hero.base.attack + power)"
+        case .armor(let power):
+            let now = hero.defense
+            return "そうびすると しゅび \(now)→\(hero.base.defense + power)"
+        }
+    }
+
+    // MARK: - 道具屋
+
+    /// 店に入って最初に出る選択。
+    @ViewBuilder
+    private func shopMenu(hero: Hero) -> some View {
+        Text("どうぐや「いらっしゃい。")
+        Text("　かうかい？ それとも うるのかい？」")
+        purse(hero.gold)
+        divider()
+        RetroChoice(title: "かう") { shopPanel = .buying }
+        RetroChoice(title: "うる", isEnabled: hero.belongings.isEmpty == false) { shopPanel = .selling }
+        divider()
+        RetroChoice(title: "やめる") { game.closeOverlay() }
+    }
+
+    /// 売れるもの一覧。そうび中のものは 外さないと売れない。
+    @ViewBuilder
+    private func sellList(hero: Hero) -> some View {
+        Text("どうぐや「どれを うるんだい？」")
+        purse(hero.gold)
+        divider()
+        ForEach(hero.belongings, id: \.item) { entry in
+            let equipped = hero.isEquipped(entry.item)
+            RetroChoice(
+                title: entry.item.name,
+                detail: equipped ? "そうび中" : "\(Hero.sellPrice(of: entry.item))G",
+                isEnabled: !equipped
+            ) {
+                shopPanel = .confirmSell(entry.item)
+            }
+        }
+        divider()
+        RetroChoice(title: "もどる") { shopPanel = .menu }
+    }
+
+    /// 売るまえの確認。
+    @ViewBuilder
+    private func sellConfirm(_ item: Item, hero: Hero) -> some View {
+        let paid = Hero.sellPrice(of: item)
+        Text("どうぐや「\(item.name)なら")
+        Text("　\(paid)ゴールドで ひきとるよ。いいかい？」")
+        if case .consumable = item.kind {
+            note("のこり ×\(hero.inventory[item, default: 0])")
+        } else {
+            note(equipPreview(item, hero: hero))
+        }
+        purse(hero.gold, after: hero.gold + paid)
+        divider()
+        RetroChoice(title: "はい") {
+            game.sell(item)
+            shopPanel = .selling
+        }
+        RetroChoice(title: "いいえ") {
+            shopPanel = .selling
+        }
+    }
+
+    /// 商品一覧。もちきんは商品と混ざらないよう、上に出して線で区切る。
+    @ViewBuilder
+    private func shopStock(hero: Hero) -> some View {
+        Text("どうぐや「なにが ほしいんだい？」")
+        purse(hero.gold)
+        divider()
+        ForEach(GameState.shopStock) { item in
+            // もう持っている装備は、はいを押しても断られるので最初から選ばせない。
+            let owned = item.kind != .consumable && hero.owns(item)
+            RetroChoice(
+                title: item.name,
+                detail: owned ? "もっている" : "\(item.price)G",
+                isEnabled: !owned && hero.gold >= item.price
+            ) {
+                shopPanel = .confirmBuy(item)
+            }
+        }
+        divider()
+        RetroChoice(title: "もどる") { shopPanel = .menu }
+    }
+
+    /// 買うまえの確認。いきなり買わずに はい／いいえ を選ばせる。
+    @ViewBuilder
+    private func purchaseConfirm(_ item: Item, hero: Hero) -> some View {
+        Text("どうぐや「\(item.name)だね。")
+        Text("　\(item.price)ゴールドに なるが、かうかい？」")
+        // 装備は「いまの値 → 買ったあとの値」だけを出す。
+        // 品物の素の強さ（+16 など）も並べると、買い替えの本当の伸び（+8）と食い違って紛らわしい。
+        if case .consumable = item.kind {
+            note(effectNote(item))
+        } else {
+            note(equipPreview(item, hero: hero))
+        }
+        purse(hero.gold, after: hero.gold >= item.price ? hero.gold - item.price : nil)
+        divider()
+        RetroChoice(title: "はい") {
+            game.buy(item)
+            shopPanel = .buying
+        }
+        RetroChoice(title: "いいえ") {
+            shopPanel = .buying
+        }
+    }
+
+    /// もちきん。買ったあとの残りも出すと、いくら減るかが分かる。
+    private func purse(_ gold: Int, after: Int? = nil) -> some View {
+        HStack(spacing: 6) {
+            Text("▶").hidden()
+            Text("もちきん")
+            Spacer()
+            if let after {
+                Text("\(gold)G → \(after)G").foregroundStyle(.yellow)
+            } else {
+                Text("\(gold)G").foregroundStyle(.yellow)
+            }
+        }
+    }
+
+    /// 商品の効きめ。装備は上がり幅、薬草は回復量。
+    private func effectNote(_ item: Item) -> String {
+        switch item.kind {
+        case .consumable:
+            "つかうと HPが \(Item.herbPower.lowerBound)〜\(Item.herbPower.upperBound) かいふく"
+        case .weapon(let power):
+            "そうびすると こうげき +\(power)"
+        case .armor(let power):
+            "そうびすると しゅび +\(power)"
+        }
+    }
+
+    /// まとまりを区切る細い線。
+    private func divider() -> some View {
+        Rectangle()
+            .fill(.white.opacity(0.35))
+            .frame(height: 2)
+            .padding(.vertical, 2)
+    }
+
+    // MARK: - 共通
 
     private func row(_ label: String, _ value: String) -> some View {
         RetroRow(label: label, value: value)

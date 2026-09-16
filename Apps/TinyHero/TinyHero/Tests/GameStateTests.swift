@@ -11,6 +11,8 @@ struct GameStateTests {
         game.stepDuration = .zero
         game.messageInterval = .zero
         game.beatPause = .zero
+        game.fadeDuration = .zero
+        game.sleepDuration = .zero
         game.waitsForTap = false
         game.rng = AnyRandomSource(SeededRandomSource(seed: 42))
         game.newGame()
@@ -29,9 +31,12 @@ struct GameStateTests {
 
     @Test func walkOutOfVillageToField() async {
         let game = makeGame()
+        // 着地点は村の出口のワープ定義から引く（地図を広げても落ちないように）。
+        let exit = World.map(.village).warps.first { $0.value.to == .field }
+        let landing = try! #require(exit?.value.at)
         for _ in 0..<3 { await game.walk(.down) }
         #expect(game.mapID == .field)
-        #expect(game.position == Point(x: 4, y: 8))
+        #expect(game.position == landing)
     }
 
     @Test func wallsBlockButTurn() async {
@@ -58,12 +63,12 @@ struct GameStateTests {
         game.mapID = .field
         game.position = Point(x: 3, y: 8)
         game.hold(.right)
-        game.startBattle(.bigRat)
+        game.startBattle(.potato)
         #expect(game.heldDirection == nil)
         for _ in 0..<10 where game.battle?.end == nil {
             await game.command(.attack)
         }
-        game.finishBattle()
+        await game.finishBattle()
         try await Task.sleep(for: .milliseconds(200))
         #expect(game.position == Point(x: 3, y: 8))
 
@@ -123,13 +128,13 @@ struct GameStateTests {
     @Test func winningBattleReturnsToField() async {
         let game = makeGame()
         game.hero.receive(.steelSword)
-        game.startBattle(.bigRat)
+        game.startBattle(.potato)
         #expect(game.screen == .battle)
         for _ in 0..<10 where game.battle?.end == nil {
             await game.command(.attack)
         }
         #expect(game.battle?.end == .won(exp: 2, gold: 3))
-        game.finishBattle()
+        await game.finishBattle()
         #expect(game.screen == .field)
         #expect(game.hero.gold == 23)
         #expect(game.hero.exp == 2)
@@ -139,7 +144,7 @@ struct GameStateTests {
     @Test func enemyHitIsRecordedForEachDamagingLine() async {
         let game = makeGame()
         _ = game.hero.gainExp(LevelTable.row(5).exp)
-        game.startBattle(.golem)
+        game.startBattle(.iceGolem)
         #expect(game.battle?.enemyHit == nil)
         var lastID = 0
         for _ in 0..<6 where game.battle?.end == nil {
@@ -161,7 +166,7 @@ struct GameStateTests {
         let game = makeGame()
         game.waitsForTap = true
         game.hero.receive(.steelSword)
-        game.startBattle(.bigRat)
+        game.startBattle(.potato)
         let turn = Task { await game.command(.attack) }
         for _ in 0..<100 where game.battle?.waitingForTap != true {
             try await Task.sleep(for: .milliseconds(10))
@@ -178,7 +183,7 @@ struct GameStateTests {
     /// 敵の攻撃が当たるたびに勇者の被ダメージが記録され、画面を揺らすきっかけになる。
     @Test func heroHitIsRecordedWhenDamaged() async {
         let game = makeGame()
-        game.startBattle(.darkDragon)
+        game.startBattle(.guardian)
         #expect(game.battle?.heroHit == nil)
         for _ in 0..<10 where game.battle?.heroHit == nil && game.battle?.end == nil {
             await game.command(.attack)
@@ -193,12 +198,12 @@ struct GameStateTests {
         let game = makeGame()
         game.hero.gold = 100
         game.mapID = .cave2
-        game.startBattle(.darkDragon)
+        game.startBattle(.guardian)
         for _ in 0..<30 where game.battle?.end == nil {
             await game.command(.attack)
         }
         #expect(game.battle?.end == .lost)
-        game.finishBattle()
+        await game.finishBattle()
         #expect(game.screen == .field)
         #expect(game.mapID == .village)
         #expect(game.hero.gold == 50)

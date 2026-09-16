@@ -13,6 +13,16 @@ enum BattleEnd: Equatable {
     case fled
 }
 
+/// 呪文や道具を使ったときに画面へ出す演出。揺れ・点滅はダメージのほうで出すので、ここには含めない。
+enum BattleEffect: Equatable {
+    /// 回復：白い湯気の粒に包まれ、緑の「+N」が浮かぶ。
+    case heal(Int)
+    /// 攻撃呪文：敵へ火の玉が飛び、当たった場所で爆発する。フレイムは大きく。
+    case flame(big: Bool)
+    /// ボスのほのお：画面の上から火の粉が降りそそぐ。
+    case breath
+}
+
 /// 行を出す前の間の取り方。
 enum BattleLinePause: Equatable {
     /// 同じ場面の続き（少し待って下に足す）。
@@ -33,6 +43,8 @@ struct BattleLine: Equatable {
     /// この行で勇者が受けたダメージ（画面を揺らすのに使う）。
     var heroDamage: Int?
     var pause: BattleLinePause = .none
+    /// この行で出す演出（呪文・道具）。
+    var effect: BattleEffect?
     /// この行を出した時点の勇者。HP・MP・レベルの表示をメッセージに合わせて変える。
     var hero: Hero?
 }
@@ -54,6 +66,14 @@ struct Battle {
     init(hero: Hero, enemy: Enemy) {
         self.hero = hero
         self.enemy = enemy
+    }
+
+    /// 会心の一撃のダメージ。守備力を無視して、攻撃力の 1.25〜1.75 倍。
+    /// 守備力を無視するだけだと、守りの薄い敵にはふつうの攻撃とほぼ同じ威力にしかならない。
+    static func criticalDamage(attack: Int, rng: inout some RandomSource) -> Int {
+        let low = max(1, attack * 5 / 4)
+        let high = max(low + 1, attack * 7 / 4)
+        return rng.next(in: low...high)
     }
 
     /// 通常攻撃のダメージ。(攻撃力 − 守備力/2) の 3/4〜1倍。届かなければ 0〜1。
@@ -96,7 +116,7 @@ struct Battle {
             let isCritical = rng.chance(16)
             if isCritical {
                 say("かいしんの いちげき！", .critical, into: &result)
-                damage = rng.next(in: max(1, hero.attack * 3 / 4)...hero.attack)
+                damage = Self.criticalDamage(attack: hero.attack, rng: &rng)
             } else {
                 damage = Self.damage(attack: hero.attack, defense: enemy.kind.stats.defense, rng: &rng)
             }
@@ -108,11 +128,14 @@ struct Battle {
                 return
             }
             hero.mp -= spell.mpCost
-            say("\(hero.name)は \(spell.name)を となえた！", .spell, pause: .beat, into: &result)
+            // 攻撃呪文は、唱えた行で火の玉を飛ばしてからダメージの行を出す。
+            let castEffect: BattleEffect? = spell.isHealing ? nil : .flame(big: spell == .flame)
+            say("\(hero.name)は \(spell.name)を となえた！", .spell, pause: .beat, effect: castEffect, into: &result)
             let amount = rng.next(in: spell.power)
             if spell.isHealing {
                 let healed = hero.heal(amount)
-                say("HPが \(healed) かいふくした！", .heal, into: &result)
+                // HP が満タンで 0 しか回復しないときは、粒と「+0」を出さない。
+                say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
             } else {
                 hit(enemyFor: amount, into: &result)
             }
@@ -124,7 +147,7 @@ struct Battle {
             }
             say("\(hero.name)は \(item.name)を つかった！", pause: .beat, into: &result)
             let healed = hero.heal(rng.next(in: Item.herbPower))
-            say("HPが \(healed) かいふくした！", .heal, into: &result)
+            say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
 
         case .run:
             if enemy.kind.isBoss {
@@ -143,7 +166,7 @@ struct Battle {
 
     private mutating func enemyAct(rng: inout some RandomSource, into result: inout TurnResult) {
         if enemy.kind.isBoss, rng.chance(3) {
-            say("\(enemy.name)は ほのおを はいた！", .fire, pause: .beat, into: &result)
+            say("\(enemy.name)は ふぶきを おこした！", .fire, pause: .beat, effect: .breath, into: &result)
             hit(heroFor: rng.next(in: EnemyKind.breathPower), into: &result)
             return
         }
@@ -158,7 +181,8 @@ struct Battle {
         } else {
             enemy.hp = max(0, enemy.hp - damage)
             result.lines.append(BattleLine(
-                text: "\(enemy.name)に \(damage)の ダメージ！", cue: .hit, enemyDamage: damage, isCritical: isCritical, hero: hero
+                text: "\(enemy.name)に \(damage)の ダメージ！", cue: .hit, enemyDamage: damage, isCritical: isCritical,
+                hero: hero
             ))
         }
     }
@@ -169,7 +193,8 @@ struct Battle {
         } else {
             hero.hp = max(0, hero.hp - damage)
             result.lines.append(BattleLine(
-                text: "\(hero.name)は \(damage)の ダメージを うけた！", cue: .damage, heroDamage: damage, hero: hero
+                text: "\(hero.name)は \(damage)の ダメージを うけた！", cue: .damage, heroDamage: damage,
+                hero: hero
             ))
         }
     }
@@ -203,7 +228,13 @@ struct Battle {
         return nil
     }
 
-    private func say(_ text: String, _ cue: SoundCue? = nil, pause: BattleLinePause = .none, into result: inout TurnResult) {
-        result.lines.append(BattleLine(text: text, cue: cue, pause: pause, hero: hero))
+    private func say(
+        _ text: String,
+        _ cue: SoundCue? = nil,
+        pause: BattleLinePause = .none,
+        effect: BattleEffect? = nil,
+        into result: inout TurnResult
+    ) {
+        result.lines.append(BattleLine(text: text, cue: cue, pause: pause, effect: effect, hero: hero))
     }
 }

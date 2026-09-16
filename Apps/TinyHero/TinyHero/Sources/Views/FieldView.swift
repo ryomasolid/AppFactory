@@ -12,7 +12,14 @@ struct FieldView: View {
                 let tile = geo.size.width / CGFloat(Self.columns)
                 let center = CGPoint(x: (geo.size.width - tile) / 2, y: (geo.size.height - tile) / 2)
                 ZStack(alignment: .topLeading) {
-                    MapLayer(map: game.map, openedChests: game.openedChests, tile: tile)
+                    MapLayer(
+                        map: game.map,
+                        openedChests: game.openedChests,
+                        tile: tile,
+                        center: game.position,
+                        // 画面に入る範囲＋すこし余分だけ描く。
+                        radius: Int((geo.size.height / tile / 2).rounded(.up)) + 2
+                    )
                         .offset(
                             x: center.x - CGFloat(game.position.x + MapLayer.padding) * tile,
                             y: center.y - CGFloat(game.position.y + MapLayer.padding) * tile
@@ -62,12 +69,19 @@ struct MapLayer: View {
     let map: GameMap
     let openedChests: Set<String>
     let tile: CGFloat
+    /// 勇者のいるマス。この まわりだけ描く。
+    let center: Point
+    /// 中心から何マスぶん描くか。
+    let radius: Int
 
     var body: some View {
         let pad = Self.padding
         Canvas { context, _ in
-            for y in -pad..<(map.height + pad) {
-                for x in -pad..<(map.width + pad) {
+            // 地図が広いので、画面に入らないところは描かない。
+            let yRange = max(-pad, center.y - radius)..<min(map.height + pad, center.y + radius + 1)
+            let xRange = max(-pad, center.x - radius)..<min(map.width + pad, center.x + radius + 1)
+            for y in yRange {
+                for x in xRange {
                     let point = Point(x: x, y: y)
                     let rect = CGRect(x: CGFloat(x + pad) * tile, y: CGFloat(y + pad) * tile, width: tile, height: tile)
                     context.draw(SpriteCache.image(SpriteID(tile: map.tile(at: point))), in: rect)
@@ -81,7 +95,7 @@ struct MapLayer: View {
                 context.draw(SpriteCache.image(SpriteID(npc: npc.role)), in: rect(for: npc.position))
             }
             if let boss = map.boss {
-                context.draw(SpriteCache.image(.darkDragon), in: rect(for: boss).insetBy(dx: -tile * 0.25, dy: -tile * 0.25))
+                context.draw(SpriteCache.image(.guardian), in: rect(for: boss).insetBy(dx: -tile * 0.25, dy: -tile * 0.25))
             }
         }
         .frame(width: CGFloat(map.width + pad * 2) * tile, height: CGFloat(map.height + pad * 2) * tile)

@@ -1,4 +1,5 @@
 import AVFoundation
+import UIKit
 
 /// BGM と効果音の再生。音はすべて起動時にバックグラウンドで合成してメモリに持つ（音源ファイルなし）。
 @MainActor
@@ -53,6 +54,20 @@ final class AudioManager {
             }
         }
 
+        // ホーム画面に戻ったら鳴りやませ、戻ってきたら鳴らし直す。
+        // `.ambient` は前面から外れても中断の通知が来ないので、自分で止めないと
+        // アプリが眠るまでのあいだ BGM が鳴り続ける。
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.suspend() }
+        }
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.resume() }
+        }
+
         Task { await loadSounds() }
     }
 
@@ -95,6 +110,23 @@ final class AudioManager {
             music[track] = makeBuffer(samples)
             if track == desiredTrack { refreshMusic() }
         }
+    }
+
+    /// 前面から外れたとき。鳴っている音を止めて、エンジンとセッションを手放す。
+    private func suspend() {
+        restoreVolume?.cancel()
+        musicNode.stop()
+        effectNodes.forEach { $0.stop() }
+        playingTrack = nil
+        if engine.isRunning { engine.pause() }
+        // ほかのアプリに音を返す。
+        try? AVAudioSession.sharedInstance().setActive(false)
+    }
+
+    /// 前面に戻ったとき。もとの曲を鳴らし直す。
+    private func resume() {
+        try? AVAudioSession.sharedInstance().setActive(true)
+        refreshMusic()
     }
 
     private func refreshMusic() {

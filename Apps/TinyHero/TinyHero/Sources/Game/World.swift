@@ -34,6 +34,10 @@ enum Tile: Character, CaseIterable {
     case cave = "C"
     case townFloor = "_"
     case house = "H"
+    /// やどやの屋根（青）。遠目でも どちらの家か わかるように色を分ける。
+    case innRoof = "I"
+    /// どうぐやの屋根（緑）。
+    case shopRoof = "S"
     case fountain = "w"
     case exit = "E"
     case wall = "#"
@@ -56,7 +60,7 @@ enum Tile: Character, CaseIterable {
 
     var isPassable: Bool {
         switch self {
-        case .mountain, .water, .house, .fountain, .wall,
+        case .mountain, .water, .house, .innRoof, .shopRoof, .fountain, .wall,
              .houseWall, .innSign, .shopSign, .counter, .bed, .shelf, .innerWall, .darkness: false
         default: true
         }

@@ -5,7 +5,7 @@ import SwiftUI
 enum SpriteID: String, CaseIterable {
     // 地形
     case grass, forest, hills, mountain, water, road, bridge, town, cave
-    case townFloor, house, fountain, wall, caveFloor, stairsUp, stairsDown
+    case townFloor, house, innRoof, shopRoof, fountain, wall, caveFloor, stairsUp, stairsDown
     case houseWall, innSign, shopSign, door, woodFloor, counter, bed, shelf, innerWall, darkness
     case chestClosed, chestOpen
     // 人（勇者は hero1/hero2 が下向き、ほかの向きはそれぞれ歩きの2コマ）
@@ -23,7 +23,7 @@ enum SpriteID: String, CaseIterable {
         }
     }
     // 敵
-    case bigRat, mushroom, bat, wolf, goblin, skeleton, golem, darkDragon
+    case potato, kelpSlime, scallop, fox, cod, snowman, iceGolem, guardian
 
     static let art: [SpriteID: [String]] = TileArt.all
         .merging(CharacterArt.all) { first, _ in first }
@@ -42,6 +42,8 @@ enum SpriteID: String, CaseIterable {
         case .cave: self = .cave
         case .townFloor, .exit: self = .townFloor
         case .house: self = .house
+        case .innRoof: self = .innRoof
+        case .shopRoof: self = .shopRoof
         case .fountain: self = .fountain
         case .wall: self = .wall
         case .caveFloor: self = .caveFloor
@@ -62,14 +64,14 @@ enum SpriteID: String, CaseIterable {
 
     init(enemy: EnemyKind) {
         switch enemy {
-        case .bigRat: self = .bigRat
-        case .mushroom: self = .mushroom
-        case .bat: self = .bat
-        case .wolf: self = .wolf
-        case .goblin: self = .goblin
-        case .skeleton: self = .skeleton
-        case .golem: self = .golem
-        case .darkDragon: self = .darkDragon
+        case .potato: self = .potato
+        case .kelpSlime: self = .kelpSlime
+        case .scallop: self = .scallop
+        case .fox: self = .fox
+        case .cod: self = .cod
+        case .snowman: self = .snowman
+        case .iceGolem: self = .iceGolem
+        case .guardian: self = .guardian
         }
     }
 
