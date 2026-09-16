@@ -25,7 +25,7 @@ let project = Project(
                     ],
                     "CFBundleDisplayName": "地理の勇者",
                     "CFBundleDevelopmentRegion": "ja",
-                    "CFBundleShortVersionString": "0.1",
+                    "CFBundleShortVersionString": "1.0",
                     "CFBundleVersion": "1",
                     "ITSAppUsesNonExemptEncryption": false,
                     // 十字キーの配置を1パターンに絞るため縦持ち固定。
