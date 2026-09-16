@@ -130,7 +130,9 @@ struct MapLayer: View {
                 context.draw(SpriteCache.image(SpriteID(npc: npc.role)), in: rect(for: npc.position))
             }
             if let boss = map.boss {
-                context.draw(SpriteCache.image(.guardian), in: rect(for: boss).insetBy(dx: -tile * 0.25, dy: -tile * 0.25))
+                // そのマップのボスの絵で出す（どの ほらあなでも守護神が座っていた）。
+                let sprite = map.bossKind.map(SpriteID.init(enemy:)) ?? .guardian
+                context.draw(SpriteCache.image(sprite), in: rect(for: boss).insetBy(dx: -tile * 0.25, dy: -tile * 0.25))
             }
         }
         .frame(width: CGFloat(map.width + pad * 2) * tile, height: CGFloat(map.height + pad * 2) * tile)

@@ -127,6 +127,34 @@ struct MapTests {
         }
     }
 
+    /// ボスは ほらあなのいちばん奥に置く。入口のとなりで出くわすと ボスらしくない。
+    @Test func bossesSitDeepInsideTheirCave() {
+        for id in MapID.allCases {
+            let map = World.map(id)
+            guard let boss = map.boss else { continue }
+            let walked = map.warps.keys.compactMap { steps(on: map, from: $0, toNeighbourOf: boss) }.min()
+            #expect(walked != nil, "\(id) のボスまで歩いて行けない")
+            #expect((walked ?? 0) >= 10, "\(id) のボスが 入口から \(walked ?? 0) 歩しかない")
+        }
+    }
+
+    /// 入口から ボスのとなりに立つまでの歩数（人・宝箱・ボスのマスは通らない）。
+    private func steps(on map: GameMap, from: Point, toNeighbourOf target: Point) -> Int? {
+        var seen: Set<Point> = [from]
+        var queue = [(from, 0)]
+        var head = 0
+        while head < queue.count {
+            let (point, distance) = queue[head]; head += 1
+            if Direction.allCases.contains(where: { point + $0.delta == target }) { return distance }
+            for direction in Direction.allCases {
+                let next = point + direction.delta
+                guard map.isWalkable(next), seen.insert(next).inserted else { continue }
+                queue.append((next, distance + 1))
+            }
+        }
+        return nil
+    }
+
     /// フィールドで歩ける2点の距離（歩数）。
     private func steps(on map: GameMap, from: Point, to: Point) -> Int? {
         var seen: Set<Point> = [from]
