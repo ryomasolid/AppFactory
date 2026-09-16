@@ -25,6 +25,8 @@ enum Launch {
         UserDefaults.standard.string(forKey: "shopConfirm").flatMap(Item.init(rawValue:))
     }
 
+    /// レベルアップの板で自動戦闘を止める（`-levelUpStop YES`、`-levelUpSpells YES` で わざのページまで）。表示確認用。
+
     /// 道具屋の「うる」一覧を開いておく（`-shopSell YES`）。表示確認用。
     static var shopSell: Bool {
         UserDefaults.standard.bool(forKey: "shopSell")
@@ -113,9 +115,9 @@ enum Launch {
                     // 決着まで（レベルアップの板が出たらそこで止める）繰り返す。
                     // command はタップ待ちで止まるので、待たずに投げてこちらはタップを送り続ける。
                     for _ in 0..<300 {
-                        // `-autoCommand` の確認では、板が出たら そこで止めて見せる。
-                        // わざを覚えたページまで見たいときは -levelUpSpells YES。
-                        if let page = game.battle?.levelUp {
+                        // `-levelUpStop YES` のときだけ、レベルアップの板で止めて見せる。
+                        // わざを覚えたページまで見たいときは -levelUpSpells YES も足す。
+                        if let page = game.battle?.levelUp, defaults.bool(forKey: "levelUpStop") {
                             if defaults.bool(forKey: "levelUpSpells") {
                                 if case .spells = page { break }
                             } else {

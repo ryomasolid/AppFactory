@@ -106,6 +106,48 @@ struct LevelUpTests {
         #expect(text.contains("ヒールを おぼえた！"))
     }
 
+    // MARK: - レベルアップの板が閉じるか
+
+    /// 板を出したまま戦闘が終わると、画面をタップしても進めなくなる。
+    /// 再生が終わったときに板が残っていないこと。
+    @Test @MainActor func levelUpBoardClosesWhenTheTurnEnds() async {
+        let game = GameState()
+        game.stepDuration = .zero
+        game.messageInterval = .zero
+        game.beatPause = .zero
+        game.fadeDuration = .zero
+        game.waitsForTap = false
+        game.rng = AnyRandomSource(SeededRandomSource(seed: 7))
+        game.newGame()
+        game.say([])
+        game.hero.receive(.steelSword)
+
+        // こんぶスライム3体（3EXP×3=9）で レベル1→2 に上がり、ヒールを覚える。
+        game.startBattle([.kelpSlime, .kelpSlime, .kelpSlime])
+        for _ in 0..<20 where game.battle?.end == nil {
+            await game.command(.attack)
+        }
+        #expect(game.hero.level == 2, "レベルが上がっていない")
+        #expect(game.battle?.end != nil)
+        #expect(game.battle?.levelUp == nil, "レベルアップの板が出たまま 戦闘が終わっている")
+    }
+
+    /// わざを覚えたときは 板の2ページ目（わざ）まで出る。
+    @Test func learningASpellAddsASecondPage() {
+        var hero = Hero()
+        var rng = SeededRandomSource(seed: 7)
+        hero.receive(.steelSword)
+        var battle = Battle(hero: hero, enemies: EnemyGroup.numbered([.kelpSlime, .kelpSlime, .kelpSlime]))
+        var pages: [LevelUpPage] = []
+        for _ in 0..<20 where battle.end == nil {
+            pages += battle.take(.attack, rng: &rng).lines.compactMap(\.levelUp)
+        }
+        let hasStats = pages.contains { if case .stats = $0 { return true } else { return false } }
+        let hasSpells = pages.contains { if case .spells = $0 { return true } else { return false } }
+        #expect(hasStats, "能力値のページが出ていない")
+        #expect(hasSpells, "覚えた わざ のページが出ていない")
+    }
+
     // MARK: - 会心の一撃
 
     /// 会心は守備力を無視して、攻撃力の 1.25〜1.75 倍。

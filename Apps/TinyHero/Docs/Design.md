@@ -172,6 +172,8 @@
     後ろを暗く敷いて まとめて ぱっと出す。
     - 1枚目：伸びた能力値を「もとの値 → あがった値」で並べる（装備こみ＝つよさの画面と同じ値）。
       **あがったあとの値だけ青**（`Retro.fresh`）にして目立たせる。伸びなかった行は出さない。
+    - 板は **必ずタップで閉じる**。覚えた わざ のページは勝利メッセージの最後の行なので、
+      再生の終わりに閉じる契機がなく、画面をタップしても進めなくなっていた。
     - タップすると 2枚目：覚えた わざ。**攻撃なら炎、回復なら緑の十字**のアイコンを左に出し、
       「こうげきの まほう／かいふくの まほう」と MP も添える。
     - **レベルが上がったら HP・MP は全快する。**
@@ -242,9 +244,9 @@ GeoHero（地理の勇者 RPG）で作った見た目のテーマを移植した
 -startBattle potato,potato,kelpSlime  # 複数体と戦う（カンマ区切り）
 -startNaming YES                       # 名前を決める画面から
 -grantExp 1400                         # けいけんちを渡して レベルアップを文字で見る
--startBattle kelpSlime,kelpSlime,kelpSlime -autoCommand attack
-                                       # 決着まで自動で戦い、レベルアップの板で止まる
-#   -levelUpSpells YES を足すと、覚えた わざ のページまで進む
+-startBattle kelpSlime,kelpSlime,kelpSlime -autoCommand attack   # 決着まで自動で戦う
+#   -levelUpStop YES を足すと レベルアップの板で止まる
+#   さらに -levelUpSpells YES で 覚えた わざ のページまで進む
 -startLevel 5 -autoInn YES             # 宿屋の暗転と ねむりの演出を見る
 -startBattle cod -startLevel 5 -autoAttack YES   # 1.5秒後に自動でこうげき（当たったときの動きの確認用）
 -startBattle cod -startLevel 10 -autoCommand fire   # 呪文の演出の確認

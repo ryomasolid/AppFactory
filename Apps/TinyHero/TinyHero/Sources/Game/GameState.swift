@@ -489,6 +489,12 @@ final class GameState {
             await pace(before: line)
             show(line)
         }
+        // レベルアップの板は最後の行で出ることがある。そのままだと閉じる契機がなく、
+        // 画面をタップしても進めなくなるので、ここでタップを待ってから閉じる。
+        if battle?.levelUp != nil {
+            await waitForTap()
+            battle?.levelUp = nil
+        }
         // 最後の行を読む間を置いてからコマンドに戻す。
         try? await Task.sleep(for: messageInterval)
         hero = session.battle.hero
