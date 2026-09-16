@@ -11,20 +11,21 @@ struct LevelRow: Equatable {
     let exp: Int
 }
 
+/// 敵は1〜3体で出てくるので、袋叩きにされても3体は倒しきれる体力にしてある。
 enum LevelTable {
     static let rows: [LevelRow] = [
-        LevelRow(maxHP: 15, maxMP: 0, attack: 5, defense: 4, agility: 4, exp: 0),
-        LevelRow(maxHP: 22, maxMP: 5, attack: 7, defense: 5, agility: 5, exp: 8),
-        LevelRow(maxHP: 28, maxMP: 9, attack: 9, defense: 7, agility: 7, exp: 25),
-        LevelRow(maxHP: 35, maxMP: 13, attack: 12, defense: 9, agility: 8, exp: 55),
-        LevelRow(maxHP: 42, maxMP: 16, attack: 14, defense: 11, agility: 10, exp: 100),
-        LevelRow(maxHP: 50, maxMP: 20, attack: 17, defense: 13, agility: 11, exp: 170),
-        LevelRow(maxHP: 57, maxMP: 24, attack: 20, defense: 15, agility: 13, exp: 270),
-        LevelRow(maxHP: 65, maxMP: 28, attack: 23, defense: 17, agility: 14, exp: 400),
-        LevelRow(maxHP: 72, maxMP: 32, attack: 26, defense: 19, agility: 16, exp: 570),
-        LevelRow(maxHP: 80, maxMP: 36, attack: 29, defense: 21, agility: 17, exp: 780),
-        LevelRow(maxHP: 88, maxMP: 40, attack: 32, defense: 23, agility: 19, exp: 1050),
-        LevelRow(maxHP: 96, maxMP: 45, attack: 35, defense: 25, agility: 20, exp: 1400),
+        LevelRow(maxHP: 24, maxMP: 0, attack: 5, defense: 4, agility: 4, exp: 0),
+        LevelRow(maxHP: 32, maxMP: 5, attack: 7, defense: 5, agility: 5, exp: 8),
+        LevelRow(maxHP: 40, maxMP: 9, attack: 9, defense: 7, agility: 7, exp: 25),
+        LevelRow(maxHP: 48, maxMP: 13, attack: 12, defense: 9, agility: 8, exp: 55),
+        LevelRow(maxHP: 56, maxMP: 16, attack: 14, defense: 11, agility: 10, exp: 100),
+        LevelRow(maxHP: 64, maxMP: 20, attack: 17, defense: 13, agility: 11, exp: 170),
+        LevelRow(maxHP: 72, maxMP: 24, attack: 20, defense: 15, agility: 13, exp: 270),
+        LevelRow(maxHP: 80, maxMP: 28, attack: 23, defense: 17, agility: 14, exp: 400),
+        LevelRow(maxHP: 88, maxMP: 32, attack: 26, defense: 19, agility: 16, exp: 570),
+        LevelRow(maxHP: 96, maxMP: 36, attack: 29, defense: 21, agility: 17, exp: 780),
+        LevelRow(maxHP: 104, maxMP: 40, attack: 32, defense: 23, agility: 19, exp: 1050),
+        LevelRow(maxHP: 112, maxMP: 45, attack: 35, defense: 25, agility: 20, exp: 1400),
     ]
 
     static var maxLevel: Int { rows.count }

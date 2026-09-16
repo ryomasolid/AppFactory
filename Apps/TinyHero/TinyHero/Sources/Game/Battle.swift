@@ -39,6 +39,10 @@ struct BattleLine: Equatable {
     var cue: SoundCue?
     /// この行で敵に与えたダメージ（画面で敵を揺らし、数字を出すのに使う）。
     var enemyDamage: Int?
+    /// ダメージを受けた敵。だれを揺らすかを決める。
+    var enemyID: Int?
+    /// この行で たおれた敵。画面から消す。
+    var defeatedID: Int?
     var isCritical = false
     /// この行で勇者が受けたダメージ（画面を揺らすのに使う）。
     var heroDamage: Int?
@@ -57,15 +61,35 @@ struct TurnResult: Equatable {
     var cues: [SoundCue] { lines.compactMap(\.cue) }
 }
 
-/// 1対1のコマンド戦闘。画面から切り離した純粋なロジックで、1コマンドごとに1ターン進める。
+/// 勇者ひとり対 敵1〜3体のコマンド戦闘。
+/// 画面から切り離した純粋なロジックで、1コマンドごとに1ターン進める。
 struct Battle {
     var hero: Hero
-    var enemy: Enemy
+    private(set) var enemies: [Enemy]
     private(set) var end: BattleEnd?
 
-    init(hero: Hero, enemy: Enemy) {
+    init(hero: Hero, enemies: [Enemy]) {
         self.hero = hero
-        self.enemy = enemy
+        self.enemies = enemies
+    }
+
+    init(hero: Hero, enemy: Enemy) {
+        self.init(hero: hero, enemies: [enemy])
+    }
+
+    /// まだ生きている敵。
+    var living: [Enemy] { enemies.filter { !$0.isDead } }
+    /// ボスがいる戦いか。
+    var isBoss: Bool { enemies.contains { $0.kind.isBoss } }
+    /// 1体目。画面の見出しなどに使う。
+    var enemy: Enemy { enemies.first ?? Enemy(.potato) }
+    /// ねらう相手が決まっていないときの相手。
+    var defaultTarget: Int? { living.first?.id }
+
+    private func index(of id: Int?) -> Int? {
+        if let id, let found = enemies.firstIndex(where: { $0.id == id && !$0.isDead }) { return found }
+        // ねらっていた敵がもう倒れていたら、生きている先頭に振り替える。
+        return enemies.firstIndex { !$0.isDead }
     }
 
     /// 会心の一撃のダメージ。守備力を無視して、攻撃力の 1.25〜1.75 倍。
@@ -83,19 +107,20 @@ struct Battle {
         return rng.next(in: max(1, base * 3 / 4)...base)
     }
 
-    mutating func take(_ command: BattleCommand, rng: inout some RandomSource) -> TurnResult {
+    mutating func take(_ command: BattleCommand, target: Int? = nil, rng: inout some RandomSource) -> TurnResult {
         guard end == nil else { return TurnResult(end: end) }
         var result = TurnResult()
 
-        // 素早さで先手を決める（勇者側をやや有利に）。
-        let heroFirst = rng.next(in: 0...(hero.agility * 2)) >= rng.next(in: 0...enemy.kind.stats.agility)
+        // 素早さで先手を決める（いちばん速い敵と比べる。勇者側をやや有利に）。
+        let fastest = living.map(\.kind.stats.agility).max() ?? 0
+        let heroFirst = rng.next(in: 0...(hero.agility * 2)) >= rng.next(in: 0...fastest)
         let order: [Bool] = heroFirst ? [true, false] : [false, true]
 
         for isHeroTurn in order {
             if isHeroTurn {
-                heroAct(command, rng: &rng, into: &result)
+                heroAct(command, target: target, rng: &rng, into: &result)
             } else {
-                enemyAct(rng: &rng, into: &result)
+                enemiesAct(rng: &rng, into: &result)
             }
             if let end = resolveEnd(into: &result) {
                 self.end = end
@@ -108,7 +133,8 @@ struct Battle {
 
     // MARK: - 行動
 
-    private mutating func heroAct(_ command: BattleCommand, rng: inout some RandomSource, into result: inout TurnResult) {
+    private mutating func heroAct(_ command: BattleCommand, target: Int?, rng: inout some RandomSource, into result: inout TurnResult) {
+        guard let slot = index(of: target) else { return }
         switch command {
         case .attack:
             say("\(hero.name)の こうげき！", .attack, pause: .beat, into: &result)
@@ -118,9 +144,9 @@ struct Battle {
                 say("かいしんの いちげき！", .critical, into: &result)
                 damage = Self.criticalDamage(attack: hero.attack, rng: &rng)
             } else {
-                damage = Self.damage(attack: hero.attack, defense: enemy.kind.stats.defense, rng: &rng)
+                damage = Self.damage(attack: hero.attack, defense: enemies[slot].kind.stats.defense, rng: &rng)
             }
-            hit(enemyFor: damage, isCritical: isCritical, into: &result)
+            hit(slot, for: damage, isCritical: isCritical, into: &result)
 
         case .spell(let spell):
             guard hero.spells.contains(spell), hero.mp >= spell.mpCost else {
@@ -137,7 +163,7 @@ struct Battle {
                 // HP が満タンで 0 しか回復しないときは、粒と「+0」を出さない。
                 say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
             } else {
-                hit(enemyFor: amount, into: &result)
+                hit(slot, for: amount, into: &result)
             }
 
         case .item(let item):
@@ -150,11 +176,12 @@ struct Battle {
             say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
 
         case .run:
-            if enemy.kind.isBoss {
+            if isBoss {
                 say("しかし まわりこまれてしまった！", .miss, pause: .beat, into: &result)
                 return
             }
-            let escaped = hero.agility >= enemy.kind.stats.agility ? !rng.chance(4) : rng.chance(2)
+            let fastest = living.map(\.kind.stats.agility).max() ?? 0
+            let escaped = hero.agility >= fastest ? !rng.chance(4) : rng.chance(2)
             say("\(hero.name)は にげだした！", .run, pause: .beat, into: &result)
             if escaped {
                 end = .fled
@@ -164,25 +191,35 @@ struct Battle {
         }
     }
 
-    private mutating func enemyAct(rng: inout some RandomSource, into result: inout TurnResult) {
-        if enemy.kind.isBoss, rng.chance(3) {
-            say("\(enemy.name)は ふぶきを おこした！", .fire, pause: .beat, effect: .breath, into: &result)
-            hit(heroFor: rng.next(in: EnemyKind.breathPower), into: &result)
-            return
+    /// 生きている敵が上から順に動く。
+    private mutating func enemiesAct(rng: inout some RandomSource, into result: inout TurnResult) {
+        for slot in enemies.indices where !enemies[slot].isDead {
+            let attacker = enemies[slot]
+            if attacker.kind.isBoss, rng.chance(3) {
+                say("\(attacker.name)は ふぶきを おこした！", .fire, pause: .beat, effect: .breath, into: &result)
+                hit(heroFor: rng.next(in: EnemyKind.breathPower), into: &result)
+            } else {
+                say("\(attacker.name)の こうげき！", pause: .beat, into: &result)
+                let damage = Self.damage(attack: attacker.kind.stats.attack, defense: hero.defense, rng: &rng)
+                hit(heroFor: damage, into: &result)
+            }
+            if hero.isDead { return }
         }
-        say("\(enemy.name)の こうげき！", pause: .beat, into: &result)
-        let damage = Self.damage(attack: enemy.kind.stats.attack, defense: hero.defense, rng: &rng)
-        hit(heroFor: damage, into: &result)
     }
 
-    private mutating func hit(enemyFor damage: Int, isCritical: Bool = false, into result: inout TurnResult) {
+    private mutating func hit(_ slot: Int, for damage: Int, isCritical: Bool = false, into result: inout TurnResult) {
         if damage == 0 {
             say("ミス！ ダメージを あたえられない！", .miss, into: &result)
-        } else {
-            enemy.hp = max(0, enemy.hp - damage)
+            return
+        }
+        enemies[slot].hp = max(0, enemies[slot].hp - damage)
+        result.lines.append(BattleLine(
+            text: "\(enemies[slot].name)に \(damage)の ダメージ！", cue: .hit,
+            enemyDamage: damage, enemyID: enemies[slot].id, isCritical: isCritical, hero: hero
+        ))
+        if enemies[slot].isDead {
             result.lines.append(BattleLine(
-                text: "\(enemy.name)に \(damage)の ダメージ！", cue: .hit, enemyDamage: damage, isCritical: isCritical,
-                hero: hero
+                text: "\(enemies[slot].name)を たおした！", defeatedID: enemies[slot].id, hero: hero
             ))
         }
     }
@@ -202,24 +239,25 @@ struct Battle {
     /// 決着がついていれば、勝利の報酬まで反映して終わり方を返す。
     private mutating func resolveEnd(into result: inout TurnResult) -> BattleEnd? {
         if end == .fled { return .fled }
-        if enemy.isDead {
-            let stats = enemy.kind.stats
-            say("\(enemy.name)を たおした！", .victory, into: &result)
-            // 報酬は「たおした！」を読んでからタップで次のページに出す。
+        if living.isEmpty {
+            let exp = enemies.reduce(0) { $0 + $1.kind.stats.exp }
+            let gold = enemies.reduce(0) { $0 + $1.kind.stats.gold }
+            say("たたかいに かった！", .victory, into: &result)
+            // 報酬は「かった！」を読んでからタップで次のページに出す。
             var rewardPause = BattleLinePause.page
-            if stats.exp > 0 {
-                say("けいけんち \(stats.exp)ポイント かくとく", pause: rewardPause, into: &result)
+            if exp > 0 {
+                say("けいけんち \(exp)ポイント かくとく", pause: rewardPause, into: &result)
                 rewardPause = .none
             }
-            if stats.gold > 0 {
-                hero.gold += stats.gold
-                say("\(stats.gold)ゴールドを てにいれた！", pause: rewardPause, into: &result)
+            if gold > 0 {
+                hero.gold += gold
+                say("\(gold)ゴールドを てにいれた！", pause: rewardPause, into: &result)
             }
-            for message in hero.gainExp(stats.exp) {
+            for message in hero.gainExp(exp) {
                 let isLevelUp = message.contains("あがった")
                 say(message, isLevelUp ? .levelUp : nil, pause: isLevelUp ? .page : .none, into: &result)
             }
-            return .won(exp: stats.exp, gold: stats.gold)
+            return .won(exp: exp, gold: gold)
         }
         if hero.isDead {
             say("\(hero.name)は ちからつきた…", .gameOver, pause: .beat, into: &result)

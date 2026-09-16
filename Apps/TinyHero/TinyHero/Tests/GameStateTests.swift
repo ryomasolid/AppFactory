@@ -173,7 +173,7 @@ struct GameStateTests {
         }
         #expect(game.battle?.waitingForTap == true)
         #expect(game.battle?.isPlaying == true)
-        #expect(game.battle?.enemyDefeated == true)
+        #expect(game.battle?.defeatedIDs.isEmpty == false)
         game.advanceBattleMessage()
         await turn.value
         #expect(game.battle?.waitingForTap == false)

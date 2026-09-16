@@ -2,6 +2,7 @@ import Foundation
 
 /// 起動引数で途中の場面から始める（シミュレータでの表示確認用）。
 /// 例: `-startMap field -startX 5 -startY 8 -startFacing left` / `-startBattle guardian -autoAttack YES` / `-startLevel 10`
+/// / `-startBattle potato,potato,kelpSlime`（複数体と戦う）
 /// / `-startBattle cod -autoCommand fire`（1.5秒後に自動で呪文・道具を使う。attack / heal / fire / highHeal / flame / herb）
 /// / `-startHP 20`（HP を減らした状態から。回復の演出や瀕死の表示の確認用）
 /// / `-startNaming YES`（名前を決める画面から）
@@ -97,8 +98,11 @@ enum Launch {
                 while game.currentPage != nil { game.advanceMessage() }
             }
         }
-        if let battleName, let kind = EnemyKind(rawValue: battleName) {
-            game.startBattle(kind)
+        if let battleName {
+            // カンマ区切りで複数体（`-startBattle potato,potato,kelpSlime`）。
+            let kinds = battleName.split(separator: ",").compactMap { EnemyKind(rawValue: String($0)) }
+            guard !kinds.isEmpty else { return }
+            game.startBattle(kinds)
             // 動きを撮るため、少し待ってから自動でコマンドを出す。
             let auto = defaults.bool(forKey: "autoAttack")
                 ? BattleCommand.attack

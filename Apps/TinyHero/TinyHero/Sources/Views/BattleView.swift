@@ -4,7 +4,9 @@ struct BattleView: View {
     @Environment(GameState.self) private var game
     @State private var submenu: Submenu = .none
 
-    private enum Submenu { case none, spells, items }
+    private enum Submenu: Equatable { case none, spells, items, targets }
+    /// 相手を選んだあとに出すコマンド（こうげき か 攻撃呪文）。
+    @State private var pendingAttack: BattleCommand?
 
     var body: some View {
         if let session = game.battle {
@@ -105,8 +107,16 @@ struct BattleView: View {
             ZStack {
                 Backdrop(isBoss: session.battle.enemy.kind.isBoss, groundHeight: size.height * 0.30)
 
-                enemySprite(session)
-                    .position(x: size.width / 2, y: enemyY)
+                // 敵を横に並べる。3体でも画面からはみ出さない幅にする。
+                let alive = session.battle.enemies
+                let spacing = min(size.width / CGFloat(alive.count + 1), 130)
+                ForEach(Array(alive.enumerated()), id: \.element.id) { index, enemy in
+                    enemySprite(session, enemy: enemy, count: alive.count)
+                        .position(
+                            x: size.width / 2 + spacing * (CGFloat(index) - CGFloat(alive.count - 1) / 2),
+                            y: enemyY + (index % 2 == 1 ? 14 : 0)
+                        )
+                }
 
                 SpriteCache.image(.heroUp1)
                     .resizable()
@@ -140,10 +150,12 @@ struct BattleView: View {
         }
     }
 
-    private func enemySprite(_ session: BattleSession) -> some View {
-        let enemy = session.battle.enemy
-        let size: CGFloat = enemy.kind.isBoss ? 210 : 168
-        let hit = session.enemyHit
+    private func enemySprite(_ session: BattleSession, enemy: Enemy, count: Int) -> some View {
+        // 数が増えるほど1体を小さくして、重ならないようにする。
+        let base: CGFloat = enemy.kind.isBoss ? 210 : 168
+        let size = count >= 3 ? base * 0.62 : (count == 2 ? base * 0.78 : base)
+        // 自分に当たった一撃だけを見る。
+        let hit = session.enemyHit?.enemyID == enemy.id ? session.enemyHit : nil
         // 会心の一撃は大きく揺らす。
         let strength: CGFloat = hit?.isCritical == true ? 2 : 1
         return ZStack {
@@ -182,8 +194,8 @@ struct BattleView: View {
             }
         }
         // 「たおした！」の行が出たら消す。
-        .opacity(session.enemyDefeated ? 0 : 1)
-        .animation(.easeOut(duration: 0.4), value: session.enemyDefeated)
+        .opacity(session.defeatedIDs.contains(enemy.id) ? 0 : 1)
+        .animation(.easeOut(duration: 0.4), value: session.defeatedIDs)
     }
 
     @ViewBuilder
@@ -194,7 +206,7 @@ struct BattleView: View {
             case .none:
                 HStack(alignment: .top, spacing: 16) {
                     VStack(alignment: .leading) {
-                        RetroChoice(title: "こうげき") { run(.attack) }
+                        RetroChoice(title: "こうげき") { aim(.attack, session) }
                         RetroChoice(title: "まほう", isEnabled: !hero.spells.isEmpty) { submenu = .spells }
                     }
                     VStack(alignment: .leading) {
@@ -205,7 +217,11 @@ struct BattleView: View {
             case .spells:
                 ForEach(hero.spells) { spell in
                     RetroChoice(title: spell.name, detail: "MP \(spell.mpCost)", isEnabled: hero.mp >= spell.mpCost) {
-                        run(.spell(spell))
+                        if spell.isHealing {
+                            run(.spell(spell))
+                        } else {
+                            aim(.spell(spell), session)
+                        }
                     }
                 }
                 RetroChoice(title: "もどる") { submenu = .none }
@@ -214,13 +230,32 @@ struct BattleView: View {
                     run(.item(.herb))
                 }
                 RetroChoice(title: "もどる") { submenu = .none }
+            case .targets:
+                ForEach(session.battle.living) { enemy in
+                    RetroChoice(title: enemy.name) { run(pendingAttack ?? .attack, target: enemy.id) }
+                }
+                RetroChoice(title: "もどる") {
+                    pendingAttack = nil
+                    submenu = .none
+                }
             }
         }
     }
 
-    private func run(_ command: BattleCommand) {
+    /// 相手が2体以上いれば選ばせる。1体なら そのまま出す。
+    private func aim(_ command: BattleCommand, _ session: BattleSession) {
+        if session.battle.living.count <= 1 {
+            run(command, target: session.battle.defaultTarget)
+        } else {
+            pendingAttack = command
+            submenu = .targets
+        }
+    }
+
+    private func run(_ command: BattleCommand, target: Int? = nil) {
         submenu = .none
-        Task { await game.command(command) }
+        pendingAttack = nil
+        Task { await game.command(command, target: target) }
     }
 }
 

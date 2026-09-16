@@ -12,8 +12,8 @@ struct BattleSession {
     var musicStopped = false
     /// 結果のページで ▼ を出してタップを待っている。
     var waitingForTap = false
-    /// 「たおした！」が出たら敵の絵を消す。
-    var enemyDefeated = false
+    /// たおれた敵。画面から消す。
+    var defeatedIDs: Set<Int> = []
     /// 勇者が受けた最新の一撃。画面はこれが変わるたびに揺れる。
     var heroHit: HeroHit?
     /// 敵に当たった最新の一撃。画面はこれが変わるたびに敵を揺らし、ダメージの数字を出す。
@@ -38,6 +38,8 @@ struct HeroHit: Equatable {
 struct EnemyHit: Equatable {
     /// 何発目か（同じダメージが続いても動きを出し直すため）。
     let id: Int
+    /// だれに当たったか。
+    let enemyID: Int
     let damage: Int
     let isCritical: Bool
 }
@@ -124,7 +126,7 @@ final class GameState {
             }
         case .battle:
             if let battle, !battle.musicStopped {
-                battle.battle.enemy.kind.isBoss ? .boss : .battle
+                battle.battle.isBoss ? .boss : .battle
             } else {
                 nil
             }
@@ -253,7 +255,7 @@ final class GameState {
         guard let table = map.encounters[map.tile(at: position)], !table.isEmpty else { return }
         stepsSinceBattle += 1
         if stepsSinceBattle > Self.safeSteps, rng.chance(Self.encounterDenominator) {
-            startBattle(table[rng.next(in: 0...(table.count - 1))])
+            startBattle(EnemyGroup.random(from: table, rng: &rng).map(\.kind))
         }
     }
 
@@ -459,17 +461,25 @@ final class GameState {
     // MARK: - 戦闘
 
     func startBattle(_ kind: EnemyKind) {
-        let enemy = Enemy(kind)
+        startBattle([kind])
+    }
+
+    func startBattle(_ kinds: [EnemyKind]) {
+        let group = EnemyGroup.numbered(kinds)
+        guard !group.isEmpty else { return }
         heldDirection = nil
         playSound(.encounter)
-        battle = BattleSession(battle: Battle(hero: hero, enemy: enemy), log: ["\(enemy.name)が あらわれた！"])
+        battle = BattleSession(
+            battle: Battle(hero: hero, enemies: group),
+            log: [EnemyGroup.encounterText(group)]
+        )
         overlay = .none
         screen = .battle
     }
 
-    func command(_ command: BattleCommand) async {
+    func command(_ command: BattleCommand, target: Int? = nil) async {
         guard var session = battle, !session.isPlaying, session.end == nil else { return }
-        let result = session.battle.take(command, rng: &rng)
+        let result = session.battle.take(command, target: target, rng: &rng)
         session.log = []
         session.isPlaying = true
         battle = session
@@ -509,7 +519,12 @@ final class GameState {
         if let damage = line.enemyDamage {
             // 書き換えの最中に battle を読むと排他アクセス違反で落ちるので、次の番号は先に取り出す。
             let nextID = (battle?.enemyHit?.id ?? 0) + 1
-            battle?.enemyHit = EnemyHit(id: nextID, damage: damage, isCritical: line.isCritical)
+            battle?.enemyHit = EnemyHit(
+                id: nextID, enemyID: line.enemyID ?? 0, damage: damage, isCritical: line.isCritical
+            )
+        }
+        if let defeated = line.defeatedID {
+            battle?.defeatedIDs.insert(defeated)
         }
         if let damage = line.heroDamage {
             let nextID = (battle?.heroHit?.id ?? 0) + 1
@@ -522,7 +537,6 @@ final class GameState {
             battle?.effect = EffectCue(id: nextID, kind: kind)
         }
         if let cue = line.cue {
-            if cue == .victory { battle?.enemyDefeated = true }
             if cue == .victory || cue == .gameOver { battle?.musicStopped = true }
             playSound(cue)
         }
@@ -549,7 +563,7 @@ final class GameState {
         hero = session.battle.hero
         stepsSinceBattle = 0
         switch end {
-        case .won where session.battle.enemy.kind.isBoss:
+        case .won where session.battle.isBoss:
             battle = nil
             screen = .ending
         case .won, .fled:
