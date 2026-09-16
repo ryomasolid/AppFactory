@@ -106,20 +106,25 @@ struct MapTests {
         #expect(!World.hakodate.npcs.contains { $0.role == .innkeeper || $0.role == .shopkeeper })
     }
 
-    /// 街と街は 歩きごたえのある距離をあける（近いと すぐ着いてしまう）。
-    @Test func townsAreFarApart() throws {
+    /// 街と街、街と ほらあなは 歩きごたえのある距離をあける（近いと すぐ着いてしまう）。
+    @Test func landmarksAreFarApart() throws {
         let field = World.map(.field)
         func landing(_ id: MapID) throws -> Point {
             let entrance = try #require(field.warps.first { $0.value.to == id })
             return entrance.key + Point(x: 0, y: 1)
         }
-        let hakodate = try landing(.hakodate)
-        let sapporo = try landing(.sapporo)
-        let rausu = try landing(.rausu)
-        let toSapporo = try #require(steps(on: field, from: hakodate, to: sapporo))
-        let toRausu = try #require(steps(on: field, from: sapporo, to: rausu))
-        #expect(toSapporo >= 20, "函館から札幌が \(toSapporo) 歩しかない")
-        #expect(toRausu >= 30, "札幌から知床が \(toRausu) 歩しかない")
+        let legs: [(String, MapID, MapID, Int)] = [
+            ("函館 → 函館山", .hakodate, .hakodateyama, 15),
+            ("函館 → 札幌", .hakodate, .sapporo, 20),
+            ("札幌 → 藻岩山", .sapporo, .moiwa1, 15),
+            ("札幌 → 知床", .sapporo, .rausu, 30),
+            ("知床 → 羅臼岳", .rausu, .rausudake1, 15),
+        ]
+        for (name, from, to, least) in legs {
+            let walked = try #require(steps(on: field, from: try landing(from), to: try landing(to)),
+                                      "\(name) が歩いてつながっていない")
+            #expect(walked >= least, "\(name) が \(walked) 歩しかない（\(least) 歩ほしい）")
+        }
     }
 
     /// フィールドで歩ける2点の距離（歩数）。
