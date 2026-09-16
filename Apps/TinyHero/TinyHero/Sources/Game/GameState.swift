@@ -52,7 +52,6 @@ final class GameState {
     enum Screen: Equatable { case title, naming, field, battle, ending }
     enum Overlay: Equatable { case none, menu, status, items, spells, shop, inn }
 
-    static let shopStock: [Item] = [.herb, .copperSword, .leatherArmor, .steelSword, .chainMail]
     /// 1歩ごとの遭遇率（分母）と、戦闘後に遭遇しない歩数。
     static let encounterDenominator = 14
     static let safeSteps = 4
@@ -116,7 +115,12 @@ final class GameState {
 
     var map: GameMap { World.map(mapID) }
     var currentPage: [String]? { pages.first }
-    var innPrice: Int { 2 + hero.level * 3 }
+    /// いま使っている街。宿屋・道具屋の中では 入ってきた街を見る。
+    var town: TownInfo { mapID.townInfo ?? lastTown.townInfo ?? .hakodate }
+    /// 宿代。奥の街ほど 高い。
+    var innPrice: Int { town.innBase + hero.level * town.innPerLevel }
+    /// 道具屋の品ぞろえ。街ごとに変える。
+    var shopStock: [Item] { town.stock }
     var canWalk: Bool { screen == .field && pages.isEmpty && overlay == .none && !isWalking && !isTransitioning }
 
     /// いま流す BGM。場面から決まる。

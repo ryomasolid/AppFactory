@@ -36,7 +36,7 @@ enum World {
             "#_III_____SSS~#",
             "#_YdW_____ZdW~#",
             "#___________~~#",
-            "#__t________~~#",
+            "#__t______t_~~#",
             "#_____e_____~~#",
             "#___________~~#",
             "#_____________#",
@@ -54,8 +54,9 @@ enum World {
             Point(x: 8, y: 12): Warp(to: .field, at: Point(x: 16, y: 35)),
         ],
         villagers: [
-            ["むすめ「まおうの てさきが 函館山に すみついて、", "みなとに イカが よりつかなくなったの。」"],
-            ["おとこ「まずは 村の まわりの くさはらで", "レベルを あげるといい。」"]
+            ["むすめ「函館山の ほらあなに イカのぬしが すみついたの。」"],
+            ["おとこ「まずは 街のまわりの くさはらで レベルを あげな。」"],
+            ["こども「みなとに イカが よりつかなくなっちゃった。」"]
         ]
     )
 
@@ -68,11 +69,11 @@ enum World {
             "#_III_____SSS_#",
             "#_III_____SSS_#",
             "#_YdW_____ZdW_#",
-            "#_____www_____#",
-            "#_____www__t__#",
-            "#_____www_____#",
-            "#__e__________#",
             "#_____________#",
+            "#__t__www__t__#",
+            "#HH___www___HH#",
+            "#WW_______e_WW#",
+            "#_t_________t_#",
             "#___t_________#",
             "#_____________#",
             "######EEE######"
@@ -87,8 +88,11 @@ enum World {
             Point(x: 8, y: 12): Warp(to: .field, at: Point(x: 14, y: 17)),
         ],
         villagers: [
-            ["むすめ「藻岩山の ほらあなから", "うなり声が きこえるのよ。」"],
-            ["おとこ「北東の 知床まで 街道が つづいている。", "おかには つよい まものが でるぞ。」"]
+            ["むすめ「ここは いちばん 大きな街。ひとも おおいでしょ。」"],
+            ["しょうにん「はがねの剣は この街でしか 買えないよ。」"],
+            ["ろうじん「イカのぬしを たおさぬと 藻岩山へは 入れぬ。」"],
+            ["おとこ「北の 藻岩山に ヒグマのぬしが すんでいるらしい。」"],
+            ["こども「ひろばの ふん水、つめたくて きもちいいよ。」"]
         ]
     )
 
@@ -102,12 +106,12 @@ enum World {
             "#_III_____SSS_#",
             "#_YdW_____ZdW_#",
             "#_____________#",
-            "#M___t_______M#",
+            "#MM_________MM#",
+            "#MM____t____MM#",
+            "#M_____e_____M#",
             "#M___________M#",
-            "#______e_____M#",
-            "#_____________#",
-            "#MM______t___M#",
-            "#M___________M#",
+            "#MM_________MM#",
+            "#MMM_______MMM#",
             "######EEE######"
         ],
         outside: .wall,
@@ -120,8 +124,7 @@ enum World {
             Point(x: 8, y: 12): Warp(to: .field, at: Point(x: 46, y: 10)),
         ],
         villagers: [
-            ["むすめ「羅臼岳の おくに 守護神さまが……", "でも いまは まおうの ものなの。」"],
-            ["おとこ「ここが さいごの街だ。", "そうびを ととのえて いくといい。」"]
+            ["むすめ「ここは さいはての町。やども 品も 高いけど ゆるしてね。」"]
         ]
     )
 
@@ -330,10 +333,23 @@ enum World {
             Point(x: 59, y: 2): Warp(to: .rausudake1, at: Point(x: 6, y: 11), requires: .bearLord),
         ],
         chestRewards: [.item(.herb), .gold(120), .item(.leatherArmor)],
-        encounters: [
-            .grass: [.potato, .kelpSlime, .scallop],
-            .forest: [.scallop, .fox],
-            .hills: [.fox, .cod],
+        // 目印ごとの区域。旅の順に ひとつずつ強くなり、となりの区域とは1種だけ重ねる。
+        // 入れる ほらあなより フィールドが強くならないようにそろえてある。
+        encounterAreas: [
+            EncounterArea(name: "函館のまわり", around: [Point(x: 16, y: 34)],
+                          enemies: [.potato, .kelpSlime]),
+            EncounterArea(name: "函館山のふもと", around: [Point(x: 33, y: 28)],
+                          enemies: [.potato, .kelpSlime, .scallop]),
+            // 中の海でへだてられているので、渡れる陸つづき（27,18）にも中心を置く。
+            // ここを 藻岩山の区域に取られると、札幌へ戻る道だけ 急に強くなってしまう。
+            EncounterArea(name: "札幌へむかう道", around: [Point(x: 14, y: 16), Point(x: 27, y: 18)],
+                          enemies: [.kelpSlime, .scallop]),
+            EncounterArea(name: "藻岩山へむかう道", around: [Point(x: 26, y: 8)],
+                          enemies: [.scallop, .fox]),
+            EncounterArea(name: "知床へむかう道", around: [Point(x: 46, y: 9)],
+                          enemies: [.fox, .cod]),
+            EncounterArea(name: "羅臼岳へむかう道", around: [Point(x: 59, y: 2)],
+                          enemies: [.cod, .snowman]),
         ],
         markerFloor: .grass
     )

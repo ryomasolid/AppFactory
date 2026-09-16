@@ -12,6 +12,7 @@ import Foundation
 /// / `-startOverlay shop -shopConfirm herb`（道具屋の「かうかい？」を出した状態）
 /// / `-startOverlay items -selectItem copperSword`（どうぐ画面で1つ選んだ状態）
 /// / `-startOverlay shop -shopSell YES`（道具屋の「うる」一覧を出した状態）
+/// / `-startOverlay shop -shopBuy YES`（道具屋の「かう」一覧。街ごとの品ぞろえを見る）
 /// / `-openedChests hakodateyama-0,moiwa1-0`（開けた宝箱）
 @MainActor
 enum Launch {
@@ -30,6 +31,11 @@ enum Launch {
     /// 道具屋の「うる」一覧を開いておく（`-shopSell YES`）。表示確認用。
     static var shopSell: Bool {
         UserDefaults.standard.bool(forKey: "shopSell")
+    }
+
+    /// 道具屋の「かう」一覧を開いておく（`-shopBuy YES`）。街ごとの品ぞろえの確認用。
+    static var shopBuy: Bool {
+        UserDefaults.standard.bool(forKey: "shopBuy")
     }
 
     /// どうぐ画面で選んでおく持ちもの（`-selectItem copperSword`）。表示確認用。

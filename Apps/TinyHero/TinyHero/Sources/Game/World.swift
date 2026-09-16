@@ -79,11 +79,58 @@ enum MapID: String, Codable, CaseIterable {
     case innInside, shopInside
 
     /// 街かどうか（宿屋・道具屋から戻る先になれるか）。
-    var isTown: Bool {
+    var isTown: Bool { townInfo != nil }
+
+    /// 街ごとの ちがい。街でなければ nil。
+    var townInfo: TownInfo? {
         switch self {
-        case .hakodate, .sapporo, .rausu: true
-        default: false
+        case .hakodate: .hakodate
+        case .sapporo: .sapporo
+        case .rausu: .rausu
+        default: nil
         }
+    }
+}
+
+/// 街ごとの ちがい。奥の街ほど 宿代は高く、道具屋の品ぞろえは強くなる。
+/// 地形・人数・家の数は地図（`Maps.swift`）のほうで変える。
+struct TownInfo: Equatable {
+    /// 宿代は `base + レベル × perLevel`。
+    let innBase: Int
+    let innPerLevel: Int
+    /// 道具屋の品ぞろえ。まだ早い装備も、もう用のない装備も置かない。
+    let stock: [Item]
+
+    /// みなとの街。旅のはじめなので 安く、そろえも いちばん下。
+    static let hakodate = TownInfo(innBase: 2, innPerLevel: 3,
+                                   stock: [.herb, .copperSword, .leatherArmor])
+    /// 大きな街。鋼の剣が ここで買える。
+    static let sapporo = TownInfo(innBase: 4, innPerLevel: 5,
+                                  stock: [.herb, .copperSword, .leatherArmor, .steelSword])
+    /// さいはての町。運ぶのが大変なぶん 宿も品も高い。銅の剣・革の鎧は もう置かない。
+    static let rausu = TownInfo(innBase: 6, innPerLevel: 8,
+                                stock: [.herb, .steelSword, .chainMail])
+}
+
+/// フィールドの区域。目印（街・ほらあな）ごとに 出る敵を決める。
+/// いちばん近い目印の表を使うので、**次の目印へ近づくほど敵が強くなる**。
+struct EncounterArea: Equatable {
+    /// どの目印のまわりか（メッセージやテストで見分けるため）。
+    let name: String
+    /// この区域の中心。**ひとつとは限らない**。
+    /// 海でへだてられて まわり道になる土地は、目印だけを中心にすると
+    /// 先の区域が食いこんでしまうので、通り道にも中心を足して押し返す。
+    let around: [Point]
+    let enemies: [EnemyKind]
+
+    init(name: String, around: [Point], enemies: [EnemyKind]) {
+        self.name = name
+        self.around = around
+        self.enemies = enemies
+    }
+
+    func distance(to point: Point) -> Int {
+        around.map { abs($0.x - point.x) + abs($0.y - point.y) }.min() ?? .max
     }
 }
 
@@ -128,8 +175,10 @@ struct GameMap {
     let boss: Point?
     /// そのマップのボス。`boss` のマスで話しかけると この敵と戦う。
     let bossKind: EnemyKind?
-    /// 地形ごとに出る敵。載っていない地形では遭遇しない。
+    /// 地形ごとに出る敵。載っていない地形では遭遇しない。ほらあなで使う。
     let encounters: [Tile: [EnemyKind]]
+    /// 区域ごとに出る敵。こちらがあれば 地形より優先する。フィールドで使う。
+    let encounterAreas: [EncounterArea]
 
     var width: Int { tiles.first?.count ?? 0 }
     var height: Int { tiles.count }
@@ -142,22 +191,18 @@ struct GameMap {
         contains(point) ? tiles[point.y][point.x] : outside
     }
 
-    /// そのマスで出る敵。
-    /// **道と橋は まわりの地形の表を借りる**。道の上だけ安全だと、街から街まで無傷で歩けてしまう。
+    /// そのマスが どの区域か。いちばん近い中心を選ぶ。
+    /// 区域は 旅の順に並べてあるので、同じ距離なら 先に書いたほう（弱いほう）になる。
+    func area(at point: Point) -> EncounterArea? {
+        encounterAreas.min { $0.distance(to: point) < $1.distance(to: point) }
+    }
+
+    /// そのマスで出る敵。区域があればそちら、なければ地形で決める。
+    /// 区域は **道の上もふくめて** 全部のマスをおおう。道だけ安全だと、
+    /// 街から街まで一度も戦わずに歩けてしまう。
     func encounterTable(at point: Point) -> [EnemyKind]? {
-        let here = tile(at: point)
-        if let table = encounters[here] { return table }
-        guard here == .road || here == .bridge else { return nil }
-        var counts: [Tile: Int] = [:]
-        for dy in -2...2 {
-            for dx in -2...2 {
-                let neighbour = tile(at: Point(x: point.x + dx, y: point.y + dy))
-                if encounters[neighbour] != nil { counts[neighbour, default: 0] += 1 }
-            }
-        }
-        // 同数のときは地形の文字でそろえて、遊ぶたびに変わらないようにする。
-        let best = counts.max { ($0.value, $0.key.rawValue) < ($1.value, $1.key.rawValue) }?.key
-        return best.flatMap { encounters[$0] }
+        if !encounterAreas.isEmpty { return area(at: point)?.enemies }
+        return encounters[tile(at: point)]
     }
 
     func npc(at point: Point) -> NPC? { npcs.first { $0.position == point } }
@@ -179,6 +224,7 @@ struct GameMap {
         chestRewards: [ChestReward] = [],
         bossKind: EnemyKind? = nil,
         encounters: [Tile: [EnemyKind]] = [:],
+        encounterAreas: [EncounterArea] = [],
         /// 人・宝箱の印（i・s・e・t・c）の足元に敷く床。
         markerFloor: Tile = .townFloor
     ) {
@@ -220,5 +266,6 @@ struct GameMap {
         self.bossKind = bossKind
         self.boss = boss
         self.encounters = encounters
+        self.encounterAreas = encounterAreas
     }
 }

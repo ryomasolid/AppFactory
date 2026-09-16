@@ -101,14 +101,18 @@ struct GroupBattleTests {
     /// 敵は1〜3体で出るので、先を越されると3発まとめて食らう。
     /// 1ラウンドあたり 85% 取れていないと、3ラウンドのうち一度は先を越される率が高くなりすぎる。
     @Test func heroUsuallyStrikesFirstOnTheField() {
-        // 地形と、そこを歩くころのレベル。
-        let zones: [(Tile, Int)] = [(.grass, 1), (.forest, 3), (.hills, 5)]
-        for (tile, level) in zones {
+        // 区域と、そこを歩くころのレベル。
+        let zones: [(String, Int)] = [
+            ("函館のまわり", 1), ("函館山のふもと", 2), ("札幌へむかう道", 4),
+            ("藻岩山へむかう道", 6), ("知床へむかう道", 8), ("羅臼岳へむかう道", 10),
+        ]
+        for (name, level) in zones {
             let heroAgility = LevelTable.row(level).agility
-            for kind in World.map(.field).encounters[tile] ?? [] {
+            let area = World.map(.field).encounterAreas.first { $0.name == name }
+            for kind in area?.enemies ?? [] {
                 let chance = firstStrikeChance(heroAgility: heroAgility, enemyAgility: kind.stats.agility)
                 #expect(chance >= 0.85,
-                        "LV\(level) で \(kind.stats.name) に 先手を取れるのが \(Int(chance * 100))% しかない")
+                        "\(name) の LV\(level) で \(kind.stats.name) に 先手を取れるのが \(Int(chance * 100))% しかない")
             }
         }
     }

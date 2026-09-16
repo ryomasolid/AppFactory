@@ -104,6 +104,7 @@ struct FieldOverlay: View {
                 guard shopPanel == .menu else { return }
                 if let item = Launch.shopConfirm { shopPanel = .confirmBuy(item) }
                 else if Launch.shopSell { shopPanel = .selling }
+                else if Launch.shopBuy { shopPanel = .buying }
             }
 
         case .inn:
@@ -291,7 +292,7 @@ struct FieldOverlay: View {
     private func shopStock(hero: Hero) -> some View {
         speech("どうぐや", "なにが ほしいんだい？")
         divider()
-        ForEach(GameState.shopStock) { item in
+        ForEach(game.shopStock) { item in
             // もう持っている装備は、はいを押しても断られるので最初から選ばせない。
             let owned = item.kind != .consumable && hero.owns(item)
             RetroChoice(

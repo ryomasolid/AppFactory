@@ -10,26 +10,29 @@ struct EncounterTests {
         kinds.map(\.stats.exp)
     }
 
-    private var allTables: [(MapID, Tile, [EnemyKind])] {
-        MapID.allCases.flatMap { id in
-            World.map(id).encounters.map { (id, $0.key, $0.value) }
+    /// ほらあなの「地形ごとの表」と フィールドの「区域ごとの表」を ひとまとめに見る。
+    private var allTables: [(MapID, String, [EnemyKind])] {
+        MapID.allCases.flatMap { id -> [(MapID, String, [EnemyKind])] in
+            let map = World.map(id)
+            return map.encounters.map { (id, "\($0.key)", $0.value) }
+                + map.encounterAreas.map { (id, $0.name, $0.enemies) }
         }
     }
 
     @Test func everyTableHasEnemies() {
-        for (id, tile, kinds) in allTables {
-            #expect(kinds.isEmpty == false, "\(id) の \(tile) に敵がいない")
+        for (id, place, kinds) in allTables {
+            #expect(kinds.isEmpty == false, "\(id) の \(place) に敵がいない")
         }
     }
 
     /// 同じエリアの中の強さのひらきは 2.5 倍まで。
     /// （以前は どうくつB1 が ヤミコウモリ(2) と ホネのへいし(22) で 5.5 倍あった）
     @Test func enemiesInOneAreaAreCloseInStrength() {
-        for (id, tile, kinds) in allTables {
+        for (id, place, kinds) in allTables {
             let values = exps(kinds)
             guard let low = values.min(), let high = values.max(), low > 0 else { continue }
             let spread = Double(high) / Double(low)
-            #expect(spread <= 2.5, "\(id) の \(tile) は強さのひらきが \(String(format: "%.1f", spread))倍: \(kinds.map(\.stats.name))")
+            #expect(spread <= 2.5, "\(id) の \(place) は強さのひらきが \(String(format: "%.1f", spread))倍: \(kinds.map(\.stats.name))")
         }
     }
 
@@ -49,8 +52,10 @@ struct EncounterTests {
         hero.restoreFully()
         var worstCase = FixedRandomSource(pick: .max)
 
-        for kinds in World.map(.field).encounters.values {
-            for kind in kinds {
+        // 最初の2区域（函館のまわり・函館山のふもと）だけを見る。
+        // 奥の区域には強い敵がいてよい（そのころには こちらも育っている）。
+        for area in World.map(.field).encounterAreas.prefix(2) {
+            for kind in area.enemies {
                 let damage = Battle.damage(attack: kind.stats.attack, defense: hero.defense, rng: &worstCase)
                 let hits = Int((Double(hero.maxHP) / Double(max(1, damage))).rounded(.up))
                 #expect(hits >= 3, "\(kind.stats.name) は LV3 の勇者を \(hits) 発で倒してしまう")
@@ -85,20 +90,24 @@ struct EncounterTests {
         #expect(used.contains(.guardian) == false)
     }
 
-    /// 実際にたどる順番。函館 → 函館山 → もり → 藻岩山 → おか → 羅臼岳。
+    /// 実際にたどる順番。フィールドの区域と ほらあなを 交互にたどる。
     private var route: [(String, [EnemyKind])] {
-        func table(_ id: MapID, _ tile: Tile) -> [EnemyKind] {
-            World.map(id).encounters[tile] ?? []
+        func cave(_ id: MapID) -> [EnemyKind] { World.map(id).encounters[.caveFloor] ?? [] }
+        func area(_ name: String) -> [EnemyKind] {
+            World.map(.field).encounterAreas.first { $0.name == name }?.enemies ?? []
         }
         return [
-            ("くさち", table(.field, .grass)),
-            ("函館山", table(.hakodateyama, .caveFloor)),
-            ("もり", table(.field, .forest)),
-            ("藻岩山B1", table(.moiwa1, .caveFloor)),
-            ("藻岩山B2", table(.moiwa2, .caveFloor)),
-            ("おか", table(.field, .hills)),
-            ("羅臼岳B1", table(.rausudake1, .caveFloor)),
-            ("羅臼岳B2", table(.rausudake2, .caveFloor)),
+            ("函館のまわり", area("函館のまわり")),
+            ("函館山のふもと", area("函館山のふもと")),
+            ("函館山の ほらあな", cave(.hakodateyama)),
+            ("札幌へむかう道", area("札幌へむかう道")),
+            ("藻岩山へむかう道", area("藻岩山へむかう道")),
+            ("藻岩山B1", cave(.moiwa1)),
+            ("藻岩山B2", cave(.moiwa2)),
+            ("知床へむかう道", area("知床へむかう道")),
+            ("羅臼岳へむかう道", area("羅臼岳へむかう道")),
+            ("羅臼岳B1", cave(.rausudake1)),
+            ("羅臼岳B2", cave(.rausudake2)),
         ]
     }
 
@@ -124,6 +133,57 @@ struct EncounterTests {
             #expect(shared.isEmpty == false,
                     "\(ladder[index].0) と \(ladder[index - 1].0) に 共通の敵がいない")
         }
+    }
+
+    /// 道を歩いていて 区域が 弱いほうへ戻らない。
+    /// 海でへだてられた土地は まわり道になるので、目印までの直線距離だけだと
+    /// 手前の道に 先の区域が食いこむことがある（実際に一度やった）。
+    @Test func walkingTheRouteNeverGetsEasier() throws {
+        let field = World.map(.field)
+        let order = field.encounterAreas.map(\.name)
+        func landing(_ id: MapID) throws -> Point {
+            let entrance = try #require(field.warps.first { $0.value.to == id })
+            return entrance.key + Point(x: 0, y: 1)
+        }
+        let legs: [(MapID, MapID)] = [
+            (.hakodate, .hakodateyama), (.hakodateyama, .sapporo),
+            (.sapporo, .moiwa1), (.moiwa1, .rausu), (.rausu, .rausudake1),
+        ]
+        for (from, to) in legs {
+            let path = try #require(walk(field, from: try landing(from), to: try landing(to)),
+                                    "\(from) から \(to) へ歩いて行けない")
+            var highest = 0
+            for point in path {
+                let area = try #require(field.area(at: point))
+                let rank = try #require(order.firstIndex(of: area.name))
+                #expect(rank >= highest,
+                        "\(from)→\(to) の (\(point.x), \(point.y)) で \(area.name) に 弱くなる")
+                highest = max(highest, rank)
+            }
+        }
+    }
+
+    /// 2点を結ぶ道すじ（歩けるマスだけ）。
+    private func walk(_ map: GameMap, from: Point, to: Point) -> [Point]? {
+        var came: [Point: Point] = [:]
+        var seen: Set<Point> = [from]
+        var queue = [from]
+        var head = 0
+        while head < queue.count {
+            let point = queue[head]; head += 1
+            if point == to {
+                var path = [to]
+                while let previous = came[path[0]] { path.insert(previous, at: 0) }
+                return path
+            }
+            for direction in Direction.allCases {
+                let next = point + direction.delta
+                guard map.tile(at: next).isPassable, seen.insert(next).inserted else { continue }
+                came[next] = point
+                queue.append(next)
+            }
+        }
+        return nil
     }
 
     /// ほらあなは3つ、それぞれに ボスがいる（街→ほらあな→ボス を3回くりかえす）。
@@ -169,5 +229,89 @@ struct EncounterTests {
         let first = try toughness(.hakodateyama)
         let last = try toughness(.rausudake1)
         #expect(last > first, "羅臼岳のまわり(\(last)) が 函館山のまわり(\(first)) より楽になっている")
+    }
+}
+
+/// 街ごとの ちがい。旅が進むほど 宿代は高く、品ぞろえは強くなる。
+struct TownTests {
+    private let route: [MapID] = [.hakodate, .sapporo, .rausu]
+
+    /// 奥の街ほど 宿代が高い。
+    @Test func innGetsMoreExpensiveAlongTheRoute() throws {
+        for level in [1, 6, 12] {
+            var previous = 0
+            for id in route {
+                let town = try #require(id.townInfo)
+                let price = town.innBase + level * town.innPerLevel
+                #expect(price > previous, "LV\(level) の \(id) は ひとばん \(price)G で 手前の街より安い")
+                previous = price
+            }
+        }
+    }
+
+    /// 道具屋は 進むほど強い品を置く。薬草は どこでも買える。
+    @Test func shopStockGrowsStronger() throws {
+        var previousWeapon = 0
+        var previousArmor = 0
+        for id in route {
+            let town = try #require(id.townInfo)
+            #expect(town.stock.contains(.herb), "\(id) の道具屋に 薬草がない")
+            var weapon = 0
+            var armor = 0
+            for item in town.stock {
+                switch item.kind {
+                case .weapon(let power): weapon = max(weapon, power)
+                case .armor(let power): armor = max(armor, power)
+                case .consumable: break
+                }
+            }
+            #expect(weapon >= previousWeapon, "\(id) の ぶきが 手前の街より弱い")
+            #expect(armor >= previousArmor, "\(id) の よろいが 手前の街より弱い")
+            previousWeapon = weapon
+            previousArmor = armor
+        }
+        #expect(previousWeapon > 0 && previousArmor > 0, "さいごの街に そうびが置かれていない")
+    }
+
+    /// まだ早い装備は 手前の街に置かない（最初の街で鋼の剣が買えると 旅にならない）。
+    @Test func earlyTownsDoNotSellLateGear() throws {
+        let hakodate = try #require(MapID.hakodate.townInfo)
+        #expect(!hakodate.stock.contains(.steelSword), "函館で はがねの剣が買える")
+        #expect(!hakodate.stock.contains(.chainMail), "函館で くさりかたびらが買える")
+        // もう用のない装備も、さいはての町には置かない。
+        let rausu = try #require(MapID.rausu.townInfo)
+        #expect(!rausu.stock.contains(.copperSword), "羅臼で まだ どうの剣を売っている")
+    }
+
+    /// 街ごとに にぎわいと 家の数を変える。
+    @Test func townsDifferInCrowdAndBuildings() {
+        let people = route.map { World.map($0).npcs.count }
+        #expect(Set(people).count == people.count, "どの街も 人の数が同じ: \(people)")
+        #expect(people[1] > people[0], "札幌が いちばん にぎやかであってほしい: \(people)")
+        #expect(people[2] < people[0], "羅臼は さいはての町なので 人が少ないほうがいい: \(people)")
+
+        let roofs = route.map { id -> Int in
+            let map = World.map(id)
+            var count = 0
+            for y in 0..<map.height {
+                for x in 0..<map.width {
+                    switch map.tile(at: Point(x: x, y: y)) {
+                    case .innRoof, .shopRoof, .house: count += 1
+                    default: break
+                    }
+                }
+            }
+            return count
+        }
+        #expect(roofs[1] > roofs[0], "札幌に 家が多くない: \(roofs)")
+    }
+
+    /// どの街にも 宿屋と道具屋の入口がある。
+    @Test func everyTownHasAnInnAndAShop() {
+        for id in route {
+            let warps = World.map(id).warps.values
+            #expect(warps.contains { $0.to == .innInside }, "\(id) に 宿屋がない")
+            #expect(warps.contains { $0.to == .shopInside }, "\(id) に 道具屋がない")
+        }
     }
 }
