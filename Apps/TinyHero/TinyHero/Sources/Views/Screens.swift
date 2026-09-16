@@ -182,6 +182,8 @@ struct RetroChoice: View {
     @Environment(GameState.self) private var game
     let title: String
     var detail: String?
+    /// detail だけ色を変えたいとき（買えない値段を赤くするなど）。
+    var detailStyle: Color?
     var isEnabled = true
     let action: () -> Void
 
@@ -193,7 +195,13 @@ struct RetroChoice: View {
             HStack {
                 Text(title)
                 Spacer()
-                if let detail { Text(detail) }
+                if let detail {
+                    if let detailStyle {
+                        Text(detail).foregroundStyle(detailStyle)
+                    } else {
+                        Text(detail)
+                    }
+                }
             }
             .contentShape(Rectangle())
             .padding(.vertical, 4)

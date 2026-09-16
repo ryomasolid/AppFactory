@@ -390,6 +390,9 @@ final class GameState {
         }
     }
 
+    /// その品を買うのに あと いくら足りないか。0 なら買える。
+    func shortfall(for item: Item) -> Int { max(0, item.price - hero.gold) }
+
     func buy(_ item: Item) {
         guard hero.gold >= item.price else {
             return say(["どうぐや「おかねが たりないよ。」"])

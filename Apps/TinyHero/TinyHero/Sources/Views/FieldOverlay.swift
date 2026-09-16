@@ -295,10 +295,14 @@ struct FieldOverlay: View {
         ForEach(game.shopStock) { item in
             // もう持っている装備は、はいを押しても断られるので最初から選ばせない。
             let owned = item.kind != .consumable && hero.owns(item)
+            // **おかねが足りなくても選べる。** どれだけ強くなるかを先に見て、
+            // 貯める目標にできるようにするため（買えるかどうかは値段の色で伝える）。
+            let short = game.shortfall(for: item) > 0
             RetroChoice(
                 title: item.name,
                 detail: owned ? "もっている" : "\(item.price)G",
-                isEnabled: !owned && hero.gold >= item.price
+                detailStyle: owned ? nil : (short ? Retro.hpLow : Retro.accent),
+                isEnabled: !owned
             ) {
                 shopPanel = .confirmBuy(item)
             }
@@ -308,8 +312,10 @@ struct FieldOverlay: View {
     }
 
     /// 買うまえの確認。いきなり買わずに はい／いいえ を選ばせる。
+    /// おかねが足りなくても ここまで来られる。伸びしろを見てから 貯めに行けるように。
     @ViewBuilder
     private func purchaseConfirm(_ item: Item, hero: Hero) -> some View {
+        let short = game.shortfall(for: item)
         speech("どうぐや", "\(item.name)は \(item.price)ゴールドだよ。")
         // 装備は「いまの値 → 買ったあとの値」だけを大きく出す。
         // 品物の素の強さ（+16 など）も並べると、買い替えの本当の伸び（+8）と食い違って紛らわしい。
@@ -318,12 +324,15 @@ struct FieldOverlay: View {
         } else {
             statPreview(item, hero: hero)
         }
+        if short > 0 {
+            note("あと \(short)ゴールド たりない。", color: Retro.hpLow)
+        }
         divider()
-        RetroChoice(title: "はい") {
+        RetroChoice(title: "はい", isEnabled: short == 0) {
             game.buy(item)
             shopPanel = .buying
         }
-        RetroChoice(title: "いいえ") {
+        RetroChoice(title: short > 0 ? "もどる" : "いいえ") {
             shopPanel = .buying
         }
     }
@@ -377,12 +386,12 @@ struct FieldOverlay: View {
     }
 
     /// 選択肢の下に添える小さな説明。
-    private func note(_ text: String) -> some View {
+    private func note(_ text: String, color: Color = .gray) -> some View {
         HStack(spacing: 6) {
             Text("▶").hidden()
             Text(text)
                 .font(Retro.font(13))
-                .foregroundStyle(.gray)
+                .foregroundStyle(color)
         }
     }
 }

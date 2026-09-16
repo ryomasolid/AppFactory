@@ -314,4 +314,16 @@ struct TownTests {
             #expect(warps.contains { $0.to == .shopInside }, "\(id) に 道具屋がない")
         }
     }
+
+    /// おかねが足りない品も 道具屋で選べて、あと いくら足りないかが分かる。
+    /// 買えない品を選べなくしていたころは、どれだけ強くなるかを見ることもできなかった。
+    @MainActor @Test func shortfallTellsHowMuchIsMissing() {
+        let game = GameState()
+        game.newGame()
+        game.hero.gold = 50
+        #expect(game.shortfall(for: .herb) == 0, "8G の薬草が 50G で買えない")
+        #expect(game.shortfall(for: .copperSword) == 50, "100G の どうの剣に あと 50G のはず")
+        game.hero.gold = 100
+        #expect(game.shortfall(for: .copperSword) == 0)
+    }
 }
