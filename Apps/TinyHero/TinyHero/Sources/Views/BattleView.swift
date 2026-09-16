@@ -13,7 +13,14 @@ struct BattleView: View {
             ZStack {
                 Color.black.ignoresSafeArea()
                 content(session)
+                if let page = session.levelUp {
+                    LevelUpBoard(page: page)
+                        // 文字を流さず、ぱっと出す。
+                        .transition(.scale(scale: 0.92).combined(with: .opacity))
+                        .id(page)
+                }
             }
+            .animation(.spring(duration: 0.22), value: session.levelUp)
             // ダメージを受けた瞬間に画面全体を揺らし、一瞬赤く光らせる。
             .keyframeAnimator(initialValue: ScreenShake(), trigger: session.heroHit?.id ?? 0) { view, shake in
                 view
@@ -386,7 +393,7 @@ private struct FlameEffect: View {
 }
 
 /// 炎のかたまり。真ん中が白く、外へいくほど赤くなる。
-private struct Fireball: View {
+struct Fireball: View {
     let size: CGFloat
 
     var body: some View {
@@ -430,5 +437,95 @@ private struct BreathEffect: View {
             fallen = true
             faded = true
         }
+    }
+}
+
+
+// MARK: - レベルアップ
+
+/// レベルアップで出す板。伸びた能力値を まとめて ぱっと出し、
+/// タップすると 覚えた わざを アイコンつきで出す。
+private struct LevelUpBoard: View {
+    let page: LevelUpPage
+
+    var body: some View {
+        ZStack {
+            // 後ろのメッセージ枠が脇から覗かないよう、暗く敷く。
+            Color.black.opacity(0.7).ignoresSafeArea()
+            RetroWindow {
+                switch page {
+                case let .stats(levelUp):
+                    stats(levelUp)
+                case let .spells(spells):
+                    learned(spells)
+                }
+            }
+            .frame(maxWidth: 340)
+            .padding(.horizontal, 24)
+        }
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func stats(_ levelUp: Hero.LevelUp) -> some View {
+        Text(levelUp.headline)
+            .font(Retro.font(18))
+            .foregroundStyle(Retro.accent)
+        Rectangle().fill(.white.opacity(0.35)).frame(height: 2).padding(.vertical, 2)
+        ForEach(levelUp.gains, id: \.label) { gain in
+            HStack(spacing: 6) {
+                Text(gain.label)
+                Spacer()
+                Text("\(gain.before)")
+                    .foregroundStyle(Retro.dim)
+                Text("→")
+                    .foregroundStyle(Retro.dim)
+                // あがったあとの値だけ青くして目立たせる。
+                Text("\(gain.after)")
+                    .foregroundStyle(Retro.fresh)
+            }
+            .font(Retro.font(16))
+        }
+    }
+
+    @ViewBuilder
+    private func learned(_ spells: [Spell]) -> some View {
+        Text("あたらしい わざを おぼえた！")
+            .font(Retro.font(16))
+            .foregroundStyle(Retro.accent)
+        Rectangle().fill(.white.opacity(0.35)).frame(height: 2).padding(.vertical, 2)
+        ForEach(spells) { spell in
+            HStack(spacing: 10) {
+                SpellIcon(spell: spell)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(spell.name).font(Retro.font(17))
+                    Text(spell.isHealing ? "かいふくの まほう" : "こうげきの まほう")
+                        .font(Retro.font(11))
+                        .foregroundStyle(Retro.dim)
+                }
+                Spacer()
+                Text("MP \(spell.mpCost)")
+                    .font(Retro.font(12))
+                    .foregroundStyle(Retro.dim)
+            }
+        }
+    }
+}
+
+/// 呪文の種類がひと目で分かる印。攻撃は炎、回復は緑の十字。
+private struct SpellIcon: View {
+    let spell: Spell
+
+    var body: some View {
+        ZStack {
+            if spell.isHealing {
+                Rectangle().frame(width: 22, height: 8)
+                Rectangle().frame(width: 8, height: 22)
+            } else {
+                Fireball(size: 24)
+            }
+        }
+        .foregroundStyle(Retro.heal)
+        .frame(width: 26, height: 26)
     }
 }

@@ -37,8 +37,8 @@ struct LevelUpTests {
         var hero = self.hero(at: 4)
         let before = (hp: hero.maxHP, mp: hero.maxMP, atk: hero.attack, def: hero.defense, agi: hero.agility)
         let need = LevelTable.row(5).exp - hero.exp
-        let messages = hero.gainExp(need)
-        let text = messages.joined(separator: "\n")
+        let results = hero.gainExp(need)
+        let text = results.flatMap(\.messages).joined(separator: "\n")
 
         #expect(text.contains("レベル5に あがった！"))
         #expect(text.contains("さいだいHP \(before.hp)→\(hero.maxHP)"))
@@ -54,14 +54,14 @@ struct LevelUpTests {
         hero.receive(.steelSword)
         let beforeAttack = hero.attack
         let need = LevelTable.row(5).exp - hero.exp
-        let text = hero.gainExp(need).joined(separator: "\n")
+        let text = hero.gainExp(need).flatMap(\.messages).joined(separator: "\n")
         #expect(text.contains("こうげき \(beforeAttack)→\(hero.attack)"))
     }
 
     /// 伸びなかった能力値の行は出さない。
     @Test func unchangedStatsAreNotListed() {
         var hero = Hero()
-        let text = hero.gainExp(LevelTable.row(2).exp).joined(separator: "\n")
+        let text = hero.gainExp(LevelTable.row(2).exp).flatMap(\.messages).joined(separator: "\n")
         // レベル1→2 は すばやさ 4→5 で伸びるので、行は出る。
         #expect(text.contains("すばやさ"))
         // 伸びていない値が「N→N」の形で出ていないこと。
@@ -70,9 +70,39 @@ struct LevelUpTests {
         }
     }
 
+    /// 伸びた能力値は「ラベル・もとの値・あがった値」の形で取り出せる（画面が青く出すため）。
+    @Test func gainsCarryBeforeAndAfter() {
+        var hero = self.hero(at: 4)
+        let need = LevelTable.row(5).exp - hero.exp
+        let levelUp = try! #require(hero.gainExp(need).first)
+
+        #expect(levelUp.level == 5)
+        #expect(levelUp.gains.isEmpty == false)
+        for gain in levelUp.gains {
+            #expect(gain.after > gain.before, "\(gain.label) が伸びていないのに入っている")
+        }
+        #expect(levelUp.gains.contains { $0.label == "さいだいHP" })
+    }
+
+    /// 覚えた呪文は 別に持つ（板の2ページ目で出すため）。
+    @Test func learnedSpellsAreSeparateFromGains() {
+        var hero = Hero()
+        let levelUp = try! #require(hero.gainExp(LevelTable.row(2).exp).first)
+        #expect(levelUp.learned == [.heal])
+        #expect(levelUp.gains.contains { $0.label.contains("HP") })
+    }
+
+    /// 呪文が 攻撃か回復かが分かる（アイコンを出し分けるため）。
+    @Test func spellsKnowIfTheyHeal() {
+        #expect(Spell.heal.isHealing)
+        #expect(Spell.highHeal.isHealing)
+        #expect(Spell.fire.isHealing == false)
+        #expect(Spell.flame.isHealing == false)
+    }
+
     @Test func spellsAreStillAnnounced() {
         var hero = Hero()
-        let text = hero.gainExp(LevelTable.row(2).exp).joined(separator: "\n")
+        let text = hero.gainExp(LevelTable.row(2).exp).flatMap(\.messages).joined(separator: "\n")
         #expect(text.contains("ヒールを おぼえた！"))
     }
 

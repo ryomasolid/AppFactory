@@ -66,7 +66,7 @@ enum Launch {
         }
         if grantExp > 0 {
             // レベルアップの見た目の確認用。上がったぶんのメッセージをそのまま出す。
-            game.say(game.hero.gainExp(grantExp))
+            game.say(game.hero.gainExp(grantExp).flatMap(\.messages))
             return
         }
         if let mapName, let map = MapID(rawValue: mapName) {
@@ -109,8 +109,29 @@ enum Launch {
                 : autoCommand(defaults.string(forKey: "autoCommand"))
             if let auto {
                 Task {
-                    try? await Task.sleep(for: .seconds(1.5))
-                    await game.command(auto)
+                    try? await Task.sleep(for: .seconds(1.2))
+                    // 決着まで（レベルアップの板が出たらそこで止める）繰り返す。
+                    // command はタップ待ちで止まるので、待たずに投げてこちらはタップを送り続ける。
+                    for _ in 0..<300 {
+                        // `-autoCommand` の確認では、板が出たら そこで止めて見せる。
+                        // わざを覚えたページまで見たいときは -levelUpSpells YES。
+                        if let page = game.battle?.levelUp {
+                            if defaults.bool(forKey: "levelUpSpells") {
+                                if case .spells = page { break }
+                            } else {
+                                break
+                            }
+                        }
+                        if game.battle?.waitingForTap == true {
+                            game.advanceBattleMessage()
+                        } else if game.currentPage != nil {
+                            game.advanceMessage()
+                        } else if game.battle?.isPlaying != true {
+                            if game.battle?.end != nil { break }
+                            Task { await game.command(auto) }
+                        }
+                        try? await Task.sleep(for: .milliseconds(150))
+                    }
                 }
             }
         }

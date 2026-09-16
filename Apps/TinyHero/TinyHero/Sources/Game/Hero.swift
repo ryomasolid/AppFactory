@@ -208,6 +208,31 @@ struct Hero: Codable, Equatable {
         return hp - before
     }
 
+    /// レベルが1つ上がったときの中身。画面はこれを見て並べる。
+    struct LevelUp: Equatable, Hashable {
+        let name: String
+        let level: Int
+        /// 伸びた能力値だけ。伸びなかったものは入れない。
+        let gains: [Gain]
+        /// このレベルで覚えた呪文。
+        let learned: [Spell]
+
+        struct Gain: Equatable, Hashable {
+            let label: String
+            let before: Int
+            let after: Int
+        }
+
+        var headline: String { "\(name)は レベル\(level)に あがった！" }
+
+        /// 画面を使わないところ（確認用の起動引数など）で出す文字列。
+        var messages: [String] {
+            [headline]
+                + gains.map { "\($0.label) \($0.before)→\($0.after)" }
+                + learned.map { "\($0.name)を おぼえた！" }
+        }
+    }
+
     /// レベルアップの前後で見せる能力値（つよさの画面と同じ、装備こみの値）。
     private struct StatLine: Equatable {
         let maxHP: Int, maxMP: Int, attack: Int, defense: Int, agility: Int
@@ -218,38 +243,38 @@ struct Hero: Codable, Equatable {
         }
     }
 
-    /// 経験値を足し、上がったレベル・伸びた能力値・覚えた呪文のメッセージを返す。
+    /// 経験値を足し、上がったレベルぶんの中身を返す。
     /// レベルが上がったら HP と MP は全快する（つぎの戦いに向かいやすくする）。
-    mutating func gainExp(_ amount: Int) -> [String] {
+    mutating func gainExp(_ amount: Int) -> [LevelUp] {
         exp += amount
-        var messages: [String] = []
+        var results: [LevelUp] = []
         while level < LevelTable.maxLevel, exp >= LevelTable.row(level + 1).exp {
             let before = StatLine(self)
             level += 1
             let after = StatLine(self)
             restoreFully()
-
-            messages.append("\(name)は レベル\(level)に あがった！")
-            messages += Hero.growthLines(from: before, to: after)
-            for spell in Spell.allCases where spell.learnLevel == level {
-                messages.append("\(spell.name)を おぼえた！")
-            }
+            results.append(LevelUp(
+                name: name,
+                level: level,
+                gains: Hero.gains(from: before, to: after),
+                learned: Spell.allCases.filter { $0.learnLevel == level }
+            ))
         }
-        return messages
+        return results
     }
 
-    /// 「もとの値 → あがった値」で、どれだけ伸びたかが分かるようにする。
-    private static func growthLines(from before: StatLine, to after: StatLine) -> [String] {
-        func grew(_ label: String, _ old: Int, _ new: Int) -> String? {
-            guard new > old else { return nil }
-            return "\(label) \(old)→\(new)"
+    /// 伸びた能力値だけを「もとの値 → あがった値」で並べる。
+    private static func gains(from before: StatLine, to after: StatLine) -> [LevelUp.Gain] {
+        let all = [
+            ("さいだいHP", before.maxHP, after.maxHP),
+            ("さいだいMP", before.maxMP, after.maxMP),
+            ("こうげき", before.attack, after.attack),
+            ("しゅび", before.defense, after.defense),
+            ("すばやさ", before.agility, after.agility),
+        ]
+        return all.compactMap { label, old, new in
+            new > old ? LevelUp.Gain(label: label, before: old, after: new) : nil
         }
-        let hp = [grew("さいだいHP", before.maxHP, after.maxHP), grew("MP", before.maxMP, after.maxMP)]
-        let power = [grew("こうげき", before.attack, after.attack), grew("しゅび", before.defense, after.defense)]
-        let speed = [grew("すばやさ", before.agility, after.agility)]
-        return [hp, power, speed]
-            .map { $0.compactMap { $0 }.joined(separator: "  ") }
-            .filter { !$0.isEmpty }
     }
 
     /// 装備は買うとすぐ付け替える（前の装備は手放す）。消耗品は道具袋へ。

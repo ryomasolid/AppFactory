@@ -23,6 +23,12 @@ enum BattleEffect: Equatable {
     case breath
 }
 
+/// レベルアップで出す画面。伸びた能力値のあと、覚えた呪文を出す。
+enum LevelUpPage: Equatable, Hashable {
+    case stats(Hero.LevelUp)
+    case spells([Spell])
+}
+
 /// 行を出す前の間の取り方。
 enum BattleLinePause: Equatable {
     /// 同じ場面の続き（少し待って下に足す）。
@@ -49,6 +55,8 @@ struct BattleLine: Equatable {
     var pause: BattleLinePause = .none
     /// この行で出す演出（呪文・道具）。
     var effect: BattleEffect?
+    /// この行で出すレベルアップの画面。文字を流さず、まとめて ぱっと出す。
+    var levelUp: LevelUpPage?
     /// この行を出した時点の勇者。HP・MP・レベルの表示をメッセージに合わせて変える。
     var hero: Hero?
 }
@@ -253,9 +261,12 @@ struct Battle {
                 hero.gold += gold
                 say("\(gold)ゴールドを てにいれた！", pause: rewardPause, into: &result)
             }
-            for message in hero.gainExp(exp) {
-                let isLevelUp = message.contains("あがった")
-                say(message, isLevelUp ? .levelUp : nil, pause: isLevelUp ? .page : .none, into: &result)
+            for levelUp in hero.gainExp(exp) {
+                say(levelUp.headline, .levelUp, pause: .page, levelUp: .stats(levelUp), into: &result)
+                if !levelUp.learned.isEmpty {
+                    say("あたらしい わざを おぼえた！", pause: .page,
+                        levelUp: .spells(levelUp.learned), into: &result)
+                }
             }
             return .won(exp: exp, gold: gold)
         }
@@ -271,8 +282,11 @@ struct Battle {
         _ cue: SoundCue? = nil,
         pause: BattleLinePause = .none,
         effect: BattleEffect? = nil,
+        levelUp: LevelUpPage? = nil,
         into result: inout TurnResult
     ) {
-        result.lines.append(BattleLine(text: text, cue: cue, pause: pause, effect: effect, hero: hero))
+        result.lines.append(BattleLine(
+            text: text, cue: cue, pause: pause, effect: effect, levelUp: levelUp, hero: hero
+        ))
     }
 }

@@ -20,6 +20,8 @@ struct BattleSession {
     var enemyHit: EnemyHit?
     /// 呪文・道具の最新の演出。画面はこれが変わるたびに粒や炎を出す。
     var effect: EffectCue?
+    /// いま出しているレベルアップの画面。次の行が出たら消える。
+    var levelUp: LevelUpPage?
 }
 
 /// 呪文・道具の演出と、その通し番号（同じ演出が続いても出し直すため）。
@@ -523,6 +525,8 @@ final class GameState {
                 id: nextID, enemyID: line.enemyID ?? 0, damage: damage, isCritical: line.isCritical
             )
         }
+        // レベルアップの画面は、その行のあいだだけ出す。
+        battle?.levelUp = line.levelUp
         if let defeated = line.defeatedID {
             battle?.defeatedIDs.insert(defeated)
         }

@@ -138,11 +138,10 @@ struct HeroTests {
     @Test func levelsUpAndLearnsSpells() {
         var hero = Hero()
         #expect(hero.spells.isEmpty)
-        let messages = hero.gainExp(LevelTable.row(4).exp)
+        let results = hero.gainExp(LevelTable.row(4).exp)
         #expect(hero.level == 4)
         #expect(hero.spells == [.heal, .fire])
-        #expect(messages.contains("ヒールを おぼえた！"))
-        #expect(messages.contains("ファイアを おぼえた！"))
+        #expect(results.flatMap(\.learned) == [.heal, .fire])
     }
 
     /// レベルアップしたら HP・MP は全快する（差分を足すだけだった頃からの変更）。

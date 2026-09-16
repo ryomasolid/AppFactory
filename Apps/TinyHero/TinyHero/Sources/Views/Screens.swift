@@ -79,6 +79,8 @@ enum Retro {
     static let hp = Color(red: 0.36, green: 0.85, blue: 0.40)
     static let hpLow = Color(red: 0.95, green: 0.42, blue: 0.30)
     static let heal = Color(red: 0.45, green: 1.00, blue: 0.50)
+    /// あがったあとの数値。目立たせる青。
+    static let fresh = Color(red: 0.45, green: 0.78, blue: 1.00)
     static let ember = Color(red: 1.00, green: 0.55, blue: 0.15)
     /// 戦闘の空と地面。ボス戦は暗いほうを使う。
     static let sky = Color(red: 0.30, green: 0.55, blue: 0.85)
