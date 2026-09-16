@@ -97,8 +97,9 @@ struct GroupBattleTests {
         return Double(wins) / Double(heroFaces * enemyFaces)
     }
 
-    /// 最初のフィールドでは、勇者がたいてい先手を取れる。
-    /// （ホタテキッドが すばやさ9 のままで、LV1 では先手が五分だった）
+    /// 最初のフィールドでは、勇者がほぼ先手を取れる。
+    /// 敵は1〜3体で出るので、先を越されると3発まとめて食らう。
+    /// 1ラウンドあたり 85% 取れていないと、3ラウンドのうち一度は先を越される率が高くなりすぎる。
     @Test func heroUsuallyStrikesFirstOnTheField() {
         // 地形と、そこを歩くころのレベル。
         let zones: [(Tile, Int)] = [(.grass, 1), (.forest, 3), (.hills, 5)]
@@ -106,7 +107,7 @@ struct GroupBattleTests {
             let heroAgility = LevelTable.row(level).agility
             for kind in World.map(.field).encounters[tile] ?? [] {
                 let chance = firstStrikeChance(heroAgility: heroAgility, enemyAgility: kind.stats.agility)
-                #expect(chance >= 0.65,
+                #expect(chance >= 0.85,
                         "LV\(level) で \(kind.stats.name) に 先手を取れるのが \(Int(chance * 100))% しかない")
             }
         }
