@@ -21,6 +21,10 @@ enum EnemyKind: String, Codable, CaseIterable {
         let gold: Int
     }
 
+    /// すばやさは 題材に合わせる。ホタテやコンブが 勇者より速いと ちぐはぐなので、
+    /// 最初のフィールドでは 勇者がたいてい先手を取れる値にしてある
+    /// （きたきつねだけは きつねなので フィールドで いちばん速い）。
+    ///
     /// 敵は1〜3体で出てくる。3体に囲まれても勝ちきれるよう、
     /// 「そのエリアに入りたてのレベルなら ひと振りで倒せる」体力にしてある。
     /// 守備力は高いままなので、レベルが足りないと固い。
@@ -28,8 +32,8 @@ enum EnemyKind: String, Codable, CaseIterable {
         switch self {
         case .potato: Stats(name: "ポテトー", maxHP: 4, attack: 6, defense: 2, agility: 3, exp: 2, gold: 3)
         case .kelpSlime: Stats(name: "こんぶスライム", maxHP: 3, attack: 7, defense: 4, agility: 2, exp: 3, gold: 4)
-        case .scallop: Stats(name: "ホタテキッド", maxHP: 4, attack: 8, defense: 3, agility: 9, exp: 4, gold: 5)
-        case .fox: Stats(name: "きたきつね", maxHP: 6, attack: 9, defense: 5, agility: 10, exp: 7, gold: 10)
+        case .scallop: Stats(name: "ホタテキッド", maxHP: 4, attack: 8, defense: 3, agility: 5, exp: 4, gold: 5)
+        case .fox: Stats(name: "きたきつね", maxHP: 6, attack: 9, defense: 5, agility: 8, exp: 7, gold: 10)
         case .cod: Stats(name: "タラこぞう", maxHP: 13, attack: 12, defense: 8, agility: 7, exp: 11, gold: 16)
         case .snowman: Stats(name: "ゆきおとこ", maxHP: 14, attack: 22, defense: 18, agility: 9, exp: 22, gold: 30)
         case .iceGolem: Stats(name: "りゅうひょうゴーレム", maxHP: 20, attack: 28, defense: 30, agility: 3, exp: 35, gold: 45)
