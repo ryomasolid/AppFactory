@@ -159,8 +159,8 @@ struct BattleView: View {
 
     private func enemySprite(_ session: BattleSession, enemy: Enemy, count: Int) -> some View {
         // 数が増えるほど1体を小さくして、重ならないようにする。
-        let base: CGFloat = enemy.kind.isBoss ? 210 : 168
-        let size = count >= 3 ? base * 0.62 : (count == 2 ? base * 0.78 : base)
+        let base: CGFloat = enemy.kind.isBoss ? 176 : 132
+        let size = count >= 3 ? base * 0.72 : (count == 2 ? base * 0.85 : base)
         // 自分に当たった一撃だけを見る。
         let hit = session.enemyHit?.enemyID == enemy.id ? session.enemyHit : nil
         // 会心の一撃は大きく揺らす。
