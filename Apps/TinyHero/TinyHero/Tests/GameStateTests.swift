@@ -61,7 +61,17 @@ struct GameStateTests {
         let game = makeGame()
         game.hero.receive(.steelSword)
         game.mapID = .field
-        game.position = Point(x: 3, y: 8)
+        // 座標は直書きせず、左へ歩ける陸地を地図から探す（海岸線を変えても落ちないように）。
+        let field = World.map(.field)
+        let start = try #require(
+            (0..<field.height).flatMap { y in (1..<field.width).map { Point(x: $0, y: y) } }
+                .first { point in
+                    let left = Point(x: point.x - 1, y: point.y)
+                    return field.isWalkable(point) && field.isWalkable(left)
+                        && field.warps[point] == nil && field.warps[left] == nil
+                }
+        )
+        game.position = start
         game.hold(.right)
         game.startBattle(.potato)
         #expect(game.heldDirection == nil)
@@ -70,12 +80,12 @@ struct GameStateTests {
         }
         await game.finishBattle()
         try await Task.sleep(for: .milliseconds(200))
-        #expect(game.position == Point(x: 3, y: 8))
+        #expect(game.position == start)
 
         game.hold(.left)
         try await Task.sleep(for: .milliseconds(50))
         game.hold(nil)
-        #expect(game.position.x < 3)
+        #expect(game.position.x < start.x)
     }
 
     /// 宿屋の扉から中に入り、下の扉から村の家の前に戻る。

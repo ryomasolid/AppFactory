@@ -74,6 +74,26 @@ struct MapLayer: View {
     /// 中心から何マスぶん描くか。
     let radius: Int
 
+    /// 大きく描く地形と、その倍率。
+    static func landmarkScale(_ tile: Tile) -> CGFloat? {
+        switch tile {
+        case .town: 2.0
+        case .cave: 1.7
+        default: nil
+        }
+    }
+
+    /// マスの底に足をそろえたまま大きくする（建物が地面に立って見えるように）。
+    static func standing(_ rect: CGRect, scale: CGFloat) -> CGRect {
+        let size = rect.width * scale
+        return CGRect(
+            x: rect.midX - size / 2,
+            y: rect.maxY - size,
+            width: size,
+            height: size
+        )
+    }
+
     var body: some View {
         let pad = Self.padding
         Canvas { context, _ in
@@ -84,7 +104,21 @@ struct MapLayer: View {
                 for x in xRange {
                     let point = Point(x: x, y: y)
                     let rect = CGRect(x: CGFloat(x + pad) * tile, y: CGFloat(y + pad) * tile, width: tile, height: tile)
-                    context.draw(SpriteCache.image(SpriteID(tile: map.tile(at: point))), in: rect)
+                    let kind = map.tile(at: point)
+                    // 街と ほらあなは あとでまとめて大きく描くので、ここでは地面だけ敷く。
+                    let ground = MapLayer.landmarkScale(kind) == nil ? kind : .grass
+                    context.draw(SpriteCache.image(SpriteID(tile: ground)), in: rect)
+                }
+            }
+            // 街と ほらあなは 1マスより大きく描く。
+            // ふつうのタイルを敷き終えたあとに描かないと、右や下のタイルに削られる。
+            for y in yRange {
+                for x in xRange {
+                    let point = Point(x: x, y: y)
+                    let kind = map.tile(at: point)
+                    guard let scale = MapLayer.landmarkScale(kind) else { continue }
+                    let rect = CGRect(x: CGFloat(x + pad) * tile, y: CGFloat(y + pad) * tile, width: tile, height: tile)
+                    context.draw(SpriteCache.image(SpriteID(tile: kind)), in: MapLayer.standing(rect, scale: scale))
                 }
             }
             for chest in map.chests {
