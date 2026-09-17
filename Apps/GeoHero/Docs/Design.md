@@ -324,8 +324,13 @@ python3 Tools/make_app_icon.py
 
 ## 6.6 ストアに出すもの
 
-- `Docs/Store/listing.md` — 名前・説明文・キーワード・年齢レーティング・プライバシーの下書きと、提出の順番。
-  金額・公開国・URL など **ユーザーが決めるもの** は太字にして空けてある。
+- `Docs/Store/listing.md` — 名前・説明文（日本語と英語）・キーワード・年齢レーティング・プライバシーの
+  下書きと、提出の順番。
+- **無料・全世界配信**（2026-09-17 決定）。日本語以外の国では英語の掲載情報が使われるので、
+  英語版も用意してある（ゲーム本編は日本語のみ、と1行目に断る）。
+- サポート／プライバシーポリシーのページは **このリポジトリの外**にある。
+  `/Users/ogatadaichi/Documents/ryomasolid.github.io`（`git@github.com:ryomasolid/ryomasolid.github.io.git`、
+  ブランチ `master`）の `support-geohero.html` / `privacy-geohero.html`。ほかのアプリと同じ置き場。
 - `Tools/make_screenshots.sh` — 審査用スクリーンショットを撮り直す。
   **6.5インチ（iPhone 11 Pro Max・1242×2688・透過なしJPEG）だけ**を撮る。
   6.9インチは以前べつのアプリで App Store Connect に弾かれている。

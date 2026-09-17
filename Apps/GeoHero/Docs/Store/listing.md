@@ -1,7 +1,7 @@
 # App Store 登録用メモ（地理の勇者 RPG）
 
-提出前に App Store Connect へ入れる中身の下書き。**太字の項目はユーザーが決めるもの**で、
-こちらでは埋められない（金額・公開国・審査に答える内容）。
+提出前に App Store Connect へ入れる中身の下書き。
+価格・公開国・URL は 2026-09-17 に決まったので、あとは Apple のアカウントで入力するだけ。
 
 ## アプリの基本
 
@@ -14,8 +14,8 @@
 | バージョン / ビルド | 1.0 / 1 |
 | プライマリ言語 | 日本語 |
 | カテゴリ | ゲーム → ロールプレイング（第2カテゴリ: アドベンチャー） |
-| **価格** | **無料のつもり？（要決定）** |
-| **公開国** | **日本のみ？全世界？（要決定）** |
+| 価格 | 無料（アプリ内課金なし） |
+| 公開国 | 全世界 |
 
 名前は30文字まで。「地理の勇者 RPG」は9文字なので余裕がある。
 同名のアプリがあると登録できないので、App Store Connect で先に名前を押さえる。
@@ -58,10 +58,45 @@
 RPG,ロールプレイング,ドット絵,レトロ,北海道,コマンドバトル,オフライン,広告なし,短編,冒険
 ```
 
-## サポートURL / マーケティングURL
+## 英語（English (U.S.)）の掲載情報
 
-**要決定。** 他のアプリと同じ ryomasolid.github.io に1ページ足すのが早い
-（AdMob の app-ads.txt でも同じリポジトリを使っている）。
+全世界に出すので、日本語以外の国では英語の掲載情報が使われる。入れておかないと
+日本語のままになる。ゲーム本編は日本語のみなので、そのことを1行目で断っておく。
+
+| 欄 | 値 |
+| --- | --- |
+| Name | Geo Hero RPG |
+| Subtitle | Pixel-art RPG across Hokkaido |
+
+```
+A small, hand-made RPG set on the island of Hokkaido, Japan.
+Note: the game text is in Japanese only.
+
+- A one-hour adventure. Three towns, three caves, three bosses.
+- Real places: Hakodate, Mt. Hakodate, Sapporo, Mt. Moiwa, Shiretoko, Mt. Rausu.
+- Monsters get tougher the closer you walk to the next landmark.
+- Classic turn-based battles: Fight, Magic, Item, Run.
+- Every sprite and every note is generated in code. No external assets.
+
+No ads. No in-app purchases. No network access. Plays fully offline.
+```
+
+キーワード（英語, 100文字）:
+
+```
+rpg,pixel,retro,turn-based,jrpg,offline,no ads,hokkaido,japan,adventure,short
+```
+
+## URL
+
+他のアプリと同じ `ryomasolid.github.io`（別リポジトリ `git@github.com:ryomasolid/ryomasolid.github.io.git`、
+ブランチ `master`）に置いた。全世界配信なので、どちらも日本語と英語を1ページに入れてある。
+
+| 欄 | 値 |
+| --- | --- |
+| サポートURL | `https://ryomasolid.github.io/support-geohero.html` |
+| プライバシーポリシーURL | `https://ryomasolid.github.io/privacy-geohero.html` |
+| マーケティングURL | `https://ryomasolid.github.io/`（任意。広告を入れていないので app-ads.txt の検証には関係ない） |
 
 ## 年齢レーティング
 
@@ -80,7 +115,8 @@ RPG,ロールプレイング,ドット絵,レトロ,北海道,コマンドバト
 - データ収集: **なし**（「データを収集していません」を選ぶ）
 - トラッキング: なし
 - サードパーティSDK: なし（広告・解析とも入れていない）
-- プライバシーポリシーURL: **要決定**（収集なしでも入力欄は必須）
+- プライバシーポリシーURL: `https://ryomasolid.github.io/privacy-geohero.html`
+  （収集なしでも入力欄は必須）
 
 ## 輸出コンプライアンス
 
@@ -105,6 +141,8 @@ RPG,ロールプレイング,ドット絵,レトロ,北海道,コマンドバト
 
 ## 提出までの順番
 
+0. 「ビジネス」で有料App契約の状態を見る（無料アプリだけなら不要だが、保留中だと別アプリで
+   つまずいたことがある）
 1. Apple Developer で App ID `tech.sesame.geohero` を登録
 2. App Store Connect で新規アプリを作る（名前・バンドルID・プライマリ言語）
 3. 上の説明文・キーワード・URL・カテゴリ・年齢レーティング・プライバシーを入れる
