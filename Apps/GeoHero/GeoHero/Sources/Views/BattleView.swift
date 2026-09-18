@@ -65,36 +65,45 @@ struct BattleView: View {
         }
     }
 
+    /// 下の2枚の枠の高さ。行や選択肢が増えても変えない
+    /// （伸び縮みすると敵の絵が上下にずれ、当たったときの揺れがわかりにくくなる）。
+    /// 余った高さは枠の中の空白になるので、画面に黒いすきまは残らない。
+    /// 中身がはみ出さないことは `LayoutTests` で見張っている。
+    static let messageHeight: CGFloat = 175
+    static let commandHeight: CGFloat = 150
+
     private func content(_ session: BattleSession) -> some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top) {
-                StatusPanel(hero: game.hero)
-                Spacer()
-            }
-            .padding(10)
-
+            // 状態の窓は戦いの絵に重ねる。行に並べると そのぶん絵が小さくなる。
             arena(session)
-
-            // 行が増えても枠の高さを変えない（伸びると敵の絵が上にずれ、揺れがわかりにくくなる）。
-            MessageBox(lines: session.log, showsCursor: session.waitingForTap)
-                .frame(height: 190, alignment: .top)
-
-            Group {
-                if session.end != nil {
-                    RetroWindow {
-                        RetroChoice(title: "つぎへ") {
-                            submenu = .none
-                            Task { await game.finishBattle() }
-                        }
-                    }
-                } else if !session.isPlaying {
-                    commandWindow(session)
-                } else {
-                    Color.clear
+                .overlay(alignment: .topLeading) {
+                    StatusPanel(hero: game.hero).padding(10)
                 }
-            }
-            .frame(height: 210, alignment: .top)
+
+            MessageBox(
+                lines: session.log,
+                showsCursor: session.waitingForTap,
+                fixedHeight: Self.messageHeight
+            )
+
+            commandSlot(session)
         }
+    }
+
+    /// コマンドの枠。文字が流れているあいだは 中身のない枠のまま置いておく。
+    private func commandSlot(_ session: BattleSession) -> some View {
+        RetroWindow {
+            if session.end != nil {
+                RetroChoice(title: "つぎへ") {
+                    submenu = .none
+                    Task { await game.finishBattle() }
+                }
+            } else if !session.isPlaying {
+                commandChoices(session)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(height: Self.commandHeight)
     }
 
     /// 大ダメージ（ボスの炎など）は大きく揺らす。
@@ -109,10 +118,10 @@ struct BattleView: View {
     private func arena(_ session: BattleSession) -> some View {
         GeometryReader { geometry in
             let size = geometry.size
-            let enemyY = size.height * 0.33
-            let heroY = size.height * 0.86
+            let enemyY = size.height * 0.38
+            let heroY = size.height * 0.85
             ZStack {
-                Backdrop(isBoss: session.battle.enemy.kind.isBoss, groundHeight: size.height * 0.30)
+                Backdrop(isBoss: session.battle.enemy.kind.isBoss, groundHeight: size.height * 0.34)
 
                 // 敵を横に並べる。3体でも画面からはみ出さない幅にする。
                 let alive = session.battle.enemies
@@ -140,7 +149,7 @@ struct BattleView: View {
             }
             .clipped()
         }
-        .frame(minHeight: 300)
+        .frame(minHeight: 280)
     }
 
     @ViewBuilder
@@ -205,48 +214,59 @@ struct BattleView: View {
         .animation(.easeOut(duration: 0.4), value: session.defeatedIDs)
     }
 
+    /// 選べるものは2列に分ける。縦に積むと枠が高くなり、そのぶん戦いの絵が小さくなる。
     @ViewBuilder
-    private func commandWindow(_ session: BattleSession) -> some View {
+    private func commandChoices(_ session: BattleSession) -> some View {
         let hero = game.hero
-        RetroWindow {
-            switch submenu {
-            case .none:
-                HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading) {
-                        RetroChoice(title: "こうげき") { aim(.attack, session) }
-                        RetroChoice(title: "まほう", isEnabled: !hero.spells.isEmpty) { submenu = .spells }
-                    }
-                    VStack(alignment: .leading) {
-                        RetroChoice(title: "どうぐ") { submenu = .items }
-                        RetroChoice(title: "にげる") { run(.run) }
-                    }
-                }
-            case .spells:
-                ForEach(hero.spells) { spell in
-                    RetroChoice(title: spell.name, detail: "MP \(spell.mpCost)", isEnabled: hero.mp >= spell.mpCost) {
-                        if spell.isHealing {
-                            run(.spell(spell))
-                        } else {
-                            aim(.spell(spell), session)
-                        }
-                    }
-                }
-                RetroChoice(title: "もどる") { submenu = .none }
-            case .items:
-                RetroChoice(title: Item.herb.name, detail: "×\(hero.herbCount)", isEnabled: hero.herbCount > 0) {
-                    run(.item(.herb))
-                }
-                RetroChoice(title: "もどる") { submenu = .none }
-            case .targets:
-                ForEach(session.battle.living) { enemy in
-                    RetroChoice(title: enemy.name) { run(pendingAttack ?? .attack, target: enemy.id) }
-                }
-                RetroChoice(title: "もどる") {
-                    pendingAttack = nil
-                    submenu = .none
-                }
+        switch submenu {
+        case .none:
+            TwoColumns {
+                RetroChoice(title: "こうげき") { aim(.attack, session) }
+                RetroChoice(title: "まほう", isEnabled: !hero.spells.isEmpty) { submenu = .spells }
+            } right: {
+                RetroChoice(title: "どうぐ") { submenu = .items }
+                RetroChoice(title: "にげる") { run(.run) }
+            }
+        case .spells:
+            let half = (hero.spells.count + 1) / 2
+            TwoColumns {
+                ForEach(hero.spells.prefix(half)) { spellChoice($0, session) }
+            } right: {
+                ForEach(hero.spells.dropFirst(half)) { spellChoice($0, session) }
+            }
+            RetroChoice(title: "もどる") { submenu = .none }
+        case .items:
+            RetroChoice(title: Item.herb.name, detail: "×\(hero.herbCount)", isEnabled: hero.herbCount > 0) {
+                run(.item(.herb))
+            }
+            RetroChoice(title: "もどる") { submenu = .none }
+        case .targets:
+            let living = session.battle.living
+            let half = (living.count + 1) / 2
+            TwoColumns {
+                ForEach(living.prefix(half)) { targetChoice($0) }
+            } right: {
+                ForEach(living.dropFirst(half)) { targetChoice($0) }
+            }
+            RetroChoice(title: "もどる") {
+                pendingAttack = nil
+                submenu = .none
             }
         }
+    }
+
+    private func spellChoice(_ spell: Spell, _ session: BattleSession) -> some View {
+        RetroChoice(title: spell.name, detail: "MP \(spell.mpCost)", isEnabled: game.hero.mp >= spell.mpCost) {
+            if spell.isHealing {
+                run(.spell(spell))
+            } else {
+                aim(.spell(spell), session)
+            }
+        }
+    }
+
+    private func targetChoice(_ enemy: Enemy) -> some View {
+        RetroChoice(title: enemy.name) { run(pendingAttack ?? .attack, target: enemy.id) }
     }
 
     /// 相手が2体以上いれば選ばせる。1体なら そのまま出す。
@@ -263,6 +283,21 @@ struct BattleView: View {
         submenu = .none
         pendingAttack = nil
         Task { await game.command(command, target: target) }
+    }
+}
+
+/// 枠の中の選択肢を2列に分けて並べる。
+private struct TwoColumns<Left: View, Right: View>: View {
+    @ViewBuilder let left: Left
+    @ViewBuilder let right: Right
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) { left }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 8) { right }
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 

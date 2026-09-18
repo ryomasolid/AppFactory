@@ -538,6 +538,9 @@ final class GameState {
 
     // MARK: - 戦闘
 
+    /// 戦闘の枠に出しておく行数。枠の高さ（`BattleView.messageHeight`）と対で決めている。
+    static let battleLogLines = 3
+
     func startBattle(_ kind: EnemyKind) {
         startBattle([kind])
     }
@@ -597,7 +600,10 @@ final class GameState {
 
     private func show(_ line: BattleLine) {
         battle?.log.append(line.text)
-        if let count = battle?.log.count, count > 4 { battle?.log.removeFirst(count - 4) }
+        // 枠に収まる行数だけ残す。あふれると下の行が切れる。
+        if let count = battle?.log.count, count > GameState.battleLogLines {
+            battle?.log.removeFirst(count - GameState.battleLogLines)
+        }
         // HP・MP・レベルの表示は、その行が出たときに合わせて変える。
         if let snapshot = line.hero { hero = snapshot }
         if let damage = line.enemyDamage {

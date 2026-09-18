@@ -262,8 +262,20 @@ struct StatusPanel: View {
 struct MessageBox: View {
     let lines: [String]
     var showsCursor = true
+    /// 決まった高さの枠にする。戦闘では 行が増えても枠を動かしたくないので渡す。
+    /// nil なら 中身のぶんだけの高さになる（ひろの・街ではこちら）。
+    var fixedHeight: CGFloat?
 
     var body: some View {
+        if let fixedHeight {
+            // 余った分は枠の中の空白にする。枠の外に残すと そこが黒いままになる。
+            window(fillsFrame: true).frame(height: fixedHeight)
+        } else {
+            window(fillsFrame: false).frame(minHeight: 130, alignment: .top)
+        }
+    }
+
+    private func window(fillsFrame: Bool) -> some View {
         RetroWindow {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 Text(line).fixedSize()
@@ -274,8 +286,10 @@ struct MessageBox: View {
                     Text("▼").font(Retro.font(12))
                 }
             }
+            if fillsFrame {
+                Spacer(minLength: 0)
+            }
         }
-        .frame(minHeight: 130, alignment: .top)
     }
 }
 
