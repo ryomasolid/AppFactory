@@ -46,10 +46,11 @@ let project = Project(
                     ],
                     "CFBundleDisplayName": "定期チェック",
                     "CFBundleDevelopmentRegion": "ja",
-                    // App Store 審査でのリジェクト対応（Guideline 2.1(b)）に伴い、ビルド番号を更新。
-                    // 却下された 1.0 (1) と同じビルド番号では再アップロードできない。
-                    "CFBundleShortVersionString": "1.0",
-                    "CFBundleVersion": "2",
+                    // AdMob の app-ads.txt 検証に App Store のマーケティングURL が必須だが、
+                    // 配信済み 1.0 ではメタデータを編集できないため 1.0.1 を出して設定する。
+                    // （1.0 は審査リジェクト対応でビルド 2 まで使っている。）
+                    "CFBundleShortVersionString": "1.0.1",
+                    "CFBundleVersion": "3",
                     "ITSAppUsesNonExemptEncryption": false,
                     // AdMob アプリID（本番）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~2706062104",
