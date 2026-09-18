@@ -156,13 +156,31 @@ Apple ID: **6813561253** / SKU: `geohero`
 9. ✅ プライバシー: データ収集なし／プライバシーポリシーURL を設定して公開
 10. ✅ 価格: 無料（175の国と地域）／配信状況: すべての国または地域
 
+11. ✅ ビルド 1（1.0）をアップロードして バージョンに紐づけた
+12. ✅ リリース方法: App Review 承認後に自動でリリース
+
 のこり:
 
-11. ⬜ ビルドのアップロード → **Xcode のApple IDのセッション切れで止まっている。**
-    Xcode → Settings → Accounts で `oga.sesame.tech@gmail.com` にサインインし直すと動く。
-    アーカイブ自体は `xcodebuild archive` で通る（署名は自動）。
-12. ⬜ バージョン画面でビルドを選ぶ
-13. ⬜ 「審査用に追加」→「App Storeに提出」
+13. ⬜ 「審査用に追加」→「App Storeに提出」（ユーザーの合図待ち）
+
+### ビルドの上げかた（コマンドライン）
+
+Xcode の Apple ID がサインインずみなら、これで通る:
+
+```
+mise exec -- tuist generate --no-open
+xcodebuild archive -workspace GeoHero.xcworkspace -scheme GeoHero \
+  -destination 'generic/platform=iOS' -archivePath <path>/GeoHero.xcarchive \
+  -allowProvisioningUpdates
+xcodebuild -exportArchive -archivePath <path>/GeoHero.xcarchive \
+  -exportOptionsPlist <path>/ExportOptions.plist -exportPath <path>/export \
+  -allowProvisioningUpdates
+```
+
+`ExportOptions.plist` は method `app-store-connect` / destination `upload` /
+teamID `ZP3T7MAT5U` / signingStyle `automatic`。
+**Xcode のセッションが切れていると「Your session has expired」で落ちる**ので、
+そのときは Xcode → Settings → Accounts でサインインし直す。
 
 ### 年齢制限指定の答え
 
