@@ -14,6 +14,7 @@ import Foundation
 /// / `-startOverlay shop -shopSell YES`（道具屋の「うる」一覧を出した状態）
 /// / `-startOverlay shop -shopBuy YES`（道具屋の「かう」一覧。街ごとの品ぞろえを見る）
 /// / `-openedChests hakodateyama-0,moiwa1-0`（開けた宝箱）
+/// / `-startMap field -startX 16 -startY 35 -autoStep up`（1秒後に1歩あるく。街に入ったときの地名の札を見る）
 @MainActor
 enum Launch {
     /// 戦闘で開いておくサブメニュー（`-battleSubmenu spells` / `items`）。表示確認用。
@@ -96,6 +97,13 @@ enum Launch {
         case "shop": game.overlay = .shop
         case "inn": game.overlay = .inn
         default: break
+        }
+        if let step = defaults.string(forKey: "autoStep").flatMap(Direction.init(rawValue:)) {
+            // 1歩ぶんの出入りの確認用（街に入ったときの地名の札など）。
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                await game.walk(step)
+            }
         }
         if defaults.bool(forKey: "autoInn") {
             // 暗転とねむりの演出の確認用。あいさつを読み飛ばして眠りに入る。

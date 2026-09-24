@@ -39,7 +39,10 @@ enum Tile: Character, CaseIterable {
     /// どうぐやの屋根（緑）。
     case shopRoof = "S"
     case fountain = "w"
+    /// 街の出口。矢印を描いて、壁のすきまが外へ抜ける道だと分かるようにする。
     case exit = "E"
+    /// 街の名前を書いた看板。通れないが、A で しらべると 街の説明が出る。
+    case signpost = "P"
     case wall = "#"
     case caveFloor = ","
     case stairsUp = "U"
@@ -61,7 +64,7 @@ enum Tile: Character, CaseIterable {
     var isPassable: Bool {
         switch self {
         case .mountain, .water, .house, .innRoof, .shopRoof, .fountain, .wall,
-             .houseWall, .innSign, .shopSign, .counter, .bed, .shelf, .innerWall, .darkness: false
+             .houseWall, .innSign, .shopSign, .counter, .bed, .shelf, .innerWall, .darkness, .signpost: false
         default: true
         }
     }
@@ -77,6 +80,19 @@ enum MapID: String, Codable, CaseIterable {
     case rausudake1, rausudake2
     /// 宿屋と道具屋の中。どの街から入っても ここを使い、出るときに元の街へ戻る。
     case innInside, shopInside
+
+    /// 漢字の地名。フィールドの目印の下や 看板に出す。街と ほらあなだけ。
+    var placeName: String? {
+        switch self {
+        case .hakodate: "函館"
+        case .sapporo: "札幌"
+        case .rausu: "羅臼"
+        case .hakodateyama: "函館山"
+        case .moiwa1, .moiwa2: "藻岩山"
+        case .rausudake1, .rausudake2: "羅臼岳"
+        case .field, .innInside, .shopInside: nil
+        }
+    }
 
     /// 街かどうか（宿屋・道具屋から戻る先になれるか）。
     var isTown: Bool { townInfo != nil }
@@ -95,6 +111,11 @@ enum MapID: String, Codable, CaseIterable {
 /// 街ごとの ちがい。奥の街ほど 宿代は高く、道具屋の品ぞろえは強くなる。
 /// 地形・人数・家の数は地図（`Maps.swift`）のほうで変える。
 struct TownInfo: Equatable {
+    /// 漢字の名前と よみ。街に入ったときの札と 看板に出す。
+    let name: String
+    let reading: String
+    /// ひとことの説明（「みなとの 街」など）。
+    let tagline: String
     /// 宿代は `base + レベル × perLevel`。
     let innBase: Int
     let innPerLevel: Int
@@ -102,13 +123,16 @@ struct TownInfo: Equatable {
     let stock: [Item]
 
     /// みなとの街。旅のはじめなので 安く、そろえも いちばん下。
-    static let hakodate = TownInfo(innBase: 2, innPerLevel: 3,
+    static let hakodate = TownInfo(name: "函館", reading: "はこだて", tagline: "みなとの 街",
+                                   innBase: 2, innPerLevel: 3,
                                    stock: [.herb, .copperSword, .leatherArmor])
     /// 大きな街。鋼の剣が ここで買える。
-    static let sapporo = TownInfo(innBase: 4, innPerLevel: 5,
+    static let sapporo = TownInfo(name: "札幌", reading: "さっぽろ", tagline: "北の 大きな 街",
+                                  innBase: 4, innPerLevel: 5,
                                   stock: [.herb, .copperSword, .leatherArmor, .steelSword])
     /// さいはての町。運ぶのが大変なぶん 宿も品も高い。銅の剣・革の鎧は もう置かない。
-    static let rausu = TownInfo(innBase: 6, innPerLevel: 8,
+    static let rausu = TownInfo(name: "羅臼", reading: "らうす", tagline: "知床の さいはての 町",
+                                innBase: 6, innPerLevel: 8,
                                 stock: [.herb, .steelSword, .chainMail])
 }
 

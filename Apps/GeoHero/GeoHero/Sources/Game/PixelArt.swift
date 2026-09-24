@@ -7,6 +7,7 @@ enum SpriteID: String, CaseIterable {
     case grass, forest, hills, mountain, water, road, bridge, town, cave
     case townFloor, house, innRoof, shopRoof, fountain, wall, caveFloor, stairsUp, stairsDown
     case houseWall, innSign, shopSign, door, woodFloor, counter, bed, shelf, innerWall, darkness
+    case exit, signpost
     /// 街と ほらあなを 1マスより大きく描くための、背景を透かした版。
     case townLarge, caveLarge
     case chestClosed, chestOpen
@@ -44,7 +45,9 @@ enum SpriteID: String, CaseIterable {
         case .bridge: self = .bridge
         case .town: self = .town
         case .cave: self = .cave
-        case .townFloor, .exit: self = .townFloor
+        case .townFloor: self = .townFloor
+        case .exit: self = .exit
+        case .signpost: self = .signpost
         case .house: self = .house
         case .innRoof: self = .innRoof
         case .shopRoof: self = .shopRoof

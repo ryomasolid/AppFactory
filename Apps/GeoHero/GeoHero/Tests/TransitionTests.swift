@@ -51,6 +51,47 @@ struct TransitionTests {
         #expect(game.isTransitioning == false)
     }
 
+    // MARK: - 街の名前
+
+    /// フィールドから街に入ると 地名の札が出て、しばらくすると消える。
+    @Test func enteringATownShowsItsName() async {
+        let game = makeGame()
+        game.bannerDuration = .milliseconds(100)
+        for _ in 0..<3 { await game.walk(.down) }
+        #expect(game.mapID == .field)
+        #expect(game.arrivalBanner == nil, "フィールドに出たのに 札が出ている")
+        await game.walk(.up)
+        #expect(game.mapID == .hakodate)
+        #expect(game.arrivalBanner?.name == "函館")
+        try? await Task.sleep(for: .milliseconds(300))
+        #expect(game.arrivalBanner == nil, "札が 消えない")
+    }
+
+    /// 宿屋から 街へ戻ったときは 札を出さない（街の中を 行き来しただけなので）。
+    @Test func leavingTheInnDoesNotShowTheName() async {
+        let game = makeGame()
+        game.position = Point(x: 3, y: 5)
+        await game.walk(.up)
+        #expect(game.mapID == .innInside)
+        await game.walk(.down)
+        #expect(game.mapID == .hakodate)
+        #expect(game.arrivalBanner == nil)
+    }
+
+    /// 街の看板を しらべると 街の名前が読める。
+    @Test func signpostTellsTheTownName() async {
+        let game = makeGame()
+        for id in [MapID.hakodate, .sapporo, .rausu] {
+            #expect(World.map(id).tiles.joined().contains(.signpost), "\(id) に看板がない")
+        }
+        await game.walk(.left)
+        await game.walk(.left)
+        await game.walk(.down)
+        #expect(game.position == Point(x: 5, y: 10))
+        game.pressA()
+        #expect(game.currentPage?.joined().contains("函館") == true)
+    }
+
     // MARK: - 宿屋
 
     /// 泊まると、まず宿屋のあいさつが出る。この時点ではまだ回復しない。

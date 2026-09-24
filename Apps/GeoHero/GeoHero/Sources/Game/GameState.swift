@@ -96,6 +96,11 @@ final class GameState {
     private(set) var curtainCaption: String?
     /// 黒幕を上げ下げしているあいだは操作を受け付けない。
     private(set) var isTransitioning = false
+    /// 街に入ったときに しばらく出す 地名の札。フィールドから入ったときだけ（宿屋から出たときは出さない）。
+    private(set) var arrivalBanner: TownInfo?
+    @ObservationIgnored private var bannerTask: Task<Void, Never>?
+    /// 地名の札を出しておく時間。
+    @ObservationIgnored var bannerDuration: Duration = .milliseconds(2600)
 
     /// 黒幕の濃さが変わるのにかかる時間。画面側のアニメーションと同じ値にする。
     @ObservationIgnored var fadeDuration: Duration = .milliseconds(280)
@@ -208,6 +213,7 @@ final class GameState {
     }
 
     private func enterField() {
+        hideBanner()
         pages = []
         overlay = .none
         battle = nil
@@ -290,11 +296,14 @@ final class GameState {
             await drawCurtain()
             lastMoveWasWarp = true
             if mapID.isTown { lastTown = mapID }
+            let from = mapID
             // 宿屋・道具屋から出るときは 入ってきた街へ戻す。
             mapID = (mapID == .innInside || mapID == .shopInside) ? lastTown : warp.to
             position = warp.at
             stepsSinceBattle = 0
+            hideBanner()
             await openCurtain()
+            if from == .field, let town = mapID.townInfo { showBanner(town) }
             return
         }
         guard let table = map.encounterTable(at: position), !table.isEmpty else { return }
@@ -302,6 +311,24 @@ final class GameState {
         if stepsSinceBattle > Self.safeSteps, rng.chance(Self.encounterDenominator) {
             startBattle(EnemyGroup.random(from: table, rng: &rng).map(\.kind))
         }
+    }
+
+    /// 街の名前の札を出し、しばらくしたら消す。
+    private func showBanner(_ town: TownInfo) {
+        bannerTask?.cancel()
+        arrivalBanner = town
+        let duration = bannerDuration
+        bannerTask = Task { [weak self] in
+            try? await Task.sleep(for: duration)
+            guard !Task.isCancelled else { return }
+            self?.arrivalBanner = nil
+        }
+    }
+
+    private func hideBanner() {
+        bannerTask?.cancel()
+        bannerTask = nil
+        arrivalBanner = nil
     }
 
     // MARK: - ウィンドウの カーソル
@@ -393,6 +420,9 @@ final class GameState {
             talk(to: npc)
         } else if let chest = map.chest(at: target) {
             open(chest)
+        } else if map.tile(at: target) == .signpost, let town = mapID.townInfo {
+            playSound(.confirm)
+            say(["かんばんに こう かいてある。", "「ここは \(town.name)（\(town.reading)）。", "\(town.tagline)」"])
         } else if bossPoint == target, let kind = map.bossKind {
             playSound(.confirm)
             say(GameState.bossGreeting(kind)) { [weak self] in

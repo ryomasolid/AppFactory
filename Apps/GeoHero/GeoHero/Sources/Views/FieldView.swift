@@ -32,21 +32,33 @@ struct FieldView: View {
                         .interpolation(.none)
                         .frame(width: tile, height: tile)
                         .offset(x: center.x, y: center.y)
-
-                    HStack(alignment: .top) {
-                        StatusPanel(hero: game.hero)
-                        Spacer()
-                        Text(game.map.name)
-                            .font(Retro.font(13))
-                            .foregroundStyle(.white)
-                            .padding(6)
-                            .background(Color.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 4))
-                    }
-                    .padding(8)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
                 .clipped()
             }
+            // 地図より大きい ZStack の中に置くと 右端が画面の外へ出てしまうので、上にかぶせる。
+            .overlay(alignment: .top) {
+                HStack(alignment: .top) {
+                    StatusPanel(hero: game.hero)
+                    Spacer()
+                    Text(placeLabel)
+                        .font(Retro.font(13))
+                        .foregroundStyle(.white)
+                        .padding(6)
+                        .background(Color.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 4))
+                }
+                .padding(8)
+            }
+            // 真ん中の勇者に かぶらないよう、ステータスの下あたりに出す。
+            .overlay(alignment: .top) {
+                if let town = game.arrivalBanner {
+                    TownBanner(town: town)
+                        .padding(.top, 150)
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        .allowsHitTesting(false)
+                }
+            }
+            .animation(.easeOut(duration: 0.35), value: game.arrivalBanner)
             .overlay(alignment: .top) {
                 FieldOverlay()
                     .padding(.top, 120)
@@ -60,6 +72,37 @@ struct FieldView: View {
 
             ControlPad()
         }
+    }
+}
+
+extension FieldView {
+    /// 右上の地名。街は 漢字に よみを そえる。
+    private var placeLabel: String {
+        guard let town = game.map.id.townInfo else { return game.map.name }
+        return "\(town.name)（\(town.reading)）"
+    }
+}
+
+/// 街に入ったときに 真ん中に しばらく出す 地名の札。
+struct TownBanner: View {
+    let town: TownInfo
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(town.reading)
+                .font(Retro.font(14))
+                .foregroundStyle(Retro.dim)
+            Text(town.name)
+                .font(Retro.font(40))
+                .foregroundStyle(Retro.accent)
+            Text(town.tagline)
+                .font(Retro.font(15))
+                .foregroundStyle(Retro.ink)
+        }
+        .padding(.horizontal, 36)
+        .padding(.vertical, 18)
+        .background(Color.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white, lineWidth: 3))
     }
 }
 
@@ -124,6 +167,28 @@ struct MapLayer: View {
                     let rect = CGRect(x: CGFloat(x + pad) * tile, y: CGFloat(y + pad) * tile, width: tile, height: tile)
                     context.draw(SpriteCache.image(mark.sprite), in: MapLayer.standing(rect, scale: mark.scale))
                 }
+            }
+            // 看板には 街の名前を書く。
+            if let town = map.id.townInfo {
+                for y in yRange {
+                    for x in xRange where map.tile(at: Point(x: x, y: y)) == .signpost {
+                        let board = rect(for: Point(x: x, y: y))
+                        let text = context.resolve(Text(town.name).font(Retro.font(tile * 0.34)).foregroundColor(.black))
+                        context.draw(text, at: CGPoint(x: board.midX, y: board.minY + board.height * 5.5 / 16))
+                    }
+                }
+            }
+            // フィールドでは 街と ほらあなの下に 地名を出す。どこが どの街か 地図だけで分かるように。
+            for (point, warp) in map.warps {
+                guard MapLayer.landmark(map.tile(at: point)) != nil, let name = warp.to.placeName,
+                      abs(point.x - center.x) <= radius, abs(point.y - center.y) <= radius else { continue }
+                let below = rect(for: point)
+                let text = context.resolve(Text(name).font(Retro.font(tile * 0.36)).foregroundColor(.white))
+                let size = text.measure(in: CGSize(width: tile * 4, height: tile))
+                let label = CGRect(x: below.midX - size.width / 2 - 6, y: below.maxY + 2,
+                                   width: size.width + 12, height: size.height + 4)
+                context.fill(Path(roundedRect: label, cornerRadius: 3), with: .color(.black.opacity(0.7)))
+                context.draw(text, at: CGPoint(x: label.midX, y: label.midY))
             }
             for chest in map.chests {
                 let sprite: SpriteID = openedChests.contains(chest.id) ? .chestOpen : .chestClosed
