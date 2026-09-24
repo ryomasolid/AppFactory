@@ -269,4 +269,128 @@ struct GameStateTests {
             #expect((game.screen == .ending) == kind.isFinalBoss, "\(kind) で エンディングの出かたが おかしい")
         }
     }
+
+    /// 倒したボスは ほらあなから いなくなる（居座って 何度でも戦えてしまう不具合の再発防止）。
+    @Test func defeatedBossLeavesItsCave() async throws {
+        let game = makeGame()
+        game.mapID = .hakodateyama
+        let boss = try #require(game.map.boss)
+        let kind = try #require(game.map.bossKind)
+        game.position = boss + Point(x: 0, y: 1)
+        game.facing = .up
+
+        // 倒す前。話しかけると 戦いになる。
+        #expect(game.bossPoint == boss)
+        game.pressA()
+        while game.currentPage != nil { game.advanceMessage() }
+        #expect(game.screen == .battle, "ボスに話しかけても 戦いにならない")
+
+        // 倒したあと。絵も当たり判定も 消える。
+        game.screen = .field
+        game.battle = nil
+        game.defeatedBosses.insert(kind)
+        #expect(game.bossPoint == nil, "倒したのに ボスが 残っている")
+        game.pressA()
+        #expect(game.screen == .field, "倒したボスと また戦いになる")
+        while game.currentPage != nil { game.advanceMessage() }
+        await game.walk(.up)
+        #expect(game.position == boss, "ボスが いたマスに 入れない")
+    }
+
+    // MARK: - ウィンドウの カーソル
+
+    /// 十字キーは 選べない行をとばし、端まで来たら 反対の端へ回る。
+    @Test func cursorSkipsRowsThatCannotBeChosen() {
+        let game = makeGame()
+        game.overlay = .shop
+        game.setChoices([
+            ChoiceSlot(id: "かう", isEnabled: true),
+            ChoiceSlot(id: "うる", isEnabled: false),
+            ChoiceSlot(id: "やめる", isEnabled: true),
+        ])
+        #expect(game.cursor == 0)
+        game.moveCursor(.down)
+        #expect(game.cursor == 2, "選べない行を とばしていない")
+        game.moveCursor(.down)
+        #expect(game.cursor == 0, "端で 反対の端へ 回らない")
+        game.moveCursor(.up)
+        #expect(game.cursor == 2)
+    }
+
+    /// ウィンドウの中身が入れかわったら いちばん上（選べる行）から。
+    @Test func cursorStartsAtTheTopOfANewWindow() {
+        let game = makeGame()
+        game.overlay = .shop
+        game.setChoices([
+            ChoiceSlot(id: "かう", isEnabled: true),
+            ChoiceSlot(id: "うる", isEnabled: true),
+            ChoiceSlot(id: "やめる", isEnabled: true),
+        ])
+        game.moveCursor(.down)
+        #expect(game.cursor == 1)
+        // 同じ並びのままなら、選べるかどうかが変わっても 指したままにする。
+        game.setChoices([
+            ChoiceSlot(id: "かう", isEnabled: true),
+            ChoiceSlot(id: "うる", isEnabled: false),
+            ChoiceSlot(id: "やめる", isEnabled: true),
+        ])
+        #expect(game.cursor == 1)
+        // 別のウィンドウに変わったら 頭に戻る。買えないときは 選べる行から。
+        game.setChoices([
+            ChoiceSlot(id: "はい", isEnabled: false),
+            ChoiceSlot(id: "もどる", isEnabled: true),
+        ])
+        #expect(game.cursor == 1, "選べない行を 指したまま 開いている")
+    }
+
+    /// ウィンドウが出ているあいだ、十字キーは歩かずに カーソルを動かす。
+    @Test func dPadMovesTheCursorInsteadOfWalking() {
+        let game = makeGame()
+        let start = game.position
+        game.overlay = .menu
+        game.setChoices([
+            ChoiceSlot(id: "つよさ", isEnabled: true),
+            ChoiceSlot(id: "どうぐ", isEnabled: true),
+        ])
+        game.hold(.down)
+        #expect(game.cursor == 1)
+        game.hold(nil)
+        #expect(game.position == start, "ウィンドウが出ているのに 歩いてしまう")
+    }
+
+    /// A は 指している行を、B は「もどる」を画面に伝える。選べない行では A は空振りする。
+    @Test func buttonsDecideAndGoBack() {
+        let game = makeGame()
+        game.overlay = .inn
+        game.setChoices([
+            ChoiceSlot(id: "はい", isEnabled: false),
+            ChoiceSlot(id: "いいえ", isEnabled: true),
+        ])
+        game.moveCursor(.up)
+        #expect(game.cursor == 1, "選べない行に カーソルが 乗ってしまう")
+        game.pressA()
+        #expect(game.confirmCount == 1)
+
+        game.setChoices([ChoiceSlot(id: "はい", isEnabled: false)])
+        game.pressA()
+        #expect(game.confirmCount == 1, "選べない行なのに 決まってしまう")
+
+        game.pressB()
+        #expect(game.cancelCount == 1)
+        #expect(game.overlay == .inn, "B を押しただけで ウィンドウが 変わってしまう")
+    }
+
+    /// ウィンドウを閉じれば 十字キーは また歩くのに戻る。
+    @Test func closingTheWindowGivesTheDPadBackToWalking() async {
+        let game = makeGame()
+        game.overlay = .menu
+        game.setChoices([ChoiceSlot(id: "とじる", isEnabled: true)])
+        #expect(game.isChoosing)
+        game.closeOverlay()
+        #expect(!game.isChoosing)
+        #expect(game.choices.isEmpty, "閉じたウィンドウの選択肢が 残っている")
+        let start = game.position
+        await game.walk(.left)
+        #expect(game.position != start)
+    }
 }

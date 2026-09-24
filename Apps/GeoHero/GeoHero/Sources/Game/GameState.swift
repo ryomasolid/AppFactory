@@ -46,6 +46,13 @@ struct EnemyHit: Equatable {
     let isCritical: Bool
 }
 
+/// ウィンドウに出ている選択肢の一行。画面が並べた順に、十字キーの カーソルが たどる。
+struct ChoiceSlot: Equatable {
+    /// 行の見出し。ウィンドウの中では重ならないので、そのまま見分けに使う。
+    let id: String
+    let isEnabled: Bool
+}
+
 @MainActor
 @Observable
 final class GameState {
@@ -62,7 +69,10 @@ final class GameState {
     var position = World.startPoint
     var facing: Direction = .down
     var openedChests: Set<String> = []
-    var overlay: Overlay = .none
+    var overlay: Overlay = .none {
+        // ウィンドウが入れかわったら、前の選択肢は捨ててカーソルを頭に戻す。
+        didSet { if overlay != oldValue { choices = []; cursor = 0 } }
+    }
     var battle: BattleSession?
     var isWalking = false
     var walkFrame = 0
@@ -122,6 +132,12 @@ final class GameState {
     /// 道具屋の品ぞろえ。街ごとに変える。
     var shopStock: [Item] { town.stock }
     var canWalk: Bool { screen == .field && pages.isEmpty && overlay == .none && !isWalking && !isTransitioning }
+
+    /// いまの地図に まだ立っているボス。倒したボスは 二度と出さない（居座って何度も戦えてしまうため）。
+    var bossPoint: Point? {
+        guard let kind = map.bossKind, !defeatedBosses.contains(kind) else { return nil }
+        return map.boss
+    }
 
     /// いま流す BGM。場面から決まる。
     var musicTrack: MusicTrack? {
@@ -211,6 +227,11 @@ final class GameState {
     func hold(_ direction: Direction?) {
         guard heldDirection != direction else { return }
         heldDirection = direction
+        // ウィンドウが出ているあいだは、同じ十字キーで カーソルを動かす。
+        if isChoosing {
+            if let direction { moveCursor(direction) }
+            return
+        }
         guard direction != nil, walkLoop == nil else { return }
         walkLoop = Task { [weak self] in
             while let self, let current = self.heldDirection, self.screen == .field, !Task.isCancelled {
@@ -229,7 +250,7 @@ final class GameState {
         guard canWalk else { return }
         facing = direction
         let next = position + direction.delta
-        guard map.isWalkable(next) else { return playSound(.bump) }
+        guard map.isWalkable(next, bossRemains: bossPoint != nil) else { return playSound(.bump) }
         isWalking = true
         lastMoveWasWarp = false
         walkFrame += 1
@@ -283,10 +304,69 @@ final class GameState {
         }
     }
 
+    // MARK: - ウィンドウの カーソル
+
+    /// いま指している行。十字キーで動かし、A で決める。
+    private(set) var cursor = 0
+    /// 出ている選択肢。画面が `setChoices` で知らせる。
+    @ObservationIgnored private(set) var choices: [ChoiceSlot] = []
+    /// A で決めた回数。画面はこれが増えたら 指している行を実行する。
+    private(set) var confirmCount = 0
+    /// B で戻した回数。画面はこれが増えたら「もどる」の行を実行する。
+    private(set) var cancelCount = 0
+
+    /// 十字キーが 歩くのではなく カーソルを動かすとき（ウィンドウが出ていて 会話は出ていない）。
+    var isChoosing: Bool { screen == .field && pages.isEmpty && overlay != .none && !isTransitioning }
+
+    /// 画面が いま出している選択肢を知らせる。並びが変わったら カーソルを頭に戻す。
+    /// **どのウィンドウにも「もどる」にあたる行をひとつ入れる**。B ボタンの行き先がなくなるため。
+    func setChoices(_ next: [ChoiceSlot]) {
+        let sameList = next.map(\.id) == choices.map(\.id)
+        choices = next
+        if !sameList {
+            cursor = next.firstIndex(where: \.isEnabled) ?? 0
+        } else if cursor >= next.count {
+            cursor = max(0, next.count - 1)
+        }
+    }
+
+    /// 十字キーで となりの行へ。選べない行は とばし、端まで来たら 反対の端へ回る。
+    func moveCursor(_ direction: Direction) {
+        let step = (direction == .up || direction == .left) ? -1 : 1
+        guard let next = selectable(from: cursor, step: step), next != cursor else { return }
+        cursor = next
+        playSound(.cursor)
+    }
+
+    /// タップで選ばれた行に カーソルを合わせる（十字キーの続きが そこから始まるように）。
+    func moveCursor(to index: Int) {
+        guard choices.indices.contains(index) else { return }
+        cursor = index
+    }
+
+    /// `index` から `step` の向きへ、次に選べる行をさがす。ひと回りして なければ nil。
+    private func selectable(from index: Int, step: Int) -> Int? {
+        guard !choices.isEmpty else { return nil }
+        var candidate = index
+        for _ in choices.indices {
+            candidate = (candidate + step + choices.count) % choices.count
+            if choices[candidate].isEnabled { return candidate }
+        }
+        return nil
+    }
+
+    /// A で いま指している行を決める。選べない行なら 音だけ返す。
+    func confirmChoice() {
+        guard choices.indices.contains(cursor), choices[cursor].isEnabled else { return playSound(.bump) }
+        playSound(.cursor)
+        confirmCount += 1
+    }
+
     // MARK: - ボタン
 
     func pressA() {
         if !pages.isEmpty { return advanceMessage() }
+        if isChoosing { return confirmChoice() }
         guard screen == .field, overlay == .none, !isWalking, !isTransitioning else { return }
         interact()
     }
@@ -295,11 +375,8 @@ final class GameState {
         if !pages.isEmpty { return advanceMessage() }
         guard screen == .field, !isWalking, !isTransitioning else { return }
         playSound(.cursor)
-        switch overlay {
-        case .none: overlay = .menu
-        case .menu: overlay = .none
-        default: overlay = .menu
-        }
+        // ウィンドウが出ていれば「もどる」を押したことにして、どこへ戻すかは画面にまかせる。
+        if overlay == .none { overlay = .menu } else { cancelCount += 1 }
     }
 
     func closeOverlay() {
@@ -316,7 +393,7 @@ final class GameState {
             talk(to: npc)
         } else if let chest = map.chest(at: target) {
             open(chest)
-        } else if map.boss == target, let kind = map.bossKind {
+        } else if bossPoint == target, let kind = map.bossKind {
             playSound(.confirm)
             say(GameState.bossGreeting(kind)) { [weak self] in
                 self?.startBattle(kind)

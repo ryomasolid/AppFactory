@@ -15,6 +15,7 @@ struct FieldView: View {
                     MapLayer(
                         map: game.map,
                         openedChests: game.openedChests,
+                        boss: game.bossPoint,
                         tile: tile,
                         center: game.position,
                         // 画面に入る範囲＋すこし余分だけ描く。
@@ -68,6 +69,8 @@ struct MapLayer: View {
 
     let map: GameMap
     let openedChests: Set<String>
+    /// まだ立っているボスのマス。倒したあとは nil（絵も消す）。
+    let boss: Point?
     let tile: CGFloat
     /// 勇者のいるマス。この まわりだけ描く。
     let center: Point
@@ -129,7 +132,7 @@ struct MapLayer: View {
             for npc in map.npcs {
                 context.draw(SpriteCache.image(SpriteID(npc: npc.role)), in: rect(for: npc.position))
             }
-            if let boss = map.boss {
+            if let boss {
                 // そのマップのボスの絵で出す（どの ほらあなでも守護神が座っていた）。
                 let sprite = map.bossKind.map(SpriteID.init(enemy:)) ?? .guardian
                 context.draw(SpriteCache.image(sprite), in: rect(for: boss).insetBy(dx: -tile * 0.25, dy: -tile * 0.25))

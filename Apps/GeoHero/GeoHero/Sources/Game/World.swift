@@ -209,8 +209,10 @@ struct GameMap {
     func chest(at point: Point) -> Chest? { chests.first { $0.position == point } }
 
     /// 歩いて入れるか（地形・人・宝箱・ボスで判定）。
-    func isWalkable(_ point: Point) -> Bool {
-        contains(point) && tile(at: point).isPassable && npc(at: point) == nil && chest(at: point) == nil && boss != point
+    /// ボスは 倒すと いなくなるので、そのあとは `bossRemains` に false を渡して 通れるようにする。
+    func isWalkable(_ point: Point, bossRemains: Bool = true) -> Bool {
+        contains(point) && tile(at: point).isPassable && npc(at: point) == nil && chest(at: point) == nil
+            && !(bossRemains && boss == point)
     }
 
     /// 文字列の地図から作る。人・宝箱・ボスの印は足元の床に置き換え、登場順に `villagers` / `chestRewards` を割り当てる。

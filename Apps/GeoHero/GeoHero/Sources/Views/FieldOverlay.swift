@@ -35,12 +35,14 @@ struct FieldOverlay: View {
 
         case .menu:
             RetroWindow {
-                RetroChoice(title: "つよさ") { game.overlay = .status }
-                RetroChoice(title: "じゅもん", isEnabled: !hero.spells.isEmpty) { game.overlay = .spells }
-                RetroChoice(title: "どうぐ") { game.overlay = .items }
-                RetroChoice(title: "おと", detail: game.soundEnabled ? "ON" : "OFF") { game.soundEnabled.toggle() }
-                RetroChoice(title: "セーブ") { game.saveFromMenu() }
-                RetroChoice(title: "とじる") { game.closeOverlay() }
+                ChoiceList([
+                    Choice(title: "つよさ") { game.overlay = .status },
+                    Choice(title: "じゅもん", isEnabled: !hero.spells.isEmpty) { game.overlay = .spells },
+                    Choice(title: "どうぐ") { game.overlay = .items },
+                    Choice(title: "おと", detail: game.soundEnabled ? "ON" : "OFF") { game.soundEnabled.toggle() },
+                    Choice(title: "セーブ") { game.saveFromMenu() },
+                    Choice(title: "とじる", isCancel: true) { game.closeOverlay() },
+                ])
             }
             .frame(width: 220)
 
@@ -59,21 +61,20 @@ struct FieldOverlay: View {
                 }
                 row("ぶき", hero.weaponName)
                 row("よろい", hero.armorName)
-                RetroChoice(title: "もどる") { game.overlay = .menu }
+                ChoiceList([Choice(title: "もどる", isCancel: true) { game.overlay = .menu }])
             }
 
         case .spells:
             RetroWindow {
-                ForEach(hero.spells) { spell in
-                    RetroChoice(
+                ChoiceList(hero.spells.map { spell in
+                    Choice(
                         title: spell.name,
                         detail: "MP \(spell.mpCost)",
                         isEnabled: spell.isHealing && hero.mp >= spell.mpCost
                     ) {
                         game.castInField(spell)
                     }
-                }
-                RetroChoice(title: "もどる") { game.overlay = .menu }
+                } + [Choice(title: "もどる", isCancel: true) { game.overlay = .menu }])
             }
 
         case .items:
@@ -111,8 +112,10 @@ struct FieldOverlay: View {
             RetroWindow {
                 speech("やどや", "ひとばん \(game.innPrice)ゴールドです。")
                 divider()
-                RetroChoice(title: "はい") { game.stayAtInn() }
-                RetroChoice(title: "いいえ") { game.closeOverlay() }
+                ChoiceList([
+                    Choice(title: "はい") { game.stayAtInn() },
+                    Choice(title: "いいえ", isCancel: true) { game.closeOverlay() },
+                ])
             }
         }
     }
@@ -127,15 +130,12 @@ struct FieldOverlay: View {
         divider()
         if hero.belongings.isEmpty {
             note("なにも もっていない")
-        } else {
-            ForEach(hero.belongings, id: \.item) { entry in
-                RetroChoice(title: entry.item.name, detail: detail(for: entry, hero: hero)) {
-                    selectedItem = entry.item
-                }
-            }
         }
-        divider()
-        RetroChoice(title: "もどる") { game.overlay = .menu }
+        ChoiceList(hero.belongings.map { entry in
+            Choice(title: entry.item.name, detail: detail(for: entry, hero: hero)) {
+                selectedItem = entry.item
+            }
+        } + [Choice(title: "もどる", separated: true, isCancel: true) { game.overlay = .menu }])
     }
 
     /// 一覧の右側。そうび中か、持っている数。
@@ -146,32 +146,36 @@ struct FieldOverlay: View {
     }
 
     /// 選んだ持ちものに対してできること。
+    /// 説明は1行だけにする。品物の素の強さと 差し引きの伸びを並べると食い違って見える。
+    /// 説明を先にまとめ、選択肢は下にそろえる（あいだに挟むと カーソルが とびとびになる）。
     @ViewBuilder
     private func itemActions(_ item: Item, hero: Hero) -> some View {
+        let available = itemAction(item, hero: hero)
         heading(item.name)
-        // 説明は1行だけにする。品物の素の強さと 差し引きの伸びを並べると食い違って見える。
+        note(available.note)
+        note("うるのは どうぐやで")
+        divider()
+        ChoiceList([available.choice, Choice(title: "やめる", isCancel: true) { selectedItem = nil }])
+    }
+
+    /// 持ちものに対してできること ひとつと、その説明。
+    private func itemAction(_ item: Item, hero: Hero) -> (note: String, choice: Choice) {
         if case .consumable = item.kind {
-            note(effectNote(item))
-            RetroChoice(title: "つかう", isEnabled: hero.hp < hero.maxHP) {
+            return (effectNote(item), Choice(title: "つかう", isEnabled: hero.hp < hero.maxHP) {
                 selectedItem = nil
                 game.useHerbInField()
-            }
-        } else if hero.isEquipped(item) {
-            note(equippedNote(item))
-            RetroChoice(title: "はずす") {
+            })
+        }
+        if hero.isEquipped(item) {
+            return (equippedNote(item), Choice(title: "はずす") {
                 selectedItem = nil
                 game.unequip(item)
-            }
-        } else {
-            note(equipPreview(item, hero: hero))
-            RetroChoice(title: "そうびする") {
-                selectedItem = nil
-                game.equip(item)
-            }
+            })
         }
-        divider()
-        note("うるのは どうぐやで")
-        RetroChoice(title: "やめる") { selectedItem = nil }
+        return (equipPreview(item, hero: hero), Choice(title: "そうびする") {
+            selectedItem = nil
+            game.equip(item)
+        })
     }
 
     /// いま そうびしているものが どれだけ足してくれているか。
@@ -244,10 +248,11 @@ struct FieldOverlay: View {
     private func shopMenu(hero: Hero) -> some View {
         speech("どうぐや", "いらっしゃい！")
         divider()
-        RetroChoice(title: "かう") { shopPanel = .buying }
-        RetroChoice(title: "うる", isEnabled: hero.belongings.isEmpty == false) { shopPanel = .selling }
-        divider()
-        RetroChoice(title: "やめる") { game.closeOverlay() }
+        ChoiceList([
+            Choice(title: "かう") { shopPanel = .buying },
+            Choice(title: "うる", isEnabled: hero.belongings.isEmpty == false) { shopPanel = .selling },
+            Choice(title: "やめる", separated: true, isCancel: true) { game.closeOverlay() },
+        ])
     }
 
     /// 売れるもの一覧。そうび中のものは 外さないと売れない。
@@ -255,18 +260,16 @@ struct FieldOverlay: View {
     private func sellList(hero: Hero) -> some View {
         speech("どうぐや", "どれを うるんだい？")
         divider()
-        ForEach(hero.belongings, id: \.item) { entry in
+        ChoiceList(hero.belongings.map { entry in
             let equipped = hero.isEquipped(entry.item)
-            RetroChoice(
+            return Choice(
                 title: entry.item.name,
                 detail: equipped ? "そうび中" : "\(Hero.sellPrice(of: entry.item))G",
                 isEnabled: !equipped
             ) {
                 shopPanel = .confirmSell(entry.item)
             }
-        }
-        divider()
-        RetroChoice(title: "もどる") { shopPanel = .menu }
+        } + [Choice(title: "もどる", separated: true, isCancel: true) { shopPanel = .menu }])
     }
 
     /// 売るまえの確認。
@@ -278,13 +281,15 @@ struct FieldOverlay: View {
             note("のこり ×\(hero.inventory[item, default: 0])")
         }
         divider()
-        RetroChoice(title: "はい") {
-            game.sell(item)
-            shopPanel = .selling
-        }
-        RetroChoice(title: "いいえ") {
-            shopPanel = .selling
-        }
+        ChoiceList([
+            Choice(title: "はい") {
+                game.sell(item)
+                shopPanel = .selling
+            },
+            Choice(title: "いいえ", isCancel: true) {
+                shopPanel = .selling
+            },
+        ])
     }
 
     /// 商品一覧。もちきんは商品と混ざらないよう、上に出して線で区切る。
@@ -292,13 +297,13 @@ struct FieldOverlay: View {
     private func shopStock(hero: Hero) -> some View {
         speech("どうぐや", "なにが ほしいんだい？")
         divider()
-        ForEach(game.shopStock) { item in
+        ChoiceList(game.shopStock.map { item in
             // もう持っている装備は、はいを押しても断られるので最初から選ばせない。
             let owned = item.kind != .consumable && hero.owns(item)
             // **おかねが足りなくても選べる。** どれだけ強くなるかを先に見て、
             // 貯める目標にできるようにするため（買えるかどうかは値段の色で伝える）。
             let short = game.shortfall(for: item) > 0
-            RetroChoice(
+            return Choice(
                 title: item.name,
                 detail: owned ? "もっている" : "\(item.price)G",
                 detailStyle: owned ? nil : (short ? Retro.hpLow : Retro.accent),
@@ -306,9 +311,7 @@ struct FieldOverlay: View {
             ) {
                 shopPanel = .confirmBuy(item)
             }
-        }
-        divider()
-        RetroChoice(title: "もどる") { shopPanel = .menu }
+        } + [Choice(title: "もどる", separated: true, isCancel: true) { shopPanel = .menu }])
     }
 
     /// 買うまえの確認。いきなり買わずに はい／いいえ を選ばせる。
@@ -328,13 +331,15 @@ struct FieldOverlay: View {
             note("あと \(short)ゴールド たりない。", color: Retro.hpLow)
         }
         divider()
-        RetroChoice(title: "はい", isEnabled: short == 0) {
-            game.buy(item)
-            shopPanel = .buying
-        }
-        RetroChoice(title: short > 0 ? "もどる" : "いいえ") {
-            shopPanel = .buying
-        }
+        ChoiceList([
+            Choice(title: "はい", isEnabled: short == 0) {
+                game.buy(item)
+                shopPanel = .buying
+            },
+            Choice(title: short > 0 ? "もどる" : "いいえ", isCancel: true) {
+                shopPanel = .buying
+            },
+        ])
     }
 
     /// もちきん。買ったあとの残りも出すと、いくら減るかが分かる。

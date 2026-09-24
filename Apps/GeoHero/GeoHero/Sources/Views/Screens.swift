@@ -177,26 +177,102 @@ struct RetroWindow<Content: View>: View {
     }
 }
 
-/// ウィンドウ内の選択肢。
-struct RetroChoice: View {
-    @Environment(GameState.self) private var game
+/// ウィンドウの中の 選べる一行。並べた順に 十字キーの カーソルが たどる。
+struct Choice: Identifiable {
     let title: String
     var detail: String?
     /// detail だけ色を変えたいとき（買えない値段を赤くするなど）。
     var detailStyle: Color?
     var isEnabled = true
-    let action: () -> Void
+    /// この行の上に 区切り線を引く（一覧から「もどる」を離すときなど）。
+    var separated = false
+    /// B ボタンで選ばれる行（もどる・やめる・とじる・いいえ）。ウィンドウごとに ひとつ。
+    var isCancel = false
+    var action: () -> Void
+
+    /// 見出しは ウィンドウの中で重ならないので、そのまま見分けに使う。
+    var id: String { title }
+    var slot: ChoiceSlot { ChoiceSlot(id: title, isEnabled: isEnabled) }
+}
+
+/// ウィンドウの中の選択肢を まとめて並べる。タッチでも 十字キーでも選べる。
+/// 出ている行を GameState に知らせ、A（けってい）と B（もどる）を ここで実行する。
+/// ひとつのウィンドウに ふたつ置くと カーソルの行き先が決まらないので、**1枚に1つだけ**。
+struct ChoiceList: View {
+    @Environment(GameState.self) private var game
+    let choices: [Choice]
+
+    init(_ choices: [Choice]) {
+        self.choices = choices
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(choices.enumerated()), id: \.element.id) { index, choice in
+                if choice.separated {
+                    Rectangle()
+                        .fill(.white.opacity(0.35))
+                        .frame(height: 2)
+                        .padding(.vertical, 2)
+                }
+                RetroChoice(choice: choice, isSelected: game.cursor == index) {
+                    // タップした行から 十字キーの続きが始まるようにする。
+                    game.moveCursor(to: index)
+                }
+            }
+        }
+        .onChange(of: choices.map(\.slot), initial: true) { _, slots in
+            game.setChoices(slots)
+        }
+        .onChange(of: game.confirmCount) { _, _ in
+            guard choices.indices.contains(game.cursor) else { return }
+            choices[game.cursor].action()
+        }
+        .onChange(of: game.cancelCount) { _, _ in
+            choices.first { $0.isCancel }?.action()
+        }
+    }
+}
+
+/// ウィンドウ内の選択肢 ひとつぶん。
+struct RetroChoice: View {
+    @Environment(GameState.self) private var game
+    let choice: Choice
+    /// 十字キーの カーソルが 指しているか。
+    var isSelected = false
+    /// タップされたときに 先に呼ぶもの（カーソルを合わせる）。
+    var onTap: () -> Void = {}
+
+    init(choice: Choice, isSelected: Bool = false, onTap: @escaping () -> Void = {}) {
+        self.choice = choice
+        self.isSelected = isSelected
+        self.onTap = onTap
+    }
+
+    /// 十字キーを使わない画面（タイトル・戦闘・エンディング）用。
+    init(
+        title: String,
+        detail: String? = nil,
+        detailStyle: Color? = nil,
+        isEnabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
+        self.init(choice: Choice(
+            title: title, detail: detail, detailStyle: detailStyle, isEnabled: isEnabled, action: action
+        ))
+    }
 
     var body: some View {
         Button {
             game.playSound(.cursor)
-            action()
+            onTap()
+            choice.action()
         } label: {
             HStack {
-                Text(title)
+                Text(choice.title)
                 Spacer()
-                if let detail {
-                    if let detailStyle {
+                if let detail = choice.detail {
+                    if let detailStyle = choice.detailStyle {
                         Text(detail).foregroundStyle(detailStyle)
                     } else {
                         Text(detail)
@@ -206,9 +282,9 @@ struct RetroChoice: View {
             .contentShape(Rectangle())
             .padding(.vertical, 4)
         }
-        .buttonStyle(RetroChoiceStyle())
-        .foregroundStyle(isEnabled ? .white : .gray)
-        .disabled(!isEnabled)
+        .buttonStyle(RetroChoiceStyle(isSelected: isSelected))
+        .foregroundStyle(choice.isEnabled ? .white : .gray)
+        .disabled(!choice.isEnabled)
     }
 }
 
@@ -227,14 +303,16 @@ struct RetroRow: View {
     }
 }
 
-/// 押している間だけ左に ▶ を出す。
+/// 十字キーが指している行と、押している間だけ左に ▶ を出す。
 /// ▶ は「いま選んでいる1つ」を指す印なので、全部の選択肢に並べると意味がなくなる。
 /// 印の分の幅は常に空けておき、押したときに文字がずれないようにする。
 private struct RetroChoiceStyle: ButtonStyle {
+    let isSelected: Bool
+
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 6) {
             Text("▶")
-                .opacity(configuration.isPressed ? 1 : 0)
+                .opacity(configuration.isPressed || isSelected ? 1 : 0)
             configuration.label
         }
     }
