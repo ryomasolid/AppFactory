@@ -4,6 +4,8 @@ enum BattleCommand: Equatable {
     case attack
     case spell(Spell)
     case item(Item)
+    /// 「ちしき」。いまの問題（`Battle.nextQuiz`）に、選んだ番号で答える。
+    case quiz(answer: Int)
     case run
 }
 
@@ -75,10 +77,16 @@ struct Battle {
     var hero: Hero
     private(set) var enemies: [Enemy]
     private(set) var end: BattleEnd?
+    /// 「ちしき」で出す問題の山。先頭が次の問題。空なら「ちしき」は出さない。
+    private(set) var quizzes: [Quiz]
+    /// ボスの すみの まくの のこり枚数。問題のない土地では まくを張らない（やぶる手がないため）。
+    private(set) var veil: Int
 
-    init(hero: Hero, enemies: [Enemy]) {
+    init(hero: Hero, enemies: [Enemy], quizzes: [Quiz] = []) {
         self.hero = hero
         self.enemies = enemies
+        self.quizzes = quizzes
+        self.veil = quizzes.isEmpty ? 0 : enemies.map(\.kind.veilLayers).max() ?? 0
     }
 
     init(hero: Hero, enemy: Enemy) {
@@ -93,6 +101,8 @@ struct Battle {
     var enemy: Enemy { enemies.first ?? Enemy(.potato) }
     /// ねらう相手が決まっていないときの相手。
     var defaultTarget: Int? { living.first?.id }
+    /// 「ちしき」を選んだときに出す問題。
+    var nextQuiz: Quiz? { quizzes.first }
 
     private func index(of id: Int?) -> Int? {
         if let id, let found = enemies.firstIndex(where: { $0.id == id && !$0.isDead }) { return found }
@@ -154,7 +164,7 @@ struct Battle {
             } else {
                 damage = Self.damage(attack: hero.attack, defense: enemies[slot].kind.stats.defense, rng: &rng)
             }
-            hit(slot, for: damage, isCritical: isCritical, into: &result)
+            hit(slot, for: softened(damage, at: slot, into: &result), isCritical: isCritical, into: &result)
 
         case .spell(let spell):
             guard hero.spells.contains(spell), hero.mp >= spell.mpCost else {
@@ -171,7 +181,7 @@ struct Battle {
                 // HP が満タンで 0 しか回復しないときは、粒と「+0」を出さない。
                 say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
             } else {
-                hit(slot, for: amount, into: &result)
+                hit(slot, for: softened(amount, at: slot, into: &result), into: &result)
             }
 
         case .item(let item):
@@ -182,6 +192,9 @@ struct Battle {
             say("\(hero.name)は \(item.name)を つかった！", pause: .beat, into: &result)
             let healed = hero.heal(rng.next(in: Item.herbPower))
             say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
+
+        case .quiz(let choice):
+            answer(choice, target: slot, rng: &rng, into: &result)
 
         case .run:
             if isBoss {
@@ -196,6 +209,40 @@ struct Battle {
             } else {
                 say("しかし まわりこまれてしまった！", .miss, into: &result)
             }
+        }
+    }
+
+    /// すみの まくが のこっていれば ダメージを半分にする（0 にはしない。レベルを上げれば 押しきれるように）。
+    private func softened(_ damage: Int, at slot: Int, into result: inout TurnResult) -> Int {
+        guard veil > 0, enemies[slot].kind.veilLayers > 0, damage > 0 else { return damage }
+        say("すみの まくに はばまれた！", .miss, into: &result)
+        return max(1, damage / 2)
+    }
+
+    /// 「ちしき」の答え合わせ。
+    /// 正解なら ボスには まくを1枚やぶって 会心なみの一撃、ざこには 全員に ふつうの一撃。
+    /// まちがえたら 何も起きずに 敵の番になり、正解を見せる（覚えて 次に使えるように）。
+    private mutating func answer(_ choice: Int, target slot: Int, rng: inout some RandomSource, into result: inout TurnResult) {
+        guard let quiz = quizzes.first, quiz.choices.indices.contains(choice) else { return }
+        quizzes.removeFirst()
+        say("\(hero.name)「\(quiz.choices[choice])！」", .spell, pause: .beat, into: &result)
+        guard choice == quiz.answer else {
+            say("ざんねん！ こたえは「\(quiz.correctChoice)」。", .miss, into: &result)
+            // まちがえた問題は すぐまた出す（覚えたかを たしかめられるように）。
+            quizzes.insert(quiz, at: min(2, quizzes.count))
+            return
+        }
+        quizzes.append(quiz)
+        say("せいかい！ ちしきの ひかりが はなたれた！", .critical, effect: .flame(big: true), into: &result)
+        if veil > 0, enemies[slot].kind.veilLayers > 0 {
+            veil -= 1
+            say(veil > 0 ? "すみの まくが 1まい やぶれた！（のこり \(veil)まい）" : "すみの まくが きえさった！", into: &result)
+            hit(slot, for: Self.criticalDamage(attack: hero.attack, rng: &rng), isCritical: true, into: &result)
+            return
+        }
+        for other in enemies.indices where !enemies[other].isDead {
+            let damage = Self.damage(attack: hero.attack, defense: enemies[other].kind.stats.defense, rng: &rng)
+            hit(other, for: max(1, damage), into: &result)
         }
     }
 

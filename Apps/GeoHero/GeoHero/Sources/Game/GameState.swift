@@ -82,6 +82,11 @@ final class GameState {
     var defeatedBosses: Set<EnemyKind> = []
     /// 宿屋・道具屋から出たときに戻る街。
     var lastTown: MapID = World.startMap
+    /// 土地ごとの「ちしき」の問題の山。戦いをまたいで続きから出す（毎回 同じ問題から始まらないように）。
+    /// セーブには残さない（試作）。
+    @ObservationIgnored var quizDecks: [QuizRegion: [Quiz]] = [:]
+    /// 問題を出す前の戦闘メッセージ。「もどる」で元に戻す。
+    @ObservationIgnored private var logBeforeQuiz: [String]?
     var hasSave = SaveStore.load() != nil
 
     /// 表示中の会話（1ページ最大3行）。
@@ -558,8 +563,9 @@ final class GameState {
     /// 長老の助言。どこまで進んだかで 言うことを変える。
     private func elderHint() -> [String] {
         if !defeatedBosses.contains(.squidLord) {
-            ["ちょうろう「函館山の ぬしは すみを はく。",
-             "　レベルを あげてから いどむのじゃ。」"]
+            ["ちょうろう「函館山の ぬしは すみの まくで みを まもる。",
+             "　函館の ことを よく しれば やぶれるはずじゃ。",
+             "　街の ものの はなしを きいておくのじゃぞ。」"]
         } else if !defeatedBosses.contains(.bearLord) {
             ["ちょうろう「よくぞ ぬしを たおした。",
              "　つぎは さっぽろの 藻岩山じゃ。",
@@ -580,7 +586,8 @@ final class GameState {
         case .squidLord:
             ["シュルルル……",
              "イカのぬし「みなとの さかなは わたしのものだ。",
-             "　すみで まっくろに してやろう！」"]
+             "　すみで まっくろに してやろう！」",
+             "（イカのぬしは すみの まくに つつまれている……）"]
         case .bearLord:
             ["グオオオ……",
              "ヒグマのぬし「この山は とおさん。",
@@ -657,8 +664,12 @@ final class GameState {
         guard !group.isEmpty else { return }
         heldDirection = nil
         playSound(.encounter)
+        var quizzes: [Quiz] = []
+        if let region = QuizRegion.at(mapID, position) {
+            quizzes = quizDecks[region] ?? region.quizzes.shuffled()
+        }
         battle = BattleSession(
-            battle: Battle(hero: hero, enemies: group),
+            battle: Battle(hero: hero, enemies: group, quizzes: quizzes),
             log: [EnemyGroup.encounterText(group)]
         )
         overlay = .none
@@ -667,7 +678,11 @@ final class GameState {
 
     func command(_ command: BattleCommand, target: Int? = nil) async {
         guard var session = battle, !session.isPlaying, session.end == nil else { return }
+        logBeforeQuiz = nil
         let result = session.battle.take(command, target: target, rng: &rng)
+        if let region = QuizRegion.at(mapID, position), !session.battle.quizzes.isEmpty {
+            quizDecks[region] = session.battle.quizzes
+        }
         session.log = []
         session.isPlaying = true
         battle = session
@@ -686,6 +701,20 @@ final class GameState {
         hero = session.battle.hero
         battle?.isPlaying = false
         battle?.end = result.end
+    }
+
+    /// 「ちしき」を選んだら、メッセージの枠に問題を出す。答えはコマンドの枠で選ぶ。
+    func poseQuiz() {
+        guard let quiz = battle?.battle.nextQuiz, logBeforeQuiz == nil else { return }
+        logBeforeQuiz = battle?.log
+        battle?.log = ["もんだい！", quiz.question]
+    }
+
+    /// 答えずに「もどる」。問題を出す前のメッセージに戻す。
+    func withdrawQuiz() {
+        guard let log = logBeforeQuiz else { return }
+        battle?.log = log
+        logBeforeQuiz = nil
     }
 
     /// 行の前の間。同じ場面の続きは少し待って下に足し、行動が変わるときは長めに待って枠を空ける。

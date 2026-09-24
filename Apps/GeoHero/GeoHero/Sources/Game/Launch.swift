@@ -17,7 +17,7 @@ import Foundation
 /// / `-startMap field -startX 16 -startY 35 -autoStep up`（1秒後に1歩あるく。街に入ったときの地名の札を見る）
 @MainActor
 enum Launch {
-    /// 戦闘で開いておくサブメニュー（`-battleSubmenu spells` / `items`）。表示確認用。
+    /// 戦闘で開いておくサブメニュー（`-battleSubmenu spells` / `items` / `quiz`）。表示確認用。
     static var battleSubmenu: String? {
         UserDefaults.standard.string(forKey: "battleSubmenu")
     }

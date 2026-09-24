@@ -58,6 +58,10 @@ enum EnemyKind: String, Codable, CaseIterable {
         }
     }
 
+    /// すみの まくの枚数。まくが のこっているうちは こうげき・呪文の ダメージが 半分になり、
+    /// 「ちしき」で1問 正解するたびに 1枚 やぶれる。
+    var veilLayers: Int { self == .squidLord ? 3 : 0 }
+
     /// 最後の相手。倒すと物語が終わる。
     var isFinalBoss: Bool { self == .guardian }
 

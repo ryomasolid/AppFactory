@@ -45,6 +45,29 @@ struct LayoutTests {
         )
     }
 
+    /// 「ちしき」の答え（2列 + もどる）も枠に収まる。答えが長いと 列の中で折り返す。
+    @Test func quizChoicesFitTheirBox() {
+        for quiz in QuizRegion.allCases.flatMap(\.quizzes) {
+            let half = (quiz.choices.count + 1) / 2
+            let answers = RetroWindow {
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(quiz.choices.prefix(half), id: \.self) { row($0, nil) }
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(quiz.choices.dropFirst(half), id: \.self) { row($0, nil) }
+                    }
+                }
+                row("もどる", nil)
+            }
+            let height = Self.height(of: answers, width: Self.narrowest)
+            #expect(
+                height <= BattleView.commandHeight,
+                "答えが コマンド枠から はみ出す: \(Int(height)) > \(Int(BattleView.commandHeight)) \(quiz.choices)"
+            )
+        }
+    }
+
     /// RetroChoice は GameState を環境から読むので、測るだけの版を置く。
     private func row(_ title: String, _ detail: String?) -> some View {
         HStack {
@@ -112,19 +135,24 @@ struct LayoutTests {
                 hero.name = String(repeating: "あ", count: Hero.maxNameLength)
                 if level < hero.level { hero = scaled(hero, to: level) }
                 let group = EnemyGroup.numbered(kinds)
-                var battle = Battle(hero: hero, enemies: group)
+                var battle = Battle(hero: hero, enemies: group, quizzes: QuizRegion.hakodate.quizzes)
                 var log = [EnemyGroup.encounterText(group)]
                 for turn in 0..<40 where battle.end == nil {
-                    // こうげき・じゅもん・どうぐ を混ぜて、出る行の種類をひととおり出す。
-                    let command: BattleCommand = switch turn % 3 {
+                    // こうげき・じゅもん・どうぐ・ちしき（正解と まちがい）を混ぜて、出る行の種類をひととおり出す。
+                    let command: BattleCommand = switch turn % 4 {
                     case 0: .attack
                     case 1: battle.hero.spells.last.map { BattleCommand.spell($0) } ?? .attack
-                    default: .item(.herb)
+                    case 2: .item(.herb)
+                    default: .quiz(answer: (turn / 4) % 3)
                     }
                     log += battle.take(command, target: battle.defaultTarget, rng: &rng).messages
                 }
                 logs.append(log)
             }
+        }
+        // 「ちしき」を選んだときに出す問題。
+        for region in QuizRegion.allCases {
+            logs += region.quizzes.map { ["もんだい！", $0.question] }
         }
         return logs
     }
