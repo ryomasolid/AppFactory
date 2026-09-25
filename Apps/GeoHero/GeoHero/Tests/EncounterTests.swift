@@ -140,34 +140,65 @@ struct EncounterTests {
         #expect(Set(seenAt.keys).count == route.flatMap(\.1).count)
     }
 
+    /// 場所ごとの、着いたころの レベル・装備。場所の順は `route` と同じ。
+    /// 札幌へむかう道は 函館山のボス（銅の剣・革の鎧で LV3〜5）を倒したあとに来る。
+    private let arrivals: [(level: Int, weapon: Item, armor: Item)] = [
+        (1, .woodStick, .clothes), (2, .woodStick, .clothes), (3, .woodStick, .clothes),
+        (4, .copperSword, .leatherArmor), (5, .copperSword, .leatherArmor), (6, .copperSword, .leatherArmor),
+        (7, .copperSword, .leatherArmor), (8, .copperSword, .leatherArmor), (9, .copperSword, .leatherArmor),
+        (10, .steelSword, .chainMail), (11, .steelSword, .chainMail),
+    ]
+
+    /// 同じ敵 `count` 体と こうげきだけで戦い、20戦のうち 勝った数を返す。
+    private func wins(level: Int, weapon: Item, armor: Item, against kind: EnemyKind, count: Int) -> Int {
+        var wins = 0
+        for seed in UInt64(1)...20 {
+            var rng = SeededRandomSource(seed: seed)
+            var hero = Hero()
+            _ = hero.gainExp(LevelTable.row(level).exp)
+            hero.receive(weapon)
+            hero.receive(armor)
+            hero.restoreFully()
+            var battle = Battle(hero: hero, enemies: EnemyGroup.numbered(Array(repeating: kind, count: count)))
+            var end: BattleEnd?
+            for _ in 0..<60 where end == nil {
+                end = battle.take(.attack, rng: &rng).end
+            }
+            if end == .won(exp: kind.stats.exp * count, gold: kind.stats.gold * count) { wins += 1 }
+        }
+        return wins
+    }
+
     /// 場所ごとに、着いたころの レベル・装備なら 同じ敵 3体に 回復なしで勝てる。
     @Test func everyPlaceIsBeatableOnArrival() {
-        // 場所の順は `route` と同じ。
-        let arrivals: [(Int, Item, Item)] = [
-            (1, .woodStick, .clothes), (2, .woodStick, .clothes), (3, .woodStick, .clothes),
-            (4, .woodStick, .clothes), (5, .copperSword, .leatherArmor), (6, .copperSword, .leatherArmor),
-            (7, .copperSword, .leatherArmor), (8, .copperSword, .leatherArmor), (9, .copperSword, .leatherArmor),
-            (10, .steelSword, .chainMail), (11, .steelSword, .chainMail),
-        ]
         #expect(arrivals.count == route.count)
-        for ((place, kinds), (level, weapon, armor)) in zip(route, arrivals) {
+        for ((place, kinds), arrival) in zip(route, arrivals) {
             for kind in kinds {
-                var losses = 0
-                for seed in UInt64(1)...20 {
-                    var rng = SeededRandomSource(seed: seed)
-                    var hero = Hero()
-                    _ = hero.gainExp(LevelTable.row(level).exp)
-                    hero.receive(weapon)
-                    hero.receive(armor)
-                    hero.restoreFully()
-                    var battle = Battle(hero: hero, enemies: EnemyGroup.numbered([kind, kind, kind]))
-                    var end: BattleEnd?
-                    for _ in 0..<60 where end == nil {
-                        end = battle.take(.attack, rng: &rng).end
-                    }
-                    if end != .won(exp: kind.stats.exp * 3, gold: kind.stats.gold * 3) { losses += 1 }
-                }
-                #expect(losses == 0, "\(place) LV\(level) で \(kind.stats.name)×3 に \(losses)/20 回 負ける")
+                let won = wins(level: arrival.level, weapon: arrival.weapon, armor: arrival.armor, against: kind, count: 3)
+                #expect(won == 20, "\(place) LV\(arrival.level) で \(kind.stats.name)×3 に \(20 - won)/20 回 負ける")
+            }
+        }
+    }
+
+    /// 2レベル足りないまま先へ行くと、楽には勝てない。
+    /// 1体なら勝てるが、ひと振りでは倒せず、3体に囲まれると たいてい負ける。
+    /// （札幌の敵を LV2 で楽に倒せていたのを直したときの見張り。函館の3か所は となりどうしなので見ない）
+    @Test func underleveledHeroCannotBreezeThrough() {
+        var strongest = FixedRandomSource(pick: .max)
+        for index in 3..<route.count {
+            let (place, kinds) = route[index]
+            let level = arrivals[index].level - 2
+            let (weapon, armor) = (arrivals[index - 2].weapon, arrivals[index - 2].armor)
+            var hero = Hero()
+            _ = hero.gainExp(LevelTable.row(level).exp)
+            hero.receive(weapon)
+            for kind in kinds {
+                let hit = Battle.damage(attack: hero.attack, defense: kind.stats.defense, rng: &strongest)
+                #expect(hit < kind.stats.maxHP, "\(place) の \(kind.stats.name) を LV\(level) で ひと振りで倒せる")
+                let won = wins(level: level, weapon: weapon, armor: armor, against: kind, count: 3)
+                #expect(won <= 10, "\(place) の \(kind.stats.name)×3 に LV\(level) で \(won)/20 回 勝ててしまう")
+                let alone = wins(level: level, weapon: weapon, armor: armor, against: kind, count: 1)
+                #expect(alone >= 15, "\(place) の \(kind.stats.name) 1体に LV\(level) で \(20 - alone)/20 回 負ける")
             }
         }
     }

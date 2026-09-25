@@ -59,11 +59,11 @@ struct GroupBattleTests {
     @Test func threeEnemiesAreBeatableWithoutHealing() {
         // エリアと、そこに着くころのレベル・装備。
         let cases: [(String, EnemyKind, Int, Item, Item)] = [
-            ("くさち", .kelpSlime, 1, .woodStick, .clothes),
-            ("もり", .fox, 3, .woodStick, .clothes),
-            ("おか", .cod, 5, .copperSword, .leatherArmor),
-            ("ほらあなB1", .snowman, 7, .copperSword, .leatherArmor),
-            ("ほらあなB2", .iceGolem, 9, .steelSword, .chainMail),
+            ("函館のまわり", .kelpSlime, 1, .woodStick, .clothes),
+            ("藻岩山へむかう道", .fox, 5, .copperSword, .leatherArmor),
+            ("知床へむかう道", .cod, 8, .copperSword, .leatherArmor),
+            ("羅臼岳へむかう道", .snowman, 9, .copperSword, .leatherArmor),
+            ("羅臼岳B2", .iceGolem, 11, .steelSword, .chainMail),
         ]
         for (zone, kind, level, weapon, armor) in cases {
             var losses = 0
