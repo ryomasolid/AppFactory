@@ -177,7 +177,7 @@ enum World {
         chestRewards: [.gold(120)],
         bossKind: .squidLord,
         encounters: [
-            .caveFloor: [.potato, .kelpSlime, .scallop],
+            .caveFloor: [.nightBat, .hairyCrab, .brickGolem],
         ],
         markerFloor: .caveFloor
     )
@@ -207,7 +207,7 @@ enum World {
         ],
         chestRewards: [.item(.copperSword)],
         encounters: [
-            .caveFloor: [.scallop, .fox],
+            .caveFloor: [.flyingSquirrel, .maitake, .salamander],
         ],
         markerFloor: .caveFloor
     )
@@ -235,7 +235,7 @@ enum World {
         chestRewards: [.gold(300)],
         bossKind: .bearLord,
         encounters: [
-            .caveFloor: [.fox, .cod],
+            .caveFloor: [.bearCub, .fishOwl, .woodpecker],
         ],
         markerFloor: .caveFloor
     )
@@ -265,7 +265,7 @@ enum World {
         ],
         chestRewards: [.item(.steelSword)],
         encounters: [
-            .caveFloor: [.cod, .snowman],
+            .caveFloor: [.hikarigoke, .icicleOgre, .iceBat],
         ],
         markerFloor: .caveFloor
     )
@@ -293,7 +293,7 @@ enum World {
         chestRewards: [.item(.chainMail)],
         bossKind: .guardian,
         encounters: [
-            .caveFloor: [.snowman, .iceGolem],
+            .caveFloor: [.phantomWolf, .iceGolem, .blizzardSpirit],
         ],
         markerFloor: .caveFloor
     )
@@ -356,23 +356,23 @@ enum World {
             Point(x: 59, y: 2): Warp(to: .rausudake1, at: Point(x: 6, y: 11), requires: .bearLord),
         ],
         chestRewards: [.item(.herb), .gold(120), .item(.leatherArmor)],
-        // 目印ごとの区域。旅の順に ひとつずつ強くなり、となりの区域とは1種だけ重ねる。
+        // 目印ごとの区域。旅の順に ひとつずつ強くなり、出る敵は 場所ごとに ぜんぶ ちがう。
         // 入れる ほらあなより フィールドが強くならないようにそろえてある。
         encounterAreas: [
             EncounterArea(name: "函館のまわり", around: [Point(x: 16, y: 34)],
-                          enemies: [.potato, .kelpSlime]),
+                          enemies: [.potato, .kelpSlime, .seagull]),
             EncounterArea(name: "函館山のふもと", around: [Point(x: 33, y: 28)],
-                          enemies: [.potato, .kelpSlime, .scallop]),
+                          enemies: [.squidKid, .scallop, .squidRice]),
             // 中の海でへだてられているので、渡れる陸つづき（27,18）にも中心を置く。
             // ここを 藻岩山の区域に取られると、札幌へ戻る道だけ 急に強くなってしまう。
             EncounterArea(name: "札幌へむかう道", around: [Point(x: 14, y: 16), Point(x: 27, y: 18)],
-                          enemies: [.kelpSlime, .scallop]),
+                          enemies: [.cornSoldier, .ramenGhost, .lambSheep]),
             EncounterArea(name: "藻岩山へむかう道", around: [Point(x: 26, y: 8)],
-                          enemies: [.scallop, .fox]),
+                          enemies: [.squirrel, .fox, .snowFestival]),
             EncounterArea(name: "知床へむかう道", around: [Point(x: 46, y: 9)],
-                          enemies: [.fox, .cod]),
+                          enemies: [.deer, .cod, .salmon]),
             EncounterArea(name: "羅臼岳へむかう道", around: [Point(x: 59, y: 2)],
-                          enemies: [.cod, .snowman]),
+                          enemies: [.seaEagle, .snowman, .orca]),
         ],
         markerFloor: .grass
     )

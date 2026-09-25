@@ -125,13 +125,57 @@ struct EncounterTests {
         #expect((exps(ladder.last!.1).max() ?? 0) > (exps(ladder.first!.1).max() ?? 0))
     }
 
-    /// となりの場所とは 少なくとも1種 重ねて、地続きにする。
-    @Test func neighbouringAreasOverlap() {
-        let ladder = route
-        for index in 1..<ladder.count {
-            let shared = Set(ladder[index].1).intersection(Set(ladder[index - 1].1))
-            #expect(shared.isEmpty == false,
-                    "\(ladder[index].0) と \(ladder[index - 1].0) に 共通の敵がいない")
+    /// 場所ごとに 出る敵を変える。同じ敵が ふたつの場所に出ない。
+    /// （以前は 7種を 11か所で使いまわしていて、どこへ行っても 同じ顔ぶれだった）
+    @Test func everyPlaceHasItsOwnEnemies() {
+        var seenAt: [EnemyKind: String] = [:]
+        for (place, kinds) in route {
+            for kind in kinds {
+                if let other = seenAt[kind] {
+                    Issue.record("\(kind.stats.name) が \(other) と \(place) の両方に出る")
+                }
+                seenAt[kind] = place
+            }
+        }
+        #expect(Set(seenAt.keys).count == route.flatMap(\.1).count)
+    }
+
+    /// 場所ごとに、着いたころの レベル・装備なら 同じ敵 3体に 回復なしで勝てる。
+    @Test func everyPlaceIsBeatableOnArrival() {
+        // 場所の順は `route` と同じ。
+        let arrivals: [(Int, Item, Item)] = [
+            (1, .woodStick, .clothes), (2, .woodStick, .clothes), (3, .woodStick, .clothes),
+            (4, .woodStick, .clothes), (5, .copperSword, .leatherArmor), (6, .copperSword, .leatherArmor),
+            (7, .copperSword, .leatherArmor), (8, .copperSword, .leatherArmor), (9, .copperSword, .leatherArmor),
+            (10, .steelSword, .chainMail), (11, .steelSword, .chainMail),
+        ]
+        #expect(arrivals.count == route.count)
+        for ((place, kinds), (level, weapon, armor)) in zip(route, arrivals) {
+            for kind in kinds {
+                var losses = 0
+                for seed in UInt64(1)...20 {
+                    var rng = SeededRandomSource(seed: seed)
+                    var hero = Hero()
+                    _ = hero.gainExp(LevelTable.row(level).exp)
+                    hero.receive(weapon)
+                    hero.receive(armor)
+                    hero.restoreFully()
+                    var battle = Battle(hero: hero, enemies: EnemyGroup.numbered([kind, kind, kind]))
+                    var end: BattleEnd?
+                    for _ in 0..<60 where end == nil {
+                        end = battle.take(.attack, rng: &rng).end
+                    }
+                    if end != .won(exp: kind.stats.exp * 3, gold: kind.stats.gold * 3) { losses += 1 }
+                }
+                #expect(losses == 0, "\(place) LV\(level) で \(kind.stats.name)×3 に \(losses)/20 回 負ける")
+            }
+        }
+    }
+
+    /// どの敵にも 自分の絵がある（絵の名前を 敵の名前とそろえてあるので、足し忘れると ポテトーになる）。
+    @Test func everyEnemyHasItsOwnSprite() {
+        for kind in EnemyKind.allCases {
+            #expect(SpriteID(enemy: kind).rawValue == kind.rawValue, "\(kind.stats.name) の絵がない")
         }
     }
 

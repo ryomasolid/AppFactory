@@ -26,7 +26,10 @@ enum SpriteID: String, CaseIterable {
         }
     }
     // 敵
-    case potato, kelpSlime, scallop, fox, cod, snowman, iceGolem
+    case potato, kelpSlime, seagull, squidKid, scallop, squidRice, nightBat, hairyCrab, brickGolem
+    case cornSoldier, ramenGhost, lambSheep, squirrel, fox, snowFestival, flyingSquirrel, maitake, salamander
+    case bearCub, fishOwl, woodpecker, deer, cod, salmon, seaEagle, snowman, orca
+    case hikarigoke, icicleOgre, iceBat, phantomWolf, iceGolem, blizzardSpirit
     /// ボス3体（函館山・藻岩山・羅臼岳）。
     case squidLord, bearLord, guardian
 
@@ -71,16 +74,10 @@ enum SpriteID: String, CaseIterable {
 
     init(enemy: EnemyKind) {
         switch enemy {
-        case .potato: self = .potato
-        case .kelpSlime: self = .kelpSlime
-        case .scallop: self = .scallop
-        case .fox: self = .fox
-        case .cod: self = .cod
-        case .snowman: self = .snowman
-        case .iceGolem: self = .iceGolem
         case .squidLord: self = .squidLord
         case .bearLord: self = .bearLord
         case .guardian: self = .guardian
+        default: self = SpriteID(rawValue: enemy.rawValue) ?? .potato
         }
     }
 
