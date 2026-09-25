@@ -135,7 +135,11 @@ struct LayoutTests {
                 hero.name = String(repeating: "あ", count: Hero.maxNameLength)
                 if level < hero.level { hero = scaled(hero, to: level) }
                 let group = EnemyGroup.numbered(kinds)
-                var battle = Battle(hero: hero, enemies: group, quizzes: QuizRegion.hakodate.quizzes)
+                // 答えが いちばん長い 土地の問題で回す（まちがいの行に 答えが出る）。
+                let longest = QuizRegion.allCases.max {
+                    $0.quizzes.map(\.correctChoice.count).max() ?? 0 < $1.quizzes.map(\.correctChoice.count).max() ?? 0
+                }
+                var battle = Battle(hero: hero, enemies: group, quizzes: longest?.quizzes ?? [])
                 var log = [EnemyGroup.encounterText(group)]
                 for turn in 0..<40 where battle.end == nil {
                     // こうげき・じゅもん・どうぐ・ちしき（正解と まちがい）を混ぜて、出る行の種類をひととおり出す。

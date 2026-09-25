@@ -79,7 +79,7 @@ struct Battle {
     private(set) var end: BattleEnd?
     /// 「ちしき」で出す問題の山。先頭が次の問題。空なら「ちしき」は出さない。
     private(set) var quizzes: [Quiz]
-    /// ボスの すみの まくの のこり枚数。問題のない土地では まくを張らない（やぶる手がないため）。
+    /// ボスの まもり（すみの まく など）の のこり枚数。問題のない土地では まくを張らない（やぶる手がないため）。
     private(set) var veil: Int
 
     init(hero: Hero, enemies: [Enemy], quizzes: [Quiz] = []) {
@@ -212,15 +212,15 @@ struct Battle {
         }
     }
 
-    /// すみの まくが のこっていれば ダメージを半分にする（0 にはしない。レベルを上げれば 押しきれるように）。
+    /// ボスの まもりが のこっていれば ダメージを半分にする（0 にはしない。レベルを上げれば 押しきれるように）。
     private func softened(_ damage: Int, at slot: Int, into result: inout TurnResult) -> Int {
         guard veil > 0, enemies[slot].kind.veilLayers > 0, damage > 0 else { return damage }
-        say("すみの まくに はばまれた！", .miss, into: &result)
+        say("\(enemies[slot].kind.veilName)に はばまれた！", .miss, into: &result)
         return max(1, damage / 2)
     }
 
     /// 「ちしき」の答え合わせ。
-    /// 正解なら ボスには まくを1枚やぶって 会心なみの一撃、ざこには 全員に ふつうの一撃。
+    /// 正解なら ボスには まもりを1枚やぶって 会心なみの一撃、ざこには 全員に ふつうの一撃。
     /// まちがえたら 何も起きずに 敵の番になり、正解を見せる（覚えて 次に使えるように）。
     private mutating func answer(_ choice: Int, target slot: Int, rng: inout some RandomSource, into result: inout TurnResult) {
         guard let quiz = quizzes.first, quiz.choices.indices.contains(choice) else { return }
@@ -236,7 +236,8 @@ struct Battle {
         say("せいかい！ ちしきの ひかりが はなたれた！", .critical, effect: .flame(big: true), into: &result)
         if veil > 0, enemies[slot].kind.veilLayers > 0 {
             veil -= 1
-            say(veil > 0 ? "すみの まくが 1まい やぶれた！（のこり \(veil)まい）" : "すみの まくが きえさった！", into: &result)
+            let name = enemies[slot].kind.veilName
+            say(veil > 0 ? "\(name)が よわまった！（のこり \(veil)）" : "\(name)が きえさった！", into: &result)
             hit(slot, for: Self.criticalDamage(attack: hero.attack, rng: &rng), isCritical: true, into: &result)
             return
         }

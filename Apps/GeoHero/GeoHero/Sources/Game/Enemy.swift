@@ -58,9 +58,25 @@ enum EnemyKind: String, Codable, CaseIterable {
         }
     }
 
-    /// すみの まくの枚数。まくが のこっているうちは こうげき・呪文の ダメージが 半分になり、
-    /// 「ちしき」で1問 正解するたびに 1枚 やぶれる。
-    var veilLayers: Int { self == .squidLord ? 3 : 0 }
+    /// ボスの まもり（すみの まく など）の枚数。のこっているうちは こうげき・呪文の ダメージが 半分になり、
+    /// 「ちしき」で1問 正解するたびに 1枚 やぶれる。奥のボスほど 多い。
+    var veilLayers: Int {
+        switch self {
+        case .squidLord: 3
+        case .bearLord: 4
+        case .guardian: 5
+        default: 0
+        }
+    }
+
+    /// まもりの名前。メッセージに出す。
+    var veilName: String {
+        switch self {
+        case .bearLord: "山の かご"
+        case .guardian: "ふぶきの まく"
+        default: "すみの まく"
+        }
+    }
 
     /// 最後の相手。倒すと物語が終わる。
     var isFinalBoss: Bool { self == .guardian }
