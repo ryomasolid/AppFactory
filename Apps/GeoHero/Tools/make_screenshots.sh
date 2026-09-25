@@ -47,7 +47,7 @@ mkdir -p "$OUT"
 echo "撮影中:"
 shot 1_title  4
 shot 2_field  4 -startMap field -startX 18 -startY 32 -startLevel 5
-shot 3_battle 5 -startBattle potato,kelpSlime,scallop -startLevel 5
+shot 3_battle 5 -startBattle cornSoldier,ramenGhost,lambSheep -startLevel 5
 shot 4_boss   5 -startBattle guardian -startLevel 12
 shot 5_shop   4 -startMap sapporo -startX 7 -startY 9 -startLevel 8 -startOverlay shop -shopConfirm steelSword
 rm -rf "$TMP"
