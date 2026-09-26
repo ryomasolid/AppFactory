@@ -33,15 +33,15 @@ enum EnemyKind: String, Codable, CaseIterable {
     case cornSoldier
     case ramenGhost
     case lambSheep
-    // 藻岩山のふもと
+    // 小樽へむかう道
     case squirrel
     case fox
     case snowFestival
-    // 藻岩山の ほらあな B1
+    // 天狗山の ほらあな
     case flyingSquirrel
     case maitake
     case salamander
-    // 藻岩山の ほらあな B2
+    // 藻岩山の ほらあな（B1・B2）
     case bearCub
     case fishOwl
     case woodpecker
@@ -66,6 +66,8 @@ enum EnemyKind: String, Codable, CaseIterable {
     case squidLord
     /// 駒ヶ岳のボス。倒すと 札幌ゆきの きっぷが もらえる。
     case komaLord
+    /// 天狗山のボス。小樽の オルゴールを うばった。
+    case tengu
     /// 藻岩山のボス。倒すと 知床ゆきの きっぷが もらえる。
     case bearLord
     /// 羅臼岳のラスボス。
@@ -141,6 +143,7 @@ enum EnemyKind: String, Codable, CaseIterable {
         case .blizzardSpirit: Stats(name: "ふぶきのせいれい", maxHP: 30, attack: 35, defense: 48, agility: 10, exp: 65, gold: 85)
         case .squidLord: Stats(name: "イカのぬし", maxHP: 70, attack: 20, defense: 10, agility: 6, exp: 60, gold: 80)
         case .komaLord: Stats(name: "駒ヶ岳のぬし", maxHP: 110, attack: 28, defense: 16, agility: 7, exp: 100, gold: 150)
+        case .tengu: Stats(name: "天狗", maxHP: 170, attack: 36, defense: 20, agility: 9, exp: 180, gold: 250)
         case .bearLord: Stats(name: "ヒグマのぬし", maxHP: 260, attack: 45, defense: 26, agility: 10, exp: 250, gold: 300)
         case .guardian: Stats(name: "知床の守護神", maxHP: 380, attack: 56, defense: 36, agility: 13, exp: 0, gold: 0)
         }
@@ -149,7 +152,7 @@ enum EnemyKind: String, Codable, CaseIterable {
     /// ボスは 話しかけて始まる戦闘。群れず、逃げられない。
     var isBoss: Bool {
         switch self {
-        case .squidLord, .komaLord, .bearLord, .guardian: true
+        case .squidLord, .komaLord, .tengu, .bearLord, .guardian: true
         default: false
         }
     }
@@ -160,6 +163,7 @@ enum EnemyKind: String, Codable, CaseIterable {
         switch self {
         case .squidLord: 3
         case .komaLord: 4
+        case .tengu: 4
         case .bearLord: 5
         case .guardian: 6
         default: 0
@@ -170,6 +174,7 @@ enum EnemyKind: String, Codable, CaseIterable {
     var veilName: String {
         switch self {
         case .komaLord: "ほのおの たてがみ"
+        case .tengu: "天狗の かくれみの"
         case .bearLord: "山の かご"
         case .guardian: "ふぶきの まく"
         default: "すみの まく"

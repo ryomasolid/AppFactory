@@ -25,6 +25,21 @@ enum StoryFlag: String, Codable, CaseIterable {
     case stampHalf
     /// 名所の スタンプを ぜんぶ あつめて、案内所から お礼をもらった。
     case stampAll
+    /// 小樽の オルゴール職人から オルゴールを かえしてもらった（藻岩山の ヒグマのこを しずめる）。
+    case musicBox
+    /// ラーメン屋から 北大の学生への 出前を あずかった。
+    case ramenCarrying
+    /// 出前を とどけた。
+    case ramenDelivered
+    /// ラーメン屋から 出前の お礼をもらった。
+    case ramenThanked
+    /// 小樽の 倉庫で まいごの ネコを 見つけた（ネコは かいぬしの ところへ 走っていく）。
+    case catFound
+    /// かいぬしから ネコの お礼をもらった。
+    case catReturned
+    /// 札幌・小樽の 名所の スタンプを 半分／ぜんぶ あつめて、札幌の案内所から お礼をもらった。
+    case sapporoStampHalf
+    case sapporoStampAll
     /// 札幌ゆきの ひこうきの きっぷ。駒ヶ岳のぬしを倒すと もらえる。
     case ticketToSapporo
     /// 知床ゆきの ひこうきの きっぷ。藻岩山の ヒグマのぬしを倒すと もらえる。
@@ -37,7 +52,7 @@ enum StoryFlag: String, Codable, CaseIterable {
         switch self {
         case .hakodateyamaPass: .squidLord
         case .fireCharm, .ticketToSapporo: .komaLord
-        case .ticketToShiretoko: .bearLord
+        case .ticketToShiretoko, .musicBox: .bearLord
         default: nil
         }
     }
@@ -57,6 +72,9 @@ enum StoryFlag: String, Codable, CaseIterable {
             ["かかりいん「札幌ゆきの きっぷを おもちですか？",
              "　……きっぷが ないと おのせ できません。",
              "　いまは 駒ヶ岳の けむりで とばない びんも おおくて。」"]
+        case .musicBox:
+            ["ヒグマの こどもたちが 道を ふさいでいて とおれない。",
+             "（しずかな 音色で なだめられたら……）"]
         case .ticketToShiretoko:
             ["かかりいん「知床ゆきの きっぷを おもちですか？",
              "　……きっぷが ないと おのせ できません。」"]
@@ -70,8 +88,8 @@ enum StoryFlag: String, Codable, CaseIterable {
 struct StoryProgress {
     var flags: Set<StoryFlag>
     var defeatedBosses: Set<EnemyKind>
-    /// 押した 名所の スタンプの数（函館エリアの 看板を 読んだ数）。
-    var stamps = 0
+    /// 地方ごとの 押した 名所の スタンプの数（看板を 読んだ数）。
+    var stamps: [Region: Int] = [:]
 
     func has(_ flag: StoryFlag) -> Bool {
         flags.contains(flag) || flag.impliedBy.map(defeatedBosses.contains) == true
@@ -84,6 +102,8 @@ struct StoryScene: Equatable {
     var gold = 0
     var items: [Item] = []
     var sets: [StoryFlag] = []
+    /// HP・MPを ぜんぶ なおす（定山渓の 足湯）。
+    var heals = false
 }
 
 /// 物語にかかわる人。進みぐあいで せりふが変わり、出たり消えたりする。
@@ -103,6 +123,26 @@ enum Resident: String, CaseIterable {
     case portKid
     /// 函館の 観光案内所の人。名所の スタンプを 見て お礼をくれる。
     case guide
+    /// 札幌の 観光案内所の人。札幌・小樽の スタンプを 見る。
+    case sapporoGuide
+    /// 赤れんが庁舎の 長官。藻岩山の ようすを 教える。
+    case governor
+    /// すすきのの ラーメン屋の おやじ。北大へ 出前を たのむ。
+    case ramenChef
+    /// 北大の学生。出前を まっている。
+    case student
+    /// 小樽の オルゴール職人。天狗に オルゴールを うばわれた。
+    case musicBoxMaker
+    /// 小樽の 倉庫の かげで まいごに なっている ネコ。
+    case lostCat
+    /// かいぬしの ところへ もどった ネコ。
+    case catHome
+    /// ネコの かいぬし。
+    case catOwner
+    /// 定山渓の 湯守。足湯で HP・MPを なおしてくれる。
+    case yumori
+    /// 定山渓の 川に すむ かっぱ。
+    case kappa
     /// 松前の殿様。駒ヶ岳へ入る 火よけの おふだを もつ。
     case lord
     /// 大沼の山守。駒ヶ岳の ようすを 教える。
@@ -121,6 +161,8 @@ enum Resident: String, CaseIterable {
         case .childAtHome: progress.has(.childFound)
         case .lostCygnet: !progress.has(.cygnetFound)
         case .cygnetHome: progress.has(.cygnetFound)
+        case .lostCat: !progress.has(.catFound)
+        case .catHome: progress.has(.catFound)
         default: true
         }
     }
@@ -241,34 +283,12 @@ enum Resident: String, CaseIterable {
             ])
 
         case .guide:
-            let total = World.stampTotal
-            let half = (total + 1) / 2
-            if progress.has(.stampAll) {
-                return StoryScene(lines: [
-                    "あんないじょ「函館エリアの 名所を ぜんぶ まわるなんて！",
-                    "　あなたは りっぱな めいしょ はかせね。」",
-                ])
-            }
-            if progress.stamps >= total {
-                return StoryScene(lines: [
-                    "あんないじょ「まあ！ スタンプが \(total)こ ぜんぶ そろってる！",
-                    "　これは めいしょ はかせへの ごほうびよ。」",
-                    "300ゴールドを てにいれた！",
-                ], gold: 300, sets: [.stampHalf, .stampAll])
-            }
-            if progress.stamps >= half, !progress.has(.stampHalf) {
-                return StoryScene(lines: [
-                    "あんないじょ「スタンプが \(progress.stamps)こ！ もう 半分ね。",
-                    "　たびの おともに どうぞ。 のこりも がんばって！」",
-                    "薬草を 3つ てにいれた！",
-                ], items: [.herb, .herb, .herb], sets: [.stampHalf])
-            }
-            return StoryScene(lines: [
-                "あんないじょ「ようこそ 函館へ！ 名所の かんばんを よむと",
-                "　めいしょ スタンプが たまるの。 函館・松前・大沼に あるわ。",
-                "　いま \(progress.stamps)こ ／ \(total)こ。 \(half)こで 薬草、",
-                "　ぜんぶ そろえば 300ゴールド あげる！」",
-            ])
+            return Self.stampScene(.hakodate, progress, half: .stampHalf, all: .stampAll,
+                                   towns: "函館・松前・大沼")
+
+        case .sapporoGuide:
+            return Self.stampScene(.sapporo, progress, half: .sapporoStampHalf, all: .sapporoStampAll,
+                                   towns: "札幌・小樽・定山渓")
 
         case .lord:
             if progress.defeatedBosses.contains(.komaLord) {
@@ -355,20 +375,185 @@ enum Resident: String, CaseIterable {
                 "ハクチョウの ひな「ピィ！」",
                 "げんきそうだ。",
             ])
+        case .governor:
+            if progress.defeatedBosses.contains(.bearLord) {
+                return StoryScene(lines: [
+                    "ちょうかん「藻岩山に しずけさが もどった。 れいを いう。",
+                    "　知床ゆきの ひこうきは 南東の 新千歳空港から でる。",
+                    "　この 赤れんが庁舎は 明治に たてられた 北海道の 役所なのだ。」",
+                ])
+            }
+            if progress.has(.musicBox) {
+                return StoryScene(lines: [
+                    "ちょうかん「オルゴールを とりもどしたか！",
+                    "　その 音色なら ヒグマの こどもたちも しずまるだろう。",
+                    "　藻岩山は 街の 南西じゃ。 たのんだぞ。」",
+                ])
+            }
+            return StoryScene(lines: [
+                "ちょうかん「わたしは 北海道の 長官だ。",
+                "　藻岩山に ヒグマのぬしが すみつき、ヒグマの こどもたちが",
+                "　山への 道を ふさいでおる。 ロープウェイも とまったままだ。",
+                "　小樽の オルゴールの 音色なら しずめられると きくが……」",
+            ])
+
+        case .musicBoxMaker:
+            if progress.has(.musicBox) {
+                return StoryScene(lines: [
+                    "しょくにん「その オルゴールの 音は 小樽の じまんさ。",
+                    "　ヒグマの こどもたちも きっと ねむってしまうよ。」",
+                ])
+            }
+            if progress.defeatedBosses.contains(.tengu) {
+                return StoryScene(lines: [
+                    "しょくにん「天狗を こらしめて くれたのか！",
+                    "　とりもどした オルゴールを もっていってくれ。",
+                    "　藻岩山の ヒグマの こどもたちを しずめるんだろう？」",
+                    "オルゴールを てにいれた！",
+                ], sets: [.musicBox])
+            }
+            return StoryScene(lines: [
+                "しょくにん「ここは オルゴール堂。 いちばんの オルゴールを",
+                "　天狗山の 天狗に うばわれて しまったんだ！",
+                "　天狗山は 街の 南。 あの 天狗は かくれみので すがたを かくすぞ。」",
+            ])
+
+        case .ramenChef:
+            if progress.has(.ramenThanked) {
+                return StoryScene(lines: [
+                    "おやじ「札幌の みそラーメンは 寒い 冬に あったまる。",
+                    "　この すすきのの 横丁から ひろまったんだぞ。」",
+                ])
+            }
+            if progress.has(.ramenDelivered) {
+                return StoryScene(lines: [
+                    "おやじ「とどけて くれたか！ のびる まえに ありがとうよ。",
+                    "　これは 出前の おだちんだ。」",
+                    "150ゴールドを てにいれた！",
+                ], gold: 150, sets: [.ramenThanked])
+            }
+            if progress.has(.ramenCarrying) {
+                return StoryScene(lines: [
+                    "おやじ「はやく 北大へ たのむぜ！ のびちまう！",
+                    "　北大は 街の 北、ポプラ並木の むこうだ。」",
+                ])
+            }
+            return StoryScene(lines: [
+                "おやじ「いいところに きた！ 北大の 学生に 出前を たのまれてな。",
+                "　名物の みそラーメン、とどけて くれないか？",
+                "　北大は 街の 北の はしだ。」",
+                "みそラーメンを あずかった。",
+            ], sets: [.ramenCarrying])
+
+        case .student:
+            if progress.has(.ramenCarrying), !progress.has(.ramenDelivered) {
+                return StoryScene(lines: [
+                    "がくせい「わあ、みそラーメン！ まってました！",
+                    "　おやじさんに よろしく つたえてね。」",
+                    "みそラーメンを とどけた。",
+                ], sets: [.ramenDelivered])
+            }
+            return StoryScene(lines: [
+                "がくせい「北大の はじめの 先生は クラーク博士。",
+                "　『少年よ 大志を いだけ』って ことばを のこしたんだ。」",
+            ])
+
+        case .catOwner:
+            if progress.has(.catReturned) {
+                return StoryScene(lines: [
+                    "かいぬし「ミケは 運河ぞいの 倉庫が すきなのよ。",
+                    "　むかしは ニシンを はこぶ 船で にぎわってたんですって。」",
+                ])
+            }
+            if progress.has(.catFound) {
+                return StoryScene(lines: [
+                    "かいぬし「ミケ！ かえってきたのね！",
+                    "　ほんとうに ありがとう。 これ、うけとって。」",
+                    "薬草を 2つ てにいれた！",
+                ], items: [.herb, .herb], sets: [.catReturned])
+            }
+            return StoryScene(lines: [
+                "かいぬし「うちの ネコの ミケが いないの。",
+                "　運河の むこうの 倉庫の ほうへ いったみたい……」",
+            ])
+
+        case .lostCat:
+            return StoryScene(lines: [
+                "ネコ「ニャー。」",
+                "ネコは かいぬしの ほうへ かけていった。",
+            ], sets: [.catFound])
+
+        case .catHome:
+            return StoryScene(lines: [
+                "ネコ「ニャーン。」",
+                "まんぞくそうに のどを ならしている。",
+            ])
+
+        case .yumori:
+            return StoryScene(lines: [
+                "ゆもり「定山渓の 足湯で ひとやすみ していきな。」",
+                "あたたかい 温泉に 足を ひたした。",
+                "HPと MPが ぜんぶ かいふくした！",
+            ], heals: true)
+
+        case .kappa:
+            return StoryScene(lines: [
+                "かっぱ「ケケッ。 おいらは 定山渓の かっぱさ。",
+                "　むかし この 川に すむ かっぱが わかものを",
+                "　ひきこんだって 伝説が あるんだ。 ……おいらじゃ ないよ？」",
+            ])
         }
+    }
+
+    /// 案内所の 場面。半分で 薬草、ぜんぶで ゴールド。
+    private static func stampScene(_ region: Region, _ progress: StoryProgress,
+                                   half halfFlag: StoryFlag, all allFlag: StoryFlag, towns: String) -> StoryScene {
+        let total = World.stampTotal(in: region)
+        let half = (total + 1) / 2
+        let stamps = progress.stamps[region, default: 0]
+        let area = region.banner.name
+        if progress.has(allFlag) {
+            return StoryScene(lines: [
+                "あんないじょ「\(area)の 名所を ぜんぶ まわるなんて！",
+                "　あなたは りっぱな めいしょ はかせね。」",
+            ])
+        }
+        if stamps >= total {
+            return StoryScene(lines: [
+                "あんないじょ「まあ！ スタンプが \(total)こ ぜんぶ そろってる！",
+                "　これは めいしょ はかせへの ごほうびよ。」",
+                "300ゴールドを てにいれた！",
+            ], gold: 300, sets: [halfFlag, allFlag])
+        }
+        if stamps >= half, !progress.has(halfFlag) {
+            return StoryScene(lines: [
+                "あんないじょ「スタンプが \(stamps)こ！ もう 半分ね。",
+                "　たびの おともに どうぞ。 のこりも がんばって！」",
+                "薬草を 3つ てにいれた！",
+            ], items: [.herb, .herb, .herb], sets: [halfFlag])
+        }
+        return StoryScene(lines: [
+            "あんないじょ「ようこそ \(area)へ！ 名所の かんばんを よむと",
+            "　めいしょ スタンプが たまるの。 \(towns)に あるわ。",
+            "　いま \(stamps)こ ／ \(total)こ。 \(half)こで 薬草、",
+            "　ぜんぶ そろえば 300ゴールド あげる！」",
+        ])
     }
 
     /// この人が 言うかもしれない せりふ ぜんぶ（`QuizTests` で 答えが街で聞けるかを見る）。
     /// 印の組み合わせは ぜんぶだと 多すぎるので、ひとつずつ 立てていった すじみちを たどる。
     var everyLine: [String] {
-        let bosses: [Set<EnemyKind>] = [[], [.squidLord], [.squidLord, .komaLord], [.squidLord, .komaLord, .bearLord]]
+        let bosses: [Set<EnemyKind>] = [[], [.squidLord], [.squidLord, .komaLord],
+                                         [.squidLord, .komaLord, .tengu], [.squidLord, .komaLord, .tengu, .bearLord]]
         var flagSets: [Set<StoryFlag>] = [[]]
         for flag in StoryFlag.allCases { flagSets.append(flagSets.last!.union([flag])) }
         for flag in StoryFlag.allCases { flagSets.append([flag]) }
-        let stamps = [0, (World.stampTotal + 1) / 2, World.stampTotal]
+        let stampSets: [[Region: Int]] = [[:], Dictionary(uniqueKeysWithValues: Region.allCases.map {
+            ($0, (World.stampTotal(in: $0) + 1) / 2)
+        }), Dictionary(uniqueKeysWithValues: Region.allCases.map { ($0, World.stampTotal(in: $0)) })]
         return bosses.flatMap { defeated in
             flagSets.flatMap { flags in
-                stamps.flatMap { scene(StoryProgress(flags: flags, defeatedBosses: defeated, stamps: $0)).lines }
+                stampSets.flatMap { scene(StoryProgress(flags: flags, defeatedBosses: defeated, stamps: $0)).lines }
             }
         }
     }

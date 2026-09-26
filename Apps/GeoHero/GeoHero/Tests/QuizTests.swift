@@ -68,9 +68,13 @@ struct QuizTests {
         #expect(QuizRegion.at(.hakodateArea, Point(x: 30, y: 18)) == .onuma, "大沼の外")
         #expect(QuizRegion.at(.hakodateArea, Point(x: 40, y: 11)) == .onuma, "駒ヶ岳の前")
         #expect(QuizRegion.at(.komagatake, Point(x: 8, y: 13)) == .onuma)
-        #expect(QuizRegion.at(.sapporoArea, Point(x: 27, y: 18)) == .sapporo, "札幌の外")
-        #expect(QuizRegion.at(.otaru, Point(x: 10, y: 13)) == .sapporo, "小樽")
-        #expect(QuizRegion.at(.sapporoArea, Point(x: 17, y: 26)) == .sapporo, "藻岩山の前")
+        #expect(QuizRegion.at(.sapporoArea, Point(x: 36, y: 21)) == .sapporo, "札幌の外")
+        #expect(QuizRegion.at(.sapporoArea, Point(x: 10, y: 22)) == .otaru, "小樽の外")
+        #expect(QuizRegion.at(.sapporoArea, Point(x: 9, y: 29)) == .otaru, "天狗山の前")
+        #expect(QuizRegion.at(.tenguyama, Point(x: 8, y: 13)) == .otaru)
+        #expect(QuizRegion.at(.jozankei, Point(x: 11, y: 16)) == .sapporo, "定山渓")
+        #expect(QuizRegion.at(.otaru, Point(x: 13, y: 20)) == .otaru, "小樽")
+        #expect(QuizRegion.at(.sapporoArea, Point(x: 29, y: 28)) == .sapporo, "藻岩山の前")
         #expect(QuizRegion.at(.moiwa2, Point(x: 1, y: 1)) == .sapporo)
         #expect(QuizRegion.at(.shiretokoArea, Point(x: 18, y: 22)) == .rausu, "知床の外")
         #expect(QuizRegion.at(.rausudake2, Point(x: 1, y: 1)) == .rausu)
@@ -79,6 +83,7 @@ struct QuizTests {
 
     /// 奥のボスほど まもりが厚い。
     @Test func laterBossesHaveThickerVeils() {
+        #expect(EnemyKind.tengu.veilLayers >= EnemyKind.komaLord.veilLayers)
         let layers = [EnemyKind.squidLord, .komaLord, .bearLord, .guardian].map(\.veilLayers)
         #expect(layers == layers.sorted() && Set(layers).count == 4, "\(layers)")
         #expect(EnemyKind.allCases.filter { !$0.isBoss }.allSatisfy { $0.veilLayers == 0 }, "ざこに まもりがある")

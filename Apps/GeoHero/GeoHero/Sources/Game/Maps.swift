@@ -19,9 +19,11 @@ enum World {
         case .onuma: onuma
         case .sapporo: sapporo
         case .otaru: otaru
+        case .jozankei: jozankei
         case .rausu: rausu
         case .hakodateyama: hakodateyama
         case .komagatake: komagatake
+        case .tenguyama: tenguyama
         case .moiwa1: moiwa1
         case .moiwa2: moiwa2
         case .rausudake1: rausudake1
@@ -40,6 +42,11 @@ enum World {
         case .glassKobo: glassKobo
         case .tokeidaiHouse: tokeidaiHouse
         case .sapporoHouse: sapporoHouse
+        case .doucho: doucho
+        case .susukinoHouse: susukinoHouse
+        case .orgelDo: orgelDo
+        case .otaruSouko: otaruSouko
+        case .onsenHouse: onsenHouse
         }
     }
 
@@ -49,16 +56,17 @@ enum World {
     static func revivePoint(in region: Region) -> (map: MapID, point: Point) {
         switch region {
         case .hakodate: revivePoint
-        case .sapporo: (.sapporo, Point(x: 7, y: 11))
+        case .sapporo: (.sapporo, Point(x: 15, y: 24))
         case .shiretoko: (.rausu, Point(x: 7, y: 11))
         }
     }
 
-    /// 名所の スタンプを押せる 看板（函館エリアの 街の 名所の看板 ぜんぶ）。
-    static let stampPlaques: [PlaqueID] = [MapID.hakodate, .matsumae, .onuma].flatMap { id in
+    /// 名所の スタンプを押せる 看板（街の 名所の看板 ぜんぶ）。地方ごとに 案内所で ごほうびが もらえる。
+    static let stampPlaques: [PlaqueID] = MapID.allCases.filter(\.isTown).flatMap { id in
         map(id).plaques.keys.map { PlaqueID(map: id, point: $0) }
     }
-    static var stampTotal: Int { stampPlaques.count }
+    static func stampPlaques(in region: Region) -> [PlaqueID] { stampPlaques.filter { $0.map.region == region } }
+    static func stampTotal(in region: Region) -> Int { stampPlaques(in: region).count }
 
     /// 函館。3つの地区に分かれていて、歩きまわって 話を聞くと 函館山への道がひらける。
     /// - 北西: 港と朝市（西は函館湾）。赤レンガ倉庫・摩周丸の看板、港の親方、迷子をさがす母。
@@ -336,109 +344,262 @@ enum World {
         chestRewards: [.gold(150)]
     )
 
+    /// 札幌。北海道で いちばん大きな街。
+    /// - 北: 北海道大学（ポプラ並木・クラーク像）。出前を まつ学生。
+    /// - 北東: 赤れんが庁舎（中に 長官）と 時計台。
+    /// - まんなか: 東西に のびる 大通公園と テレビ塔。
+    /// - 南: すすきの（ラーメン横丁）、宿屋・道具屋、観光案内所。
+    /// 長官の話 → 小樽の オルゴール職人 → 天狗山 → オルゴールで 藻岩山、の順（`Story.swift`）。
     static let sapporo = GameMap(
         id: .sapporo,
         name: "さっぽろ",
         rows: [
-            "###############",
-            "#_____________#",
-            "#_III_____SSS_#",
-            "#_III_____SSS_#",
-            "#_YdW_____ZdW_#",
-            "#_____________#",
-            "#__t__www__t__#",
-            "#HH___www___HH#",
-            "#dW_______e_Wd#",
-            "#_t_________t_#",
-            "#___t______t__#",
-            "#____P________#",
-            "######EEE######"
+            "###############################",
+            "#_f_f__HHHHH_____HHHHHHH______#",
+            "#_f_f__WWWWW_____HHHHHHH__HHH_#",
+            "#_f_f______3_____WWWdWWW__WdW_#",
+            "#_f_f___P_____________P__P____#",
+            "#_f_f_t_______________________#",
+            "#__________________t__________#",
+            "#_____________________________#",
+            "#__________________________HH_#",
+            "#_f___f___f___f___f___f___fWW_#",
+            "#_____ww__P___ww__t___ww__P___#",
+            "#___f___f___f___f___f___f___f_#",
+            "#___t_________________________#",
+            "#_____________________________#",
+            "#_III___SSS____e____HHHHHHH___#",
+            "#_III___SSS_________WWWWWWW___#",
+            "#_YdW___ZdW___________P_______#",
+            "#_______________________2_____#",
+            "#_________________t___________#",
+            "#____________4__________HHH___#",
+            "#___HHH_________________WdW___#",
+            "#___WdW____________________t__#",
+            "#_________t___________________#",
+            "#___________________c_________#",
+            "#____________P________________#",
+            "##############EEE##############"
         ],
-        // 壁の外は草原。出口のすきまの先に野原が見えて、外へ抜ける道だと分かる。
         outside: .grass,
         warps: [
             // 家の扉。
-            Point(x: 1, y: 8): Warp(to: .tokeidaiHouse, at: Point(x: 4, y: 4)),
-            Point(x: 13, y: 8): Warp(to: .sapporoHouse, at: Point(x: 4, y: 4)),
-            // 左の家（青い屋根・ベッドの看板）が宿屋、右の家（緑の屋根・お金のふくろ）が道具屋。
-            Point(x: 3, y: 4): Warp(to: .innInside, at: Point(x: 4, y: 4)),
-            Point(x: 11, y: 4): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
-            Point(x: 6, y: 12): Warp(to: .sapporoArea, at: Point(x: 27, y: 18)),
-            Point(x: 7, y: 12): Warp(to: .sapporoArea, at: Point(x: 27, y: 18)),
-            Point(x: 8, y: 12): Warp(to: .sapporoArea, at: Point(x: 27, y: 18)),
+            Point(x: 20, y: 3): Warp(to: .doucho, at: Point(x: 4, y: 4)),
+            Point(x: 27, y: 3): Warp(to: .tokeidaiHouse, at: Point(x: 4, y: 4)),
+            Point(x: 25, y: 20): Warp(to: .sapporoHouse, at: Point(x: 4, y: 4)),
+            Point(x: 5, y: 21): Warp(to: .susukinoHouse, at: Point(x: 4, y: 4)),
+            Point(x: 3, y: 16): Warp(to: .innInside, at: Point(x: 4, y: 4)),
+            Point(x: 9, y: 16): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
+            Point(x: 14, y: 25): Warp(to: .sapporoArea, at: Point(x: 36, y: 21)),
+            Point(x: 15, y: 25): Warp(to: .sapporoArea, at: Point(x: 36, y: 21)),
+            Point(x: 16, y: 25): Warp(to: .sapporoArea, at: Point(x: 36, y: 21)),
         ],
-        // 戦闘の「ちしき」の答えは ここで聞ける（`QuizRegion.sapporo` と `QuizTests` を見る）。
+        // 戦闘の「ちしき」の答えは ここと 定山渓で 聞ける（`QuizRegion.sapporo` と `QuizTests` を見る）。
         villagers: [
-            ["むすめ「ここは いちばん 大きな街。",
-             "　冬の 雪まつりには ひとで いっぱいよ。」"],
-            ["しょうにん「はがねの剣は この街でしか 買えないよ。",
-             "　帰りに 名物の みそラーメンも 食べていきな。」"],
-            ["ろうじん「むかし クラーク博士が いうたものじゃ。",
-             "　『少年よ 大志を いだけ』とな。",
-             "　藻岩山の ぬしにも おそれず いどむのじゃ。」"],
-            ["おとこ「北の 藻岩山に ヒグマのぬしが すんでいるらしい。",
-             "　あの山から 見る 札幌の 夜景は きれいなのにな。」"],
-            ["こども「ひろばの ふん水、つめたくて きもちいいよ。",
-             "　大通公園の ふん水は もっと 大きいんだって！」"],
-            ["たびびと「白い 時計台の かねの音を きいたかい？",
-             "　札幌の まちの しるしだよ。」"]
-        ]
+            ["がくせい「ポプラ並木は 北大の じまん。",
+             "　クラーク博士の 像も あるよ。」"],
+            ["やくにん「赤れんが庁舎は 明治に たてられた 北海道の 役所。",
+             "　長官は 中に おられるぞ。」"],
+            ["こども「冬の 大通公園では 雪まつりが あるんだ！",
+             "　大きな 雪の 像が ずらっと ならぶよ。」"],
+            ["むすめ「大通公園は 札幌の まんなかを",
+             "　東西に のびる 公園よ。」"],
+            ["たびびと「札幌で 生まれた みそラーメン、",
+             "　すすきので 食べなきゃ そんだよ！」"],
+            ["おとこ「南西の 藻岩山から 見る 夜景は きれいなんだ。",
+             "　いまは ヒグマのぬしで 近づけないけどな。」"],
+            ["しょうにん「鋼の剣は 札幌で 買えるよ。",
+             "　藻岩山へ 行くなら そろえておきな。」"],
+        ],
+        residents: ["2": .ramenChef, "3": .student, "4": .sapporoGuide],
+        plaques: [
+            Point(x: 8, y: 4): Plaque(title: "クラーク", lines: [
+                "かんばんに こう かいてある。",
+                "「クラーク博士の 像」",
+                "北大の はじめの 先生。",
+                "『少年よ 大志を いだけ』の ことばを のこした。",
+            ]),
+            Point(x: 22, y: 4): Plaque(title: "道庁", lines: [
+                "かんばんに こう かいてある。",
+                "「北海道庁 旧本庁舎（赤れんが庁舎）」",
+                "明治に たてられた 北海道の 役所。",
+            ]),
+            Point(x: 25, y: 4): Plaque(title: "時計台", lines: [
+                "かんばんに こう かいてある。",
+                "「札幌市時計台」",
+                "白い 木の たてもの。 いまも かねが 時を つげる。",
+            ]),
+            Point(x: 10, y: 10): Plaque(title: "大通", lines: [
+                "かんばんに こう かいてある。",
+                "「大通公園」",
+                "札幌の まんなかを 東西に のびる 公園。",
+                "冬には 雪まつりの 会場に なる。",
+            ]),
+            Point(x: 26, y: 10): Plaque(title: "テレビ塔", lines: [
+                "かんばんに こう かいてある。",
+                "「さっぽろテレビ塔」",
+                "大通公園の 東の はしに たつ 塔。",
+            ]),
+            Point(x: 22, y: 16): Plaque(title: "横丁", lines: [
+                "かんばんに こう かいてある。",
+                "「ラーメン横丁」",
+                "札幌 名物の みそラーメンの 店が ならぶ。",
+            ]),
+        ],
+        chestRewards: [.gold(80)]
     )
 
-    /// 小樽。札幌の 西の みなと町。運河と 石の倉庫、ガラス工房。
+    /// 小樽。石狩湾の みなと町。
+    /// - 北: 小樽港と 石の倉庫（まいごの ネコ）。
+    /// - まんなか: 東西に ながれる 小樽運河。
+    /// - 南: 堺町通りの ガラス工房・オルゴール堂（天狗に オルゴールを うばわれた 職人）、宿屋・道具屋。
     static let otaru = GameMap(
         id: .otaru,
         name: "おたる",
         rows: [
-            "#####################",
-            "#~~~~~~~~~~~~~~~~~~~#",
-            "#~~~~~~~~~~~~~~~~~~~#",
-            "#__HHHH__~~_HHHH_t__#",
-            "#__WWWW_P~~_WWWW____#",
-            "#________bb_________#",
-            "#___t____~~_________#",
-            "#_____HHH~~____t____#",
-            "#_____WdWbb_________#",
-            "#_III_P__~~__SSS____#",
-            "#_III_____e__SSS____#",
-            "#_YdW________ZdW____#",
-            "#_____t_____________#",
-            "#____________P______#",
-            "#########EEE#########"
+            "###########################",
+            "#~~~~~~~~~~~~~~~~~~~~~~~~~#",
+            "#~~~~~_~~~~~~~~~~~_~~~~~~~#",
+            "#_HHHH___HHHH____c__HHHH__#",
+            "#_WWWW___WdWW__2____WWWW__#",
+            "#_______P_________________#",
+            "#~~~~b~~~~~~~b~~~~~~~b~~~~#",
+            "#_______________P_________#",
+            "#__________34_____________#",
+            "#__HHH___________HHHHH__t_#",
+            "#__WdW___________WWdWW____#",
+            "#_____P_________P____1____#",
+            "#_________t_______________#",
+            "#________HHH______________#",
+            "#________WWW______________#",
+            "#_III______P_______SSS____#",
+            "#_III_________e____SSS____#",
+            "#_YdW______________ZdW____#",
+            "#_______t_________________#",
+            "#_____________________t___#",
+            "#_________P______P________#",
+            "############EEE############"
         ],
         outside: .grass,
         warps: [
             // 家の扉。
-            Point(x: 7, y: 8): Warp(to: .glassKobo, at: Point(x: 4, y: 4)),
-            Point(x: 3, y: 11): Warp(to: .innInside, at: Point(x: 4, y: 4)),
-            Point(x: 14, y: 11): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
-            Point(x: 9, y: 14): Warp(to: .sapporoArea, at: Point(x: 9, y: 16)),
-            Point(x: 10, y: 14): Warp(to: .sapporoArea, at: Point(x: 9, y: 16)),
-            Point(x: 11, y: 14): Warp(to: .sapporoArea, at: Point(x: 9, y: 16)),
+            Point(x: 10, y: 4): Warp(to: .otaruSouko, at: Point(x: 4, y: 4)),
+            Point(x: 4, y: 10): Warp(to: .glassKobo, at: Point(x: 4, y: 4)),
+            Point(x: 19, y: 10): Warp(to: .orgelDo, at: Point(x: 4, y: 4)),
+            Point(x: 3, y: 17): Warp(to: .innInside, at: Point(x: 4, y: 4)),
+            Point(x: 20, y: 17): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
+            Point(x: 12, y: 21): Warp(to: .sapporoArea, at: Point(x: 10, y: 22)),
+            Point(x: 13, y: 21): Warp(to: .sapporoArea, at: Point(x: 10, y: 22)),
+            Point(x: 14, y: 21): Warp(to: .sapporoArea, at: Point(x: 10, y: 22)),
         ],
-        // 小樽の問題は 札幌の山に まぜてある（`QuizRegion.sapporo`）。
+        // 戦闘の「ちしき」の答えは ここで聞ける（`QuizRegion.otaru` と `QuizTests` を見る）。
         villagers: [
-            ["ふなのり「小樽は 石狩湾に めんした みなと町。",
-             "　むかしは ニシンりょうで にぎわったんだ。」"],
-            ["むすめ「運河ぞいの 石の 倉庫は むかしの みなとの なごり。",
-             "　夜は ガスとうが ともって きれいよ。」"],
-            ["しょくにん「小樽の ガラスは ニシンりょうの",
-             "　うきだまを つくっていたのが はじまりさ。」"],
-            ["たびびと「札幌から 小樽までは 海ぞいの 道で すぐだよ。",
-             "　オルゴールの 店も あるんだ。」"],
+            ["ふなのり「むかし 小樽は ニシンりょうで にぎわったんだ。",
+             "　運河は その 荷を はこぶ 水の みちさ。」"],
+            ["むすめ「小樽の ガラスは ニシンりょうの",
+             "　うきだまづくりが はじまりなの。」"],
+            ["おとこ「街の 南の 天狗山には 天狗が すむって いうぜ。",
+             "　ロープウェイで のぼると 石狩湾が 見わたせるんだ。」"],
+            ["たびびと「銀行が ならんで『北の ウォール街』って",
+             "　よばれたのが この 小樽さ。」"],
         ],
+        residents: ["1": .musicBoxMaker, "2": .lostCat, "3": .catOwner, "4": .catHome],
         plaques: [
-            Point(x: 8, y: 4): Plaque(title: "運河", lines: [
+            Point(x: 8, y: 5): Plaque(title: "運河", lines: [
                 "かんばんに こう かいてある。",
                 "「小樽運河」",
                 "船の 荷を 倉庫へ はこんだ 水の みち。",
             ]),
-            Point(x: 6, y: 9): Plaque(title: "ガラス", lines: [
+            Point(x: 16, y: 7): Plaque(title: "倉庫", lines: [
+                "かんばんに こう かいてある。",
+                "「運河の 石造倉庫」",
+                "ニシンや 米を しまった 石の 倉庫。",
+            ]),
+            Point(x: 6, y: 11): Plaque(title: "ガラス", lines: [
                 "かんばんに こう かいてある。",
                 "「ガラス工房」",
                 "小樽の 名物の ガラスを つくる 店。",
             ]),
-        ]
+            Point(x: 16, y: 11): Plaque(title: "オルゴ", lines: [
+                "かんばんに こう かいてある。",
+                "「小樽オルゴール堂」",
+                "たくさんの オルゴールが ならぶ 店。",
+            ]),
+            Point(x: 11, y: 15): Plaque(title: "銀行", lines: [
+                "かんばんに こう かいてある。",
+                "「北の ウォール街」",
+                "むかし 銀行が たちならんだ 通り。",
+            ]),
+            Point(x: 17, y: 20): Plaque(title: "天狗山", lines: [
+                "かんばんに こう かいてある。",
+                "「天狗山」",
+                "小樽の 南に そびえる 山。 天狗の 伝説が のこる。",
+            ]),
+        ],
+        chestRewards: [.gold(70)]
+    )
+
+    /// 定山渓。札幌の 南西の 山あいの 温泉街。豊平川の 谷に かかる 吊橋と、かっぱの 伝説。
+    /// 湯守に 話しかけると 足湯で HP・MPが ぜんぶ なおる（藻岩山の 前の ひとやすみ）。
+    static let jozankei = GameMap(
+        id: .jozankei,
+        name: "じょうざんけい",
+        rows: [
+            "#######################",
+            "#MMMMMMMMMMMMMMMMMMMMM#",
+            "#MMMM_______MMMMMMMMMM#",
+            "#__________~~_P_______#",
+            "#__www_P___bb_________#",
+            "#__www_____~~____1____#",
+            "#___2______~~__P______#",
+            "#__________~~_________#",
+            "#_HHH______~~__III_SSS#",
+            "#_WdW______~~__III_SSS#",
+            "#______t___~~__YdW_ZdW#",
+            "#__________~~_________#",
+            "#____e_____bb_________#",
+            "#__________~~____t____#",
+            "#__________~~_t_______#",
+            "#__c_____P____________#",
+            "#_____________________#",
+            "##########EEE##########"
+        ],
+        outside: .grass,
+        warps: [
+            Point(x: 3, y: 9): Warp(to: .onsenHouse, at: Point(x: 4, y: 4)),
+            Point(x: 16, y: 10): Warp(to: .innInside, at: Point(x: 4, y: 4)),
+            Point(x: 20, y: 10): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
+            Point(x: 10, y: 17): Warp(to: .sapporoArea, at: Point(x: 20, y: 34)),
+            Point(x: 11, y: 17): Warp(to: .sapporoArea, at: Point(x: 20, y: 34)),
+            Point(x: 12, y: 17): Warp(to: .sapporoArea, at: Point(x: 20, y: 34)),
+        ],
+        villagers: [
+            ["おばあさん「定山渓は 札幌の 奥座敷と よばれる",
+             "　温泉の 町さ。 ゆっくり していきな。」"],
+            ["こども「川に かっぱが すむって ほんとかなあ？",
+             "　町には かっぱの 像が いっぱい あるよ。」"],
+            ["たびびと「藻岩山の ぬしに いどむ まえに",
+             "　足湯で やすんで いくと いい。」"],
+        ],
+        residents: ["1": .kappa, "2": .yumori],
+        plaques: [
+            Point(x: 14, y: 3): Plaque(title: "吊橋", lines: [
+                "かんばんに こう かいてある。",
+                "「二見吊橋」",
+                "豊平川の 谷に かかる 赤い 吊橋。",
+            ]),
+            Point(x: 7, y: 4): Plaque(title: "温泉", lines: [
+                "かんばんに こう かいてある。",
+                "「定山渓温泉」",
+                "山あいに わく 札幌の 温泉。",
+            ]),
+            Point(x: 15, y: 6): Plaque(title: "かっぱ", lines: [
+                "かんばんに こう かいてある。",
+                "「かっぱ淵」",
+                "かっぱが すむと いわれる 川の ふち。",
+            ]),
+        ],
+        chestRewards: [.gold(120)]
     )
 
     static let rausu = GameMap(
@@ -543,6 +704,39 @@ enum World {
         markerFloor: .caveFloor
     )
 
+    /// 天狗山の ほらあな。小樽の 南。いちばん奥に オルゴールを うばった 天狗がいる。
+    static let tenguyama = GameMap(
+        id: .tenguyama,
+        name: "天狗山の ほらあな",
+        rows: [
+            "###################",
+            "######,,,,,,,######",
+            "######,,,B,,,######",
+            "######,,,,,,,######",
+            "########,,,########",
+            "#c,,,,#,,,,,#,,,,,#",
+            "#,###,#,###,#,###,#",
+            "#,#,,,,,#,,,,,#,#,#",
+            "#,#,#####,###,#,#,#",
+            "#,,,#,,,,,,,#,,,#,#",
+            "###,#,#####,#####,#",
+            "#,,,,,#,,,,,,,,#,c#",
+            "#,#####,####,#,#,,#",
+            "#,,,,,,,,U,,,#,,,,#",
+            "###################"
+        ],
+        outside: .wall,
+        warps: [
+            Point(x: 9, y: 13): Warp(to: .sapporoArea, at: Point(x: 9, y: 29)),
+        ],
+        chestRewards: [.gold(300), .item(.herb)],
+        bossKind: .tengu,
+        encounters: [
+            .caveFloor: [.flyingSquirrel, .maitake, .salamander],
+        ],
+        markerFloor: .caveFloor
+    )
+
     static let moiwa1 = GameMap(
         id: .moiwa1,
         name: "藻岩山の ほらあな B1",
@@ -563,12 +757,12 @@ enum World {
         ],
         outside: .wall,
         warps: [
-            Point(x: 7, y: 11): Warp(to: .sapporoArea, at: Point(x: 17, y: 26)),
+            Point(x: 7, y: 11): Warp(to: .sapporoArea, at: Point(x: 29, y: 28)),
             Point(x: 3, y: 9): Warp(to: .moiwa2, at: Point(x: 6, y: 9)),
         ],
-        chestRewards: [.item(.copperSword)],
+        chestRewards: [.item(.herb)],
         encounters: [
-            .caveFloor: [.flyingSquirrel, .maitake, .salamander],
+            .caveFloor: [.bearCub, .fishOwl, .woodpecker],
         ],
         markerFloor: .caveFloor
     )
@@ -716,7 +910,7 @@ enum World {
             Point(x: 38, y: 33): Warp(to: .hakodateyama, at: Point(x: 6, y: 11), needs: .hakodateyamaPass),
             Point(x: 40, y: 10): Warp(to: .komagatake, at: Point(x: 8, y: 13), needs: .fireCharm),
             // 函館空港 → 丘珠空港（札幌）。
-            Point(x: 55, y: 27): Warp(to: .sapporoArea, at: Point(x: 34, y: 13), needs: .ticketToSapporo),
+            Point(x: 55, y: 27): Warp(to: .sapporoArea, at: Point(x: 42, y: 15), needs: .ticketToSapporo),
         ],
         chestRewards: [.gold(200), .gold(120), .item(.herb), .item(.leatherArmor), .gold(60)],
         // 目印ごとの区域。旅の順に ひとつずつ強くなり、出る敵は 場所ごとに ぜんぶ ちがう。
@@ -735,62 +929,76 @@ enum World {
         markerFloor: .grass
     )
 
-    /// 札幌・小樽。48×34 マス。北西は 石狩湾、まんなかに 札幌、西の 海ぞいに 小樽、南西に 藻岩山。
+    /// 札幌・小樽。65×40 マス。北西は 石狩湾、まんなかに 札幌（豊平川が ながれる）、西の 海ぞいに 小樽と 天狗山、
+    /// 南西に 藻岩山と 山あいの 定山渓、南に 支笏湖。
     /// 丘珠空港（北東）は 函館と、新千歳空港（南東）は 知床の 中標津と むすぶ。
     static let sapporoArea = GameMap(
         id: .sapporoArea,
         name: "札幌・小樽",
         rows: [
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.........",
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...........",
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~......c......",
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...............",
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.................",
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...................",
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~......................",
-            "~~~~~~~~~~~~~~~~~~~~~~~~........................",
-            "~~~~~~~~~~~~~~~~~~~~~.........~.............ffff",
-            "~~~~~~~~~~~~~~~~~~~...........~.............ffff",
-            "~~~~~~~~~~~~~~~~~.............~.............ffff",
-            "~~~~~~~~~~~~~~~...............~.............ffff",
-            "~~~~~~~~~~~~~.................~...A.........ffff",
-            "~~~~~~~~~.....................~...=.........ffff",
-            "...c..........................~...=.........ffff",
-            "MMMMMMhh.T....................~...=..fffffffffff",
-            "MMMMMMhh.========.............~...=..fffffffffff",
-            "MMMMMMhh..fffff.=..........T..~...=..fffffffffff",
-            "MMMMMMhh..fffff.==============b====..fffffffffff",
-            "MMMMMMhh..fffff............=..~...=..fffffffffff",
-            "MMMMMMMMMMfffffhhhhhhh.....=..~...=..fffffffffff",
-            "MMMMMMMMMMfffffMMMMMMh.....=..~...=..fffffffffff",
-            "MMMMMMMMMMfffffMMMMMMh.....=..~...=.........ffff",
-            "MMMMMMMMMM...hMMMMMMMh.....=..~...=======...ffff",
-            "MMMMMMMMMM...hMMMMMMMh.....=............=...ffff",
-            "MMMMMMMMMM...hMMMCMMMh.....=....fffffff.=...ffff",
-            "MMMMMMMMMM.......===========....fffffff.=...ffff",
-            "MMMMMMMMMMhhhhhhhhhhhhhhhhh.....fffffff.=...ffff",
-            "MMMMMMMMMMMMMMMMMMMMMMMhhh~~~~..fffffff.=...ffff",
-            "MMMMMMMMMMMMMMMMMMMMMMMhh~~~~~~.........A...ffff",
-            "MMMMMMMMMMMMMMMMMMMMMMMhh~~~~~~.........=...ffff",
-            "MMMMMMMMMMMMMMMMMMMMMMMhh~~~~~~.............ffff",
-            "MMMMMMMMMMMMMMMMMMMMMMMhh~~~~~~.............ffff",
-            "MMMMMMMMMMMMMMMMMMMMMMMhhhh.................ffff"
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~....................",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...c.................",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~....=..................",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.....=..................",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...=..................",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...~~~~~~=..................",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~........~~~b~~................",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.............b~~~~~.............",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...............=..~~~~~~..........",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.................=.....~~~~~~.......",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~...................=........~~~~~~....",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~.....................=...........~~~~~~.",
+            "~~~~~~~~~~~~~~~~~~~~~~~..............~........=..............~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~................~........=.................~",
+            "~~~~~~~~~~~~~~~~~~~..................~....A...=................c.",
+            "~~~~~~~~~~~~~~~~~....................~....=====..................",
+            "~~~~~~~~~~~~~~~.....................~.....=...............fffffff",
+            "~~~~~~~~~~~~~.......................~.....=...............fffffff",
+            "~~~~~~~~~~~.........................~.....=...............fffffff",
+            "~~~~~~~~~...........===========.....~.....=...fffffff.....fffffff",
+            "~~~~~~..............=.........=.....T.....=...fffffff.....fffffff",
+            "..........T.....ffff=ffff.....======b================.....fffffff",
+            "MMMMMc....===========ffff..........~=.........ffffff=.....fffffff",
+            "MMMMMhh......=..fffffffffhhhhhhhh..~=.........ffffff=.....fffffff",
+            "MMMMMhhhhhhhh=h.fffffffffhMMMMMMh..~=.........ffffff=.....fffffff",
+            "MMMMMhhhMMMMM=h.fffffffffhMMMMMMh..~=.........ffffff=.....fffffff",
+            "MMMMMhhhMMMMM=h.fffffffffhMMMMMMh..~=.........ffffff=...fffffffff",
+            "MMMMMhhhMMMMM=h.fffffffffhMMMCMMh..~=...............=...fffffffff",
+            "MMMMMhhhMCMMM=h..........hhhh=hhh.~.=...............=...fffffffff",
+            "MMMMMhhhh=hhh=h..........hhhh=hhh.~.=...............=...fffffffff",
+            "MMMMMMMhh=====h.........==========b==...............=...fffffffff",
+            "MMMMMMMMhhhhhhhhhhffffff=hhhhhhhhh~.................=...fffffffff",
+            "MMMMMMMMhhhhMMMMhhffffff=hhMMMMMhh~....~~~~~~.......=.A.fffffffff",
+            "MMMMMMMMhhhhMMMMhhffTfff=hhMMMMMhh~...~~~~~~~~......===.fffffffff",
+            "MMMMMMMMhhhhMMMMhhff=====hhMMMMMhhh...~~~~~~~~..........fffffffff",
+            "MMMMMMMMMMMMMMMMMMffffffMMMMMMMMMMM...~~~~~~~~..........fffffffff",
+            "MMMMMMMMMMMMMMMMMMffffffMMMMMMMMMMM...~~~~~~~~..........fffffffff",
+            "MMMMMMMMMMMMMMMMMMhhhhhhMMMMMMMMMMM...~~~~~~~~..........fffffffff",
+            "MMMMMMMMMMMMMMMMMMhhhhhhMMMMMMMMMMMc...~~~~~~...........fffffffff",
+            "MMMMMMMMMMMMMMMMMMhhhhhhMMMMMMMMMMM.....................fffffffff"
         ],
         outside: .water,
         warps: [
-            Point(x: 27, y: 17): Warp(to: .sapporo, at: Point(x: 7, y: 11)),
-            Point(x: 9, y: 15): Warp(to: .otaru, at: Point(x: 10, y: 13)),
-            Point(x: 17, y: 25): Warp(to: .moiwa1, at: Point(x: 6, y: 11)),
+            Point(x: 36, y: 20): Warp(to: .sapporo, at: Point(x: 15, y: 24)),
+            Point(x: 10, y: 21): Warp(to: .otaru, at: Point(x: 13, y: 20)),
+            Point(x: 20, y: 33): Warp(to: .jozankei, at: Point(x: 11, y: 16)),
+            // 天狗山は いつでも 入れる。藻岩山は ヒグマの こどもたちを オルゴールで しずめてから。
+            Point(x: 9, y: 28): Warp(to: .tenguyama, at: Point(x: 8, y: 13)),
+            Point(x: 29, y: 27): Warp(to: .moiwa1, at: Point(x: 6, y: 11), needs: .musicBox),
             // 丘珠空港 → 函館空港（もどり）。
-            Point(x: 34, y: 12): Warp(to: .hakodateArea, at: Point(x: 55, y: 28), needs: .ticketToSapporo),
+            Point(x: 42, y: 14): Warp(to: .hakodateArea, at: Point(x: 55, y: 28), needs: .ticketToSapporo),
             // 新千歳空港 → 中標津空港（知床）。
-            Point(x: 40, y: 29): Warp(to: .shiretokoArea, at: Point(x: 6, y: 26), needs: .ticketToShiretoko),
+            Point(x: 54, y: 32): Warp(to: .shiretokoArea, at: Point(x: 6, y: 26), needs: .ticketToShiretoko),
         ],
-        chestRewards: [.gold(300), .item(.herb)],
+        chestRewards: [.gold(250), .item(.herb), .gold(400), .item(.herb)],
+        // 札幌の まわりは やさしく、小樽・天狗山・定山渓の ほうは 手ごわい。
         encounterAreas: [
-            EncounterArea(name: "札幌のまわり", around: [Point(x: 34, y: 13), Point(x: 27, y: 18), Point(x: 9, y: 16)],
+            EncounterArea(name: "札幌のまわり",
+                          around: [Point(x: 42, y: 15), Point(x: 36, y: 21), Point(x: 54, y: 33), Point(x: 29, y: 28)],
                           enemies: [.cornSoldier, .ramenGhost, .lambSheep]),
-            EncounterArea(name: "藻岩山のふもと", around: [Point(x: 17, y: 26), Point(x: 40, y: 30)],
+            // 札幌から 小樽への 海ぞいの道にも 中心を置く（歩いて 弱いほうへ 戻らないように）。
+            EncounterArea(name: "小樽へむかう道",
+                          around: [Point(x: 10, y: 22), Point(x: 9, y: 29), Point(x: 20, y: 34), Point(x: 22, y: 19)],
                           enemies: [.squirrel, .fox, .snowFestival]),
         ],
         markerFloor: .grass
@@ -838,7 +1046,7 @@ enum World {
             Point(x: 18, y: 21): Warp(to: .rausu, at: Point(x: 7, y: 11)),
             Point(x: 21, y: 7): Warp(to: .rausudake1, at: Point(x: 6, y: 11)),
             // 中標津空港 → 新千歳空港（もどり）。
-            Point(x: 6, y: 25): Warp(to: .sapporoArea, at: Point(x: 40, y: 30), needs: .ticketToShiretoko),
+            Point(x: 6, y: 25): Warp(to: .sapporoArea, at: Point(x: 54, y: 33), needs: .ticketToShiretoko),
         ],
         chestRewards: [.gold(500), .item(.herb)],
         encounterAreas: [
@@ -890,16 +1098,17 @@ enum World {
     // MARK: - 家の中
 
     /// 家の中の地図（入れる順に）。
-    static let houses: [MapID] = [.bugyosho, .asaichiSouko, .motomachiHouse, .bukeyashiki, .tsukemonoya, .ryoshiHouse, .noukaHouse, .dangoya, .yamagoya, .glassKobo, .tokeidaiHouse, .sapporoHouse]
+    static let houses: [MapID] = [.doucho, .susukinoHouse, .orgelDo, .otaruSouko, .onsenHouse, .bugyosho, .asaichiSouko, .motomachiHouse, .bukeyashiki, .tsukemonoya, .ryoshiHouse, .noukaHouse, .dangoya, .yamagoya, .glassKobo, .tokeidaiHouse, .sapporoHouse]
 
     /// 家の中を作る。出口は 下の まんなか、入ると その上に立つ。
     /// 出口の行き先は 入った扉の前に差し替わる（GameState が見る）が、地図の上でも 同じ場所を書いておく。
     private static func house(_ id: MapID, name: String, rows: [String], town: MapID, door: Point,
-                              villagers: [[String]], chestRewards: [ChestReward]) -> GameMap {
+                              villagers: [[String]], residents: [Character: Resident] = [:],
+                              chestRewards: [ChestReward]) -> GameMap {
         GameMap(
             id: id, name: name, rows: rows, outside: .darkness,
             warps: [Point(x: 4, y: rows.count - 1): Warp(to: town, at: door + Point(x: 0, y: 1))],
-            villagers: villagers, chestRewards: chestRewards, markerFloor: .woodFloor
+            villagers: villagers, residents: residents, chestRewards: chestRewards, markerFloor: .woodFloor
         )
     }
 
@@ -1076,28 +1285,35 @@ enum World {
         chestRewards: [.item(.herb), .gold(40)]
     )
 
-    /// 小樽の ガラス工房。
-    static let glassKobo = house(
-        .glassKobo, name: "ガラスこうぼう",
+
+
+
+
+
+
+    /// 赤れんが庁舎（北海道庁 旧本庁舎）。奥に 長官がいる。
+    static let doucho = house(
+        .doucho, name: "あかれんがちょうしゃ",
         rows: [
             "XXXXXXXXX",
-            "XLLtoLLcX",
+            "XLLL1LLLX",
             "XoooooooX",
-            "XoooooooX",
+            "XtooooocX",
             "XoooooooX",
             "XXXXdXXXX",
         ],
-        town: .otaru, door: Point(x: 7, y: 8),
+        town: .sapporo, door: Point(x: 20, y: 3),
         villagers: [
-            ["しょくにん「札幌で 鋼の剣は かったかい？",
-             "　藻岩山の おくは てごわいぞ。」"],
+            ["やくにん「長官は 小樽の オルゴールの ことを",
+             "　たいそう 気にかけて おられる。」"],
         ],
-        chestRewards: [.gold(200)]
+        residents: ["1": .governor],
+        chestRewards: [.gold(100)]
     )
 
-    /// 札幌の 家。
+    /// 札幌の 時計台。
     static let tokeidaiHouse = house(
-        .tokeidaiHouse, name: "とけいだいの いえ",
+        .tokeidaiHouse, name: "とけいだい",
         rows: [
             "XXXXXXXXX",
             "XQotoLLcX",
@@ -1106,10 +1322,10 @@ enum World {
             "XoooooooX",
             "XXXXdXXXX",
         ],
-        town: .sapporo, door: Point(x: 1, y: 8),
+        town: .sapporo, door: Point(x: 27, y: 3),
         villagers: [
-            ["おとこ「藻岩山の ヒグマのぬしは 山の かごで みを まもる。",
-             "　札幌と 小樽の 話を よく きいておけよ。」"],
+            ["かねもり「この 時計台は もとは 札幌農学校の 演武場。",
+             "　いまも かねが 時を つげて いるんだよ。」"],
         ],
         chestRewards: [.item(.herb)]
     )
@@ -1125,11 +1341,106 @@ enum World {
             "XoooooooX",
             "XXXXdXXXX",
         ],
-        town: .sapporo, door: Point(x: 13, y: 8),
+        town: .sapporo, door: Point(x: 25, y: 20),
         villagers: [
             ["むすめ「新千歳空港は 札幌の 南東よ。",
              "　ヒグマのぬしを たおせば 知床へ とべる きっぷが もらえるわ。」"],
         ],
         chestRewards: [.gold(150)]
+    )
+
+    /// すすきのの 家。
+    static let susukinoHouse = house(
+        .susukinoHouse, name: "すすきのの いえ",
+        rows: [
+            "XXXXXXXXX",
+            "XLLtoLLcX",
+            "XoooooooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .sapporo, door: Point(x: 5, y: 21),
+        villagers: [
+            ["おじさん「ラーメンの おやじは 出前の 手が",
+             "　たりないって ぼやいてたよ。」"],
+        ],
+        chestRewards: [.gold(60)]
+    )
+
+    /// 小樽の ガラス工房。
+    static let glassKobo = house(
+        .glassKobo, name: "ガラスこうぼう",
+        rows: [
+            "XXXXXXXXX",
+            "XLLtoLLcX",
+            "XoooooooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .otaru, door: Point(x: 4, y: 10),
+        villagers: [
+            ["しょくにん「札幌で 鋼の剣は かったかい？",
+             "　天狗山の おくは てごわいぞ。」"],
+        ],
+        chestRewards: [.gold(200)]
+    )
+
+    /// 小樽の オルゴール堂。
+    static let orgelDo = house(
+        .orgelDo, name: "オルゴールどう",
+        rows: [
+            "XXXXXXXXX",
+            "XLLLoLLLX",
+            "XoooooooX",
+            "XcootoooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .otaru, door: Point(x: 19, y: 10),
+        villagers: [
+            ["てんいん「天狗山の 天狗は かくれみので すがたを かくすの。",
+             "　小樽の ことを こたえれば かくれみのが はがれるそうよ。」"],
+        ],
+        chestRewards: [.item(.herb)]
+    )
+
+    /// 小樽の 石の倉庫。
+    static let otaruSouko = house(
+        .otaruSouko, name: "おたるの そうこ",
+        rows: [
+            "XXXXXXXXX",
+            "XQotoLLcX",
+            "XoooooooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .otaru, door: Point(x: 10, y: 4),
+        villagers: [
+            ["にんぷ「ネコなら さっき 倉庫の 東の かげに いたぞ。",
+             "　ニシンの においでも したのかな。」"],
+        ],
+        chestRewards: [.gold(120)]
+    )
+
+    /// 定山渓の 湯宿。
+    static let onsenHouse = house(
+        .onsenHouse, name: "ゆやど",
+        rows: [
+            "XXXXXXXXX",
+            "XLLLoLLLX",
+            "XoooooooX",
+            "XcootoooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .jozankei, door: Point(x: 3, y: 9),
+        villagers: [
+            ["おかみ「藻岩山の ほらあなは 2かいだて。",
+             "　ぬしは いちばん 奥に いるそうだよ。」"],
+        ],
+        chestRewards: [.item(.herb)]
     )
 }

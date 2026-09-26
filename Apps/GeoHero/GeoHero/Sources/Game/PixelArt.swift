@@ -16,8 +16,8 @@ enum SpriteID: String, CaseIterable {
     case elder, innkeeper, shopkeeper, villager
     /// 物語の人（奉行・港の親方・こども）。ふつうの村人と 見分けがつくように 絵を分ける。
     case magistrate, fisherman, child
-    /// 大沼の 白鳥の ひな。
-    case cygnet
+    /// 大沼の 白鳥の ひな・小樽の ネコ・定山渓の かっぱ。
+    case cygnet, cat, kappa
 
     /// 向きと歩数から勇者の絵を選ぶ（1歩ごとに2コマを交互に）。
     static func hero(facing: Direction, step: Int) -> SpriteID {
@@ -35,8 +35,8 @@ enum SpriteID: String, CaseIterable {
     case bearCub, fishOwl, woodpecker, deer, cod, salmon, seaEagle, snowman, orca
     case hikarigoke, icicleOgre, iceBat, phantomWolf, iceGolem, blizzardSpirit
     case sakuraSpirit, matsumaeZuke, kitamaeShip, apple, dango, junsai, lavaSlime, pumiceGolem, sulfurSmoke
-    /// ボス4体（函館山・駒ヶ岳・藻岩山・羅臼岳）。
-    case squidLord, komaLord, bearLord, guardian
+    /// ボス5体（函館山・駒ヶ岳・天狗山・藻岩山・羅臼岳）。
+    case squidLord, komaLord, tengu, bearLord, guardian
 
     static let art: [SpriteID: [String]] = TileArt.all
         .merging(CharacterArt.all) { first, _ in first }
@@ -85,6 +85,7 @@ enum SpriteID: String, CaseIterable {
         switch enemy {
         case .squidLord: self = .squidLord
         case .komaLord: self = .komaLord
+        case .tengu: self = .tengu
         case .bearLord: self = .bearLord
         case .guardian: self = .guardian
         default: self = SpriteID(rawValue: enemy.rawValue) ?? .potato
@@ -99,11 +100,13 @@ enum SpriteID: String, CaseIterable {
         case .villager: self = .villager
         case .resident(let resident):
             switch resident {
-            case .magistrate, .lord: self = .magistrate
-            case .fisherBoss, .ranger: self = .fisherman
-            case .lostChild, .childAtHome, .portKid: self = .child
-            case .mother, .guide, .swanKeeper: self = .villager
+            case .magistrate, .lord, .governor: self = .magistrate
+            case .fisherBoss, .ranger, .ramenChef, .yumori, .musicBoxMaker: self = .fisherman
+            case .lostChild, .childAtHome, .portKid, .student: self = .child
+            case .mother, .guide, .sapporoGuide, .swanKeeper, .catOwner: self = .villager
             case .lostCygnet, .cygnetHome: self = .cygnet
+            case .lostCat, .catHome: self = .cat
+            case .kappa: self = .kappa
             }
         }
     }

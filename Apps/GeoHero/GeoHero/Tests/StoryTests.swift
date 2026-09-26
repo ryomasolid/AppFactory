@@ -218,25 +218,25 @@ struct StoryTests {
         var lines: [String] = []
         while let page = game.currentPage { lines += page; game.advanceMessage() }
         #expect(lines.joined().contains("スタンプ"))
-        #expect(game.stamps == 1)
+        #expect(game.stamps[.hakodate] == 1)
         game.pressA()
         while game.currentPage != nil { game.advanceMessage() }
-        #expect(game.stamps == 1)
+        #expect(game.stamps[.hakodate] == 1)
     }
 
     /// 案内所は 半分で 薬草、ぜんぶで ゴールドをくれる。それぞれ 1度だけ。
     @Test func guideRewardsHalfAndAllStamps() throws {
-        #expect(World.stampTotal >= 10, "名所が すくない: \(World.stampTotal)")
+        #expect(World.stampTotal(in: .hakodate) >= 10, "名所が すくない: \(World.stampTotal(in: .hakodate))")
         let game = makeGame()
         let herbs = game.hero.inventory[.herb, default: 0]
-        game.readPlaques = Set(World.stampPlaques.prefix((World.stampTotal + 1) / 2))
+        game.readPlaques = Set(World.stampPlaques(in: .hakodate).prefix((World.stampTotal(in: .hakodate) + 1) / 2))
         try talk(to: .guide, in: game)
         #expect(game.hero.inventory[.herb, default: 0] == herbs + 3)
         try talk(to: .guide, in: game)
         #expect(game.hero.inventory[.herb, default: 0] == herbs + 3, "薬草を 2度 もらえる")
 
         let gold = game.hero.gold
-        game.readPlaques = Set(World.stampPlaques)
+        game.readPlaques = Set(World.stampPlaques(in: .hakodate))
         try talk(to: .guide, in: game)
         #expect(game.hero.gold == gold + 300)
         try talk(to: .guide, in: game)
@@ -248,6 +248,87 @@ struct StoryTests {
         save.readPlaques = [PlaqueID(map: .onuma, point: Point(x: 5, y: 3))]
         let decoded = try JSONDecoder().decode(SaveData.self, from: JSONEncoder().encode(save))
         #expect(decoded == save)
+    }
+
+    // MARK: - 札幌・小樽
+
+    /// 藻岩山の前に立って 1歩 入ろうとする。
+    private func tryEnteringMoiwa(_ game: GameState) async {
+        let gate = World.sapporoArea.warps.first { $0.value.to == .moiwa1 }!.key
+        game.mapID = .sapporoArea
+        game.position = gate + Point(x: 0, y: 1)
+        await game.walk(.up)
+    }
+
+    /// 長官の話 → 天狗を倒す → オルゴール職人から オルゴール → 藻岩山へ入れる。
+    @Test func musicBoxOpensMoiwa() async throws {
+        let game = makeGame()
+        game.defeatedBosses = [.squidLord, .komaLord]
+        let governor = try talk(to: .governor, in: game, town: .doucho)
+        #expect(governor.joined().contains("小樽"), "長官が つぎの行き先を 言っていない")
+        await tryEnteringMoiwa(game)
+        #expect(game.mapID == .sapporoArea, "オルゴールが ないのに 藻岩山へ 入れる")
+        while game.currentPage != nil { game.advanceMessage() }
+
+        try talk(to: .musicBoxMaker, in: game, town: .otaru)
+        #expect(!game.storyFlags.contains(.musicBox), "天狗を倒す前に オルゴールが もらえた")
+        game.defeatedBosses.insert(.tengu)
+        try talk(to: .musicBoxMaker, in: game, town: .otaru)
+        #expect(game.storyFlags.contains(.musicBox))
+        await tryEnteringMoiwa(game)
+        #expect(game.mapID == .moiwa1)
+    }
+
+    /// ラーメンの 出前: 店で あずかり、北大の学生に とどけ、店で お礼を 1度だけ もらう。
+    @Test func ramenDelivery() throws {
+        let game = makeGame()
+        try talk(to: .student, in: game, town: .sapporo)
+        #expect(!game.storyFlags.contains(.ramenDelivered), "あずかる前に とどけられた")
+        try talk(to: .ramenChef, in: game, town: .sapporo)
+        #expect(game.storyFlags.contains(.ramenCarrying))
+        try talk(to: .student, in: game, town: .sapporo)
+        #expect(game.storyFlags.contains(.ramenDelivered))
+        let gold = game.hero.gold
+        try talk(to: .ramenChef, in: game, town: .sapporo)
+        try talk(to: .ramenChef, in: game, town: .sapporo)
+        #expect(game.hero.gold == gold + 150, "お礼が 1度で ない")
+    }
+
+    /// 倉庫の ネコを 見つけると かいぬしの となりに もどり、お礼は 1度だけ。
+    @Test func lostCatGoesHome() throws {
+        let game = makeGame()
+        let herbs = game.hero.inventory[.herb, default: 0]
+        try talk(to: .lostCat, in: game, town: .otaru)
+        #expect(game.npcs.contains { $0.role == .resident(.catHome) } == false || game.mapID == .otaru)
+        try talk(to: .catOwner, in: game, town: .otaru)
+        try talk(to: .catOwner, in: game, town: .otaru)
+        #expect(game.hero.inventory[.herb, default: 0] == herbs + 2)
+        #expect(World.otaru.npcs(game.progress).contains { $0.role == .resident(.catHome) })
+    }
+
+    /// 定山渓の 足湯で HP・MPが ぜんぶ なおる。
+    @Test func footBathHeals() throws {
+        let game = makeGame()
+        _ = game.hero.gainExp(LevelTable.row(5).exp)
+        game.hero.hp = 1
+        game.hero.mp = 0
+        try talk(to: .yumori, in: game, town: .jozankei)
+        #expect(game.hero.hp == game.hero.maxHP)
+        #expect(game.hero.mp == game.hero.maxMP)
+    }
+
+    /// 札幌の案内所は 札幌・小樽・定山渓の スタンプを 数える（函館の スタンプは 数えない）。
+    @Test func sapporoGuideCountsItsOwnStamps() throws {
+        let total = World.stampTotal(in: .sapporo)
+        #expect(total >= 10, "札幌・小樽の 名所が すくない: \(total)")
+        let game = makeGame()
+        game.readPlaques = Set(World.stampPlaques(in: .hakodate))
+        let gold = game.hero.gold
+        try talk(to: .sapporoGuide, in: game, town: .sapporo)
+        #expect(game.hero.gold == gold, "函館の スタンプで 札幌の ごほうびが 出た")
+        game.readPlaques.formUnion(World.stampPlaques(in: .sapporo))
+        try talk(to: .sapporoGuide, in: game, town: .sapporo)
+        #expect(game.hero.gold == gold + 300)
     }
 
     /// 物語の前の セーブ（新しい項目がない）も 読める。

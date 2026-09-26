@@ -13,15 +13,16 @@ struct Quiz: Equatable, Hashable {
 
 /// 問題を出す土地。街・ちかくの ほらあな・その街へ むかう区域で、その街の問題を出す。
 enum QuizRegion: CaseIterable {
-    case hakodate, matsumae, onuma, sapporo, rausu
+    case hakodate, matsumae, onuma, sapporo, otaru, rausu
 
-    /// 答えを教えてくれる街。小樽の問題は 札幌の山に まぜてある。
+    /// 答えを教えてくれる街。定山渓の問題は 札幌の山に まぜてある。
     var towns: [MapID] {
         switch self {
         case .hakodate: [.hakodate]
         case .matsumae: [.matsumae]
         case .onuma: [.onuma]
-        case .sapporo: [.sapporo, .otaru]
+        case .sapporo: [.sapporo, .jozankei]
+        case .otaru: [.otaru]
         case .rausu: [.rausu]
         }
     }
@@ -32,7 +33,8 @@ enum QuizRegion: CaseIterable {
         case .hakodate: ["函館のまわり", "函館山のふもと"]
         case .matsumae: ["松前へむかう道"]
         case .onuma: ["大沼のまわり"]
-        case .sapporo: ["札幌のまわり", "藻岩山のふもと"]
+        case .sapporo: ["札幌のまわり"]
+        case .otaru: ["小樽へむかう道"]
         case .rausu: ["知床へむかう道", "羅臼岳へむかう道"]
         }
     }
@@ -43,7 +45,8 @@ enum QuizRegion: CaseIterable {
         case .hakodate, .hakodateyama: .hakodate
         case .matsumae: .matsumae
         case .onuma, .komagatake: .onuma
-        case .sapporo, .otaru, .moiwa1, .moiwa2: .sapporo
+        case .sapporo, .jozankei, .moiwa1, .moiwa2: .sapporo
+        case .otaru, .tenguyama: .otaru
         case .rausu, .rausudake1, .rausudake2: .rausu
         case .hakodateArea, .sapporoArea, .shiretokoArea:
             World.map(mapID).area(at: point).flatMap { area in allCases.first { $0.areas.contains(area.name) } }
@@ -89,9 +92,18 @@ enum QuizRegion: CaseIterable {
             Quiz(question: "札幌の まんなかを 東西に のびる 公園は？", choices: ["大通公園", "上野公園", "奈良公園"], answer: 0),
             Quiz(question: "札幌の 夜景が 見える 山は？", choices: ["函館山", "藻岩山", "羅臼岳"], answer: 1),
             Quiz(question: "「少年よ 大志を いだけ」と いった 博士は？", choices: ["ペリー", "ザビエル", "クラーク"], answer: 2),
-            // 小樽で 聞ける問題。
+            Quiz(question: "明治に たてられた 北海道の 役所の たてものは？", choices: ["赤れんが庁舎", "五稜郭", "松前城"], answer: 0),
+            // 定山渓で 聞ける問題。
+            Quiz(question: "定山渓の 川に すむと いわれる いきものは？", choices: ["てんぐ", "かっぱ", "りゅう"], answer: 1),
+            Quiz(question: "定山渓は なにで 有名な 町？", choices: ["砂丘", "流氷", "温泉"], answer: 2),
+        ]
+        case .otaru: [
             Quiz(question: "小樽の まちなかを ながれる 古い 水の みちは？", choices: ["運河", "お堀", "滝"], answer: 0),
             Quiz(question: "小樽の 名物の こうげいひんは？", choices: ["うるし", "ガラス", "やきもの"], answer: 1),
+            Quiz(question: "むかし 小樽を にぎわせた さかなは？", choices: ["マグロ", "カツオ", "ニシン"], answer: 2),
+            Quiz(question: "小樽の 南に そびえる 山は？", choices: ["天狗山", "函館山", "羅臼岳"], answer: 0),
+            Quiz(question: "小樽の オルゴール堂で ならぶ ものは？", choices: ["ちょうちん", "オルゴール", "こけし"], answer: 1),
+            Quiz(question: "銀行が ならび「北の ウォール街」と よばれた 町は？", choices: ["松前", "羅臼", "小樽"], answer: 2),
         ]
         case .rausu: [
             Quiz(question: "知床が えらばれた ものは？", choices: ["世界文化遺産", "世界自然遺産", "日本三景"], answer: 1),

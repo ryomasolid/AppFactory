@@ -840,5 +840,24 @@ enum EnemyArt {
             ".......RR.R.RR..",
             ".......kk.k.kk..",
         ],
+        // 天狗山の 天狗。赤い かおと 長い はな、やつでの うちわ。
+        .tengu: [
+            ".....kkkkkk.....",
+            "....kkkkkkkk....",
+            ".....rrrrrr.....",
+            "....rrkrrkrr....",
+            "....rrrrrrrrrrr.",
+            "....rrrrrrrrrrr.",
+            ".....rrwwwrr....",
+            "....wwwwwwww..G.",
+            "...BBBwwwwBBBGGG",
+            "..BBBBBBBBBBBBGG",
+            "..BBsBBBBBBBsNG.",
+            "..BBBBBBBBBBBN..",
+            "...BBBBBBBBBB...",
+            "....BBB..BBB....",
+            "....nnn..nnn....",
+            "....nn....nn....",
+        ],
     ]
 }

@@ -2,13 +2,14 @@ import Testing
 @testable import GeoHero
 
 /// ボスは 着くころの レベル・装備で、「ちしき」で まもりを やぶり、回復しながら戦えば 勝てる。
-/// 駒ヶ岳のぬしを 足して 旅が のびたので、藻岩山・羅臼岳の ボスも 着くころのレベルに合わせた。
+/// 駒ヶ岳のぬし・天狗を 足して 旅が のびたので、藻岩山・羅臼岳の ボスも 着くころのレベルに合わせた。
 struct BossBalanceTests {
 
     /// ボスと、倒しに行くころの レベル・装備・問題の土地。
     private let bosses: [(EnemyKind, Int, Item, Item, QuizRegion)] = [
         (.squidLord, 5, .copperSword, .leatherArmor, .hakodate),
         (.komaLord, 7, .copperSword, .leatherArmor, .onuma),
+        (.tengu, 10, .copperSword, .leatherArmor, .otaru),
         (.bearLord, 11, .steelSword, .chainMail, .sapporo),
         (.guardian, 15, .steelSword, .chainMail, .rausu),
     ]

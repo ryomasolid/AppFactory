@@ -88,8 +88,11 @@ final class GameState {
     var storyFlags: Set<StoryFlag> = []
     /// 読んだ 名所の看板（めいしょ スタンプ）。
     var readPlaques: Set<PlaqueID> = []
-    /// 押した スタンプの数（函館エリアの 名所だけ 数える）。
-    var stamps: Int { readPlaques.intersection(World.stampPlaques).count }
+    /// 地方ごとの 押した スタンプの数。
+    var stamps: [Region: Int] {
+        Dictionary(grouping: readPlaques.intersection(World.stampPlaques), by: { $0.map.region ?? .hakodate })
+            .mapValues(\.count)
+    }
     var progress: StoryProgress { StoryProgress(flags: storyFlags, defeatedBosses: defeatedBosses, stamps: stamps) }
     /// いまの地図に 出ている人。
     var npcs: [NPC] { map.npcs(progress) }
@@ -488,7 +491,8 @@ final class GameState {
     private func stamp(_ plaque: PlaqueID) -> [String] {
         guard World.stampPlaques.contains(plaque), readPlaques.insert(plaque).inserted else { return [] }
         playSound(.chest)
-        return ["めいしょ スタンプを おした！（\(stamps)／\(World.stampTotal)）"]
+        let region = plaque.map.region ?? .hakodate
+        return ["めいしょ スタンプを おした！（\(stamps[region, default: 0])／\(World.stampTotal(in: region))）"]
     }
 
     private func talk(to npc: NPC) {
@@ -512,6 +516,10 @@ final class GameState {
         if scene.gold > 0 || !scene.items.isEmpty || !scene.sets.isEmpty { playSound(.chest) }
         hero.gold += scene.gold
         for item in scene.items { hero.receive(item) }
+        if scene.heals {
+            hero.restoreFully()
+            playSound(.heal)
+        }
         say(scene.lines) { [weak self] in
             self?.storyFlags.formUnion(scene.sets)
         }
@@ -644,10 +652,17 @@ final class GameState {
             ["ちょうろう「駒ヶ岳は 大沼の 北じゃ。",
              "　ぬしは ほのおの たてがみで みを まもる。",
              "　大沼の ものの はなしを きいておくのじゃぞ。」"]
+        } else if !defeatedBosses.contains(.tengu) && !progress.has(.musicBox) {
+            ["ちょうろう「札幌の 赤れんが庁舎の 長官を たずねよ。",
+             "　小樽の 天狗山には 天狗が おる。",
+             "　かくれみので みを まもるゆえ、小樽の ことを しっておくのじゃ。」"]
+        } else if !progress.has(.musicBox) {
+            ["ちょうろう「天狗を こらしめたか。",
+             "　小樽の オルゴール職人に しらせて やるのじゃ。」"]
         } else if !defeatedBosses.contains(.bearLord) {
-            ["ちょうろう「札幌の 藻岩山に ヒグマのぬしが おる。",
+            ["ちょうろう「藻岩山は 札幌の 南西じゃ。",
              "　ぬしは 山の かごで みを まもる。",
-             "　札幌や 小樽の ものの はなしを きいておくのじゃぞ。」"]
+             "　札幌の ものの はなしを きいておくのじゃぞ。」"]
         } else if !defeatedBosses.contains(.guardian) {
             ["ちょうろう「のこるは 羅臼岳の 守護神。",
              "　ふぶきの まくで みを まもり、ふぶきを おこす。",
@@ -672,6 +687,11 @@ final class GameState {
              "駒ヶ岳のぬし「この 山の 火は わたしのものだ。",
              "　ひこうきも 人も 近づけさせぬ！」",
              "（駒ヶ岳のぬしは ほのおの たてがみに つつまれている……）"]
+        case .tengu:
+            ["ヒュウウ……",
+             "天狗「わっはっは！ この オルゴールの 音は わしの ものじゃ。",
+             "　人間の すがたなど 見えぬ ところから こらしめてくれる！」",
+             "（天狗は かくれみので すがたを かくしている……）"]
         case .bearLord:
             ["グオオオ……",
              "ヒグマのぬし「この山は とおさん。",
@@ -699,6 +719,11 @@ final class GameState {
              "大沼の ひとびとから おれいに",
              "札幌ゆきの ひこうきの きっぷを もらった！",
              "函館の 東の 函館空港から とべる。"]
+        case .tengu:
+            ["天狗を たおした！",
+             "天狗は うちわを おとして 山の おくへ にげていった。",
+             "とられた オルゴールも おちている。",
+             "小樽の オルゴール職人に しらせに いこう。"]
         case .bearLord:
             ["ヒグマのぬしを たおした！",
              "藻岩山に しずけさが もどった。",

@@ -134,8 +134,10 @@ struct MapTests {
             ("函館 → 松前", .hakodateArea, .hakodate, .matsumae, 40),
             ("函館 → 大沼", .hakodateArea, .hakodate, .onuma, 20),
             ("大沼 → 駒ヶ岳", .hakodateArea, .onuma, .komagatake, 15),
-            ("札幌 → 藻岩山", .sapporoArea, .sapporo, .moiwa1, 15),
-            ("札幌 → 小樽", .sapporoArea, .sapporo, .otaru, 15),
+            ("札幌 → 藻岩山", .sapporoArea, .sapporo, .moiwa1, 12),
+            ("小樽 → 天狗山", .sapporoArea, .otaru, .tenguyama, 12),
+            ("藻岩山 → 定山渓", .sapporoArea, .moiwa1, .jozankei, 12),
+            ("札幌 → 小樽", .sapporoArea, .sapporo, .otaru, 20),
             ("中標津 → 羅臼", .shiretokoArea, .sapporoArea, .rausu, 15),
             ("羅臼 → 羅臼岳", .shiretokoArea, .rausu, .rausudake1, 15),
         ]
