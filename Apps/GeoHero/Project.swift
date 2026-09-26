@@ -26,7 +26,7 @@ let project = Project(
                     "CFBundleDisplayName": "地理の勇者",
                     "CFBundleDevelopmentRegion": "ja",
                     "CFBundleShortVersionString": "1.1",
-                    "CFBundleVersion": "3",
+                    "CFBundleVersion": "4",
                     "ITSAppUsesNonExemptEncryption": false,
                     // 十字キーの配置を1パターンに絞るため縦持ち固定。
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),

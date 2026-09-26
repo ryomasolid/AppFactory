@@ -91,8 +91,12 @@ struct StoryProgress {
     /// 地方ごとの 押した 名所の スタンプの数（看板を 読んだ数）。
     var stamps: [Region: Int] = [:]
 
+    /// `impliedBy.map(defeatedBosses.contains)` と メソッドを そのまま渡すと、
+    /// Release の最適化で 不正なメモリを 読んで落ちた（空港に入ろうとすると クラッシュ）。ふつうに 書く。
     func has(_ flag: StoryFlag) -> Bool {
-        flags.contains(flag) || flag.impliedBy.map(defeatedBosses.contains) == true
+        if flags.contains(flag) { return true }
+        guard let boss = flag.impliedBy else { return false }
+        return defeatedBosses.contains(boss)
     }
 }
 
