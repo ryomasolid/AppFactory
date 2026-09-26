@@ -16,8 +16,12 @@ struct BattleSession {
     var defeatedIDs: Set<Int> = []
     /// 勇者が受けた最新の一撃。画面はこれが変わるたびに揺れる。
     var heroHit: HeroHit?
-    /// 敵に当たった最新の一撃。画面はこれが変わるたびに敵を揺らし、ダメージの数字を出す。
+    /// 敵に当たった最新の一撃。ダメージの数字は これに当たった敵だけに出す。
     var enemyHit: EnemyHit?
+    /// 敵ごとの 最後に当たった一撃。画面は これが変わった敵だけを 揺らす。
+    /// （最新の一撃だけを見ていると、別の敵に当たったとき「自分への一撃が なくなった」のも 変化になり、
+    /// 当たっていない敵まで 揺れて 点滅していた。「ちしき」で 全員に当てた あとに 目立った）
+    var lastHits: [Int: EnemyHit] = [:]
     /// 呪文・道具の最新の演出。画面はこれが変わるたびに粒や炎を出す。
     var effect: EffectCue?
     /// いま出しているレベルアップの画面。次の行が出たら消える。
@@ -878,9 +882,9 @@ final class GameState {
         if let damage = line.enemyDamage {
             // 書き換えの最中に battle を読むと排他アクセス違反で落ちるので、次の番号は先に取り出す。
             let nextID = (battle?.enemyHit?.id ?? 0) + 1
-            battle?.enemyHit = EnemyHit(
-                id: nextID, enemyID: line.enemyID ?? 0, damage: damage, isCritical: line.isCritical
-            )
+            let hit = EnemyHit(id: nextID, enemyID: line.enemyID ?? 0, damage: damage, isCritical: line.isCritical)
+            battle?.enemyHit = hit
+            battle?.lastHits[hit.enemyID] = hit
         }
         // レベルアップの画面は、その行のあいだだけ出す。
         battle?.levelUp = line.levelUp

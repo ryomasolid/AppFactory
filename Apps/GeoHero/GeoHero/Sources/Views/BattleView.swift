@@ -171,17 +171,18 @@ struct BattleView: View {
         // 数が増えるほど1体を小さくして、重ならないようにする。
         let base: CGFloat = enemy.kind.isBoss ? 176 : 132
         let size = count >= 3 ? base * 0.72 : (count == 2 ? base * 0.85 : base)
-        // 自分に当たった一撃だけを見る。
+        // 自分に 最後に当たった一撃で 揺らし、それが いまの一撃なら ダメージの数字も出す。
+        let lastHit = session.lastHits[enemy.id]
         let hit = session.enemyHit?.enemyID == enemy.id ? session.enemyHit : nil
         // 会心の一撃は大きく揺らす。
-        let strength: CGFloat = hit?.isCritical == true ? 2 : 1
+        let strength: CGFloat = lastHit?.isCritical == true ? 2 : 1
         return ZStack {
             SpriteCache.image(SpriteID(enemy: enemy.kind))
                 .resizable()
                 .interpolation(.none)
                 .frame(width: size, height: size)
                 // 当たった瞬間に左右に揺れて、2回点滅する。
-                .keyframeAnimator(initialValue: HitPose(), trigger: hit?.id ?? 0) { view, pose in
+                .keyframeAnimator(initialValue: HitPose(), trigger: lastHit?.id ?? 0) { view, pose in
                     view
                         .offset(x: pose.shake)
                         .opacity(pose.opacity)

@@ -185,6 +185,30 @@ struct QuizTests {
         #expect(game.battle?.battle.nextQuiz != first, "つぎの戦いで また同じ問題から始まった")
     }
 
+    /// 「ちしき」で 全員に当てた あとに 1体を なぐっても、ほかの敵は 揺れない
+    /// （最新の一撃だけを 見ていたころは、当たっていない敵まで 揺れて 点滅していた）。
+    @MainActor
+    @Test func attackAfterQuizShakesOnlyTheTarget() async throws {
+        let game = GameState()
+        game.newGame()
+        game.messageInterval = .zero
+        game.beatPause = .zero
+        game.waitsForTap = false
+        game.rng = AnyRandomSource(SeededRandomSource(seed: 2))
+        game.startBattle([.iceGolem, .iceGolem, .iceGolem])
+        let quiz = try #require(game.battle?.battle.nextQuiz)
+        await game.command(.quiz(answer: quiz.answer), target: 0)
+        let afterQuiz = try #require(game.battle?.lastHits)
+        #expect(afterQuiz.count == 3, "ちしきが 全員に 当たっていない")
+
+        await game.command(.attack, target: 0)
+        let afterAttack = try #require(game.battle?.lastHits)
+        let targetID = try #require(game.battle?.enemyHit?.enemyID)
+        for (id, hit) in afterQuiz where id != targetID {
+            #expect(afterAttack[id] == hit, "なぐっていない 敵 \(id) の 一撃が かわった")
+        }
+    }
+
     @MainActor
     @Test func withdrawingRestoresTheLog() {
         let game = GameState()
