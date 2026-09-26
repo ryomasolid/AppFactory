@@ -86,7 +86,11 @@ final class GameState {
     var interiorReturn: Point?
     /// 物語の進みぐあい（人の頼みを片づけると立つ）。
     var storyFlags: Set<StoryFlag> = []
-    var progress: StoryProgress { StoryProgress(flags: storyFlags, defeatedBosses: defeatedBosses) }
+    /// 読んだ 名所の看板（めいしょ スタンプ）。
+    var readPlaques: Set<PlaqueID> = []
+    /// 押した スタンプの数（函館エリアの 名所だけ 数える）。
+    var stamps: Int { readPlaques.intersection(World.stampPlaques).count }
+    var progress: StoryProgress { StoryProgress(flags: storyFlags, defeatedBosses: defeatedBosses, stamps: stamps) }
     /// いまの地図に 出ている人。
     var npcs: [NPC] { map.npcs(progress) }
     /// 土地ごとの「ちしき」の問題の山。戦いをまたいで続きから出す（毎回 同じ問題から始まらないように）。
@@ -109,7 +113,7 @@ final class GameState {
     /// 黒幕を上げ下げしているあいだは操作を受け付けない。
     private(set) var isTransitioning = false
     /// 街に入ったときに しばらく出す 地名の札。フィールドから入ったときだけ（宿屋から出たときは出さない）。
-    private(set) var arrivalBanner: TownInfo?
+    private(set) var arrivalBanner: PlaceBanner?
     @ObservationIgnored private var bannerTask: Task<Void, Never>?
     /// 地名の札を出しておく時間。
     @ObservationIgnored var bannerDuration: Duration = .milliseconds(2600)
@@ -141,6 +145,8 @@ final class GameState {
     }
 
     var map: GameMap { World.map(mapID) }
+    /// いまの地方。宿屋・道具屋の中では 入ってきた街の地方。
+    var region: Region { mapID.region ?? lastTown.region ?? .hakodate }
     var currentPage: [String]? { pages.first }
     /// いま使っている街。宿屋・道具屋の中では 入ってきた街を見る。
     var town: TownInfo { mapID.townInfo ?? lastTown.townInfo ?? .hakodate }
@@ -162,11 +168,7 @@ final class GameState {
         // 名前を決めているあいだも タイトルの曲を流し続ける。
         case .title, .naming: .title
         case .field:
-            switch mapID {
-            case .hakodate, .sapporo, .rausu, .innInside, .shopInside: .village
-            case .field: .overworld
-            case .hakodateyama, .moiwa1, .moiwa2, .rausudake1, .rausudake2: .cave
-            }
+            if mapID.isField { .overworld } else if mapID.isCave { .cave } else { .village }
         case .battle:
             if let battle, !battle.musicStopped {
                 battle.battle.isBoss ? .boss : .battle
@@ -197,6 +199,7 @@ final class GameState {
         openedChests = []
         defeatedBosses = []
         storyFlags = []
+        readPlaques = []
         lastTown = World.startMap
         interiorReturn = nil
         enterField()
@@ -208,7 +211,8 @@ final class GameState {
             "そなたには いにしえの ゆうしゃの ちが ながれておる。",
             "この北海道の 守護神は 知床の おくに とらわれておる。",
             "だが 道には まおうの てさきが 3ひき。",
-            "まずは 函館山に すみついた イカのぬしじゃ。",
+            "まずは この 函館エリアから じゃ。",
+            "函館山に イカのぬしが すみついた。",
             "山は いま 奉行所が とじておる。",
             "街の ものに 話を きいて まわるのじゃ。」",
             "（十字キーで あるき、Aで はなす・しらべる、",
@@ -224,13 +228,13 @@ final class GameState {
         openedChests = save.openedChests
         defeatedBosses = save.defeatedBosses
         storyFlags = save.storyFlags
+        readPlaques = save.readPlaques
         lastTown = save.lastTown
         interiorReturn = save.interiorReturn
         if mapID.isTown { lastTown = mapID }
         // 地図を描きなおした街で 古いセーブの位置が 建物や海の中に なっていたら、街の入口へ。
         if !map.contains(position) || !map.tile(at: position).isPassable {
-            mapID = World.revivePoint.map
-            position = World.revivePoint.point
+            (mapID, position) = World.revivePoint(in: region)
         }
         facing = .down
         enterField()
@@ -322,8 +326,11 @@ final class GameState {
                 return
             }
             // 出入りは 暗転をはさんで「移った」と分かるようにする。
+            // 空港（フィールドから となりの地方の フィールドへ）は ひこうきなので、暗いあいだに 字を出す。
+            let isFlight = mapID.isField && warp.to.isField
             playSound(.stairs)
-            await drawCurtain()
+            await drawCurtain(caption: isFlight ? "ひこうきで とんでいる……" : nil)
+            if isFlight { try? await Task.sleep(for: sleepDuration) }
             lastMoveWasWarp = true
             if mapID.isTown { lastTown = mapID }
             let from = mapID
@@ -339,7 +346,11 @@ final class GameState {
             stepsSinceBattle = 0
             hideBanner()
             await openCurtain()
-            if from == .field, let town = mapID.townInfo { showBanner(town) }
+            if isFlight, let region = mapID.region {
+                showBanner(region.banner)
+            } else if from.isField, let town = mapID.townInfo {
+                showBanner(town.banner)
+            }
             return
         }
         guard let table = map.encounterTable(at: position), !table.isEmpty else { return }
@@ -350,9 +361,9 @@ final class GameState {
     }
 
     /// 街の名前の札を出し、しばらくしたら消す。
-    private func showBanner(_ town: TownInfo) {
+    private func showBanner(_ banner: PlaceBanner) {
         bannerTask?.cancel()
-        arrivalBanner = town
+        arrivalBanner = banner
         let duration = bannerDuration
         bannerTask = Task { [weak self] in
             try? await Task.sleep(for: duration)
@@ -458,7 +469,7 @@ final class GameState {
             open(chest)
         } else if map.tile(at: target) == .signpost, let plaque = map.plaques[target] {
             playSound(.confirm)
-            say(plaque.lines)
+            say(plaque.lines + stamp(PlaqueID(map: mapID, point: target)))
         } else if map.tile(at: target) == .signpost, let town = mapID.townInfo {
             playSound(.confirm)
             say(["かんばんに こう かいてある。", "「ここは \(town.name)（\(town.reading)）。", "\(town.tagline)」"])
@@ -471,6 +482,13 @@ final class GameState {
             playSound(.cursor)
             say(["\(hero.name)は あしもとを しらべた。", "しかし なにも みつからなかった。"])
         }
+    }
+
+    /// 名所の看板を はじめて読んだら スタンプを押す。押したときの せりふを返す。
+    private func stamp(_ plaque: PlaqueID) -> [String] {
+        guard World.stampPlaques.contains(plaque), readPlaques.insert(plaque).inserted else { return [] }
+        playSound(.chest)
+        return ["めいしょ スタンプを おした！（\(stamps)／\(World.stampTotal)）"]
     }
 
     private func talk(to npc: NPC) {
@@ -592,7 +610,7 @@ final class GameState {
         SaveStore.save(SaveData(
             hero: hero, map: mapID, position: position,
             openedChests: openedChests, defeatedBosses: defeatedBosses,
-            storyFlags: storyFlags, lastTown: lastTown, interiorReturn: interiorReturn
+            storyFlags: storyFlags, readPlaques: readPlaques, lastTown: lastTown, interiorReturn: interiorReturn
         ))
         hasSave = true
     }
@@ -618,11 +636,18 @@ final class GameState {
             ["ちょうろう「函館山の ぬしは すみの まくで みを まもる。",
              "　函館の ことを よく しれば やぶれるはずじゃ。",
              "　街の ものの はなしを きいておくのじゃぞ。」"]
-        } else if !defeatedBosses.contains(.bearLord) {
+        } else if !progress.has(.fireCharm) {
             ["ちょうろう「よくぞ ぬしを たおした。",
-             "　つぎは さっぽろの 藻岩山じゃ。",
+             "　つぎは 駒ヶ岳じゃが、火よけの おふだが いる。",
+             "　松前の 殿様を たずねよ。 函館湾を まわった 西の はてじゃ。」"]
+        } else if !defeatedBosses.contains(.komaLord) {
+            ["ちょうろう「駒ヶ岳は 大沼の 北じゃ。",
+             "　ぬしは ほのおの たてがみで みを まもる。",
+             "　大沼の ものの はなしを きいておくのじゃぞ。」"]
+        } else if !defeatedBosses.contains(.bearLord) {
+            ["ちょうろう「札幌の 藻岩山に ヒグマのぬしが おる。",
              "　ぬしは 山の かごで みを まもる。",
-             "　札幌の ものの はなしを きいておくのじゃぞ。」"]
+             "　札幌や 小樽の ものの はなしを きいておくのじゃぞ。」"]
         } else if !defeatedBosses.contains(.guardian) {
             ["ちょうろう「のこるは 羅臼岳の 守護神。",
              "　ふぶきの まくで みを まもり、ふぶきを おこす。",
@@ -642,6 +667,11 @@ final class GameState {
              "イカのぬし「みなとの さかなは わたしのものだ。",
              "　すみで まっくろに してやろう！」",
              "（イカのぬしは すみの まくに つつまれている……）"]
+        case .komaLord:
+            ["ヒヒーン……！",
+             "駒ヶ岳のぬし「この 山の 火は わたしのものだ。",
+             "　ひこうきも 人も 近づけさせぬ！」",
+             "（駒ヶ岳のぬしは ほのおの たてがみに つつまれている……）"]
         case .bearLord:
             ["グオオオ……",
              "ヒグマのぬし「この山は とおさん。",
@@ -662,11 +692,19 @@ final class GameState {
         case .squidLord:
             ["イカのぬしを たおした！",
              "みなとに さかなが もどってきた。",
-             "北へ 街道が つづいている。つぎは さっぽろへ。"]
+             "五稜郭の 奉行に しらせに いこう。"]
+        case .komaLord:
+            ["駒ヶ岳のぬしを たおした！",
+             "山の けむりが おさまり、空が はれていく。",
+             "大沼の ひとびとから おれいに",
+             "札幌ゆきの ひこうきの きっぷを もらった！",
+             "函館の 東の 函館空港から とべる。"]
         case .bearLord:
             ["ヒグマのぬしを たおした！",
              "藻岩山に しずけさが もどった。",
-             "のこるは 知床。羅臼岳へ 向かおう。"]
+             "札幌の ひとびとから おれいに",
+             "知床ゆきの ひこうきの きっぷを もらった！",
+             "南東の 新千歳空港から とべる。"]
         default:
             []
         }
@@ -865,8 +903,7 @@ final class GameState {
             await drawCurtain()
             hero.gold /= 2
             hero.restoreFully()
-            mapID = World.revivePoint.map
-            position = World.revivePoint.point
+            (mapID, position) = World.revivePoint(in: region)
             facing = .up
             enterField()
             await openCurtain()

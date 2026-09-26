@@ -32,6 +32,10 @@ enum Tile: Character, CaseIterable {
     case bridge = "b"
     case town = "T"
     case cave = "C"
+    /// 空港。きっぷがあれば となりの地方へ とべる。
+    case airport = "A"
+    /// さくらの木（街の中）。通れない。
+    case blossom = "k"
     case townFloor = "_"
     case house = "H"
     /// やどやの屋根（青）。遠目でも どちらの家か わかるように色を分ける。
@@ -64,38 +68,96 @@ enum Tile: Character, CaseIterable {
     var isPassable: Bool {
         switch self {
         case .mountain, .water, .house, .innRoof, .shopRoof, .fountain, .wall,
-             .houseWall, .innSign, .shopSign, .counter, .bed, .shelf, .innerWall, .darkness, .signpost: false
+             .houseWall, .innSign, .shopSign, .counter, .bed, .shelf, .innerWall, .darkness, .signpost, .blossom: false
         default: true
         }
     }
 }
 
+/// 地方。地方ごとに フィールドが1枚あり、空港から ひこうきで行き来する。
+/// 函館エリア → 札幌・小樽 → 知床 の順にたどる。
+enum Region: String, CaseIterable {
+    case hakodate, sapporo, shiretoko
+
+    /// その地方の フィールド。
+    var field: MapID {
+        switch self {
+        case .hakodate: .hakodateArea
+        case .sapporo: .sapporoArea
+        case .shiretoko: .shiretokoArea
+        }
+    }
+
+    /// ひこうきで着いたときの札。
+    var banner: PlaceBanner {
+        switch self {
+        case .hakodate: PlaceBanner(name: "函館エリア", reading: "はこだて えりあ", tagline: "旅の はじまりの 道南")
+        case .sapporo: PlaceBanner(name: "札幌・小樽", reading: "さっぽろ・おたる", tagline: "北の 大きな 街と みなと町")
+        case .shiretoko: PlaceBanner(name: "知床", reading: "しれとこ", tagline: "ちの はての 半島")
+        }
+    }
+}
+
 enum MapID: String, Codable, CaseIterable {
-    case field
-    /// 街。南から 函館 → 札幌 → 知床 の順にたどる。
-    case hakodate, sapporo, rausu
-    /// ほらあな。街ごとに ちかくの山へ入る。
-    case hakodateyama
+    /// 地方の フィールド。函館エリアは 1枚きりだったころの名前（field）でセーブに残る。
+    case hakodateArea = "field"
+    case sapporoArea, shiretokoArea
+    /// 街。函館エリアは 函館・松前・大沼、札幌・小樽は 札幌・小樽、知床は 羅臼。
+    case hakodate, matsumae, onuma
+    case sapporo, otaru
+    case rausu
+    /// ほらあな。
+    case hakodateyama, komagatake
     case moiwa1, moiwa2
     case rausudake1, rausudake2
     /// 宿屋と道具屋の中。どの街から入っても ここを使い、出るときに元の街へ戻る。
     case innInside, shopInside
+    /// 街の 家の中。1軒ずつ ちがい、宝箱や ヒントをくれる人がいる。出るときは 入った扉の前へ戻る。
+    case bugyosho, asaichiSouko, motomachiHouse, bukeyashiki, tsukemonoya, ryoshiHouse, noukaHouse, dangoya, yamagoya, glassKobo, tokeidaiHouse, sapporoHouse
 
-    /// 漢字の地名。フィールドの目印の下や 看板に出す。街と ほらあなだけ。
+    /// 漢字の地名。フィールドの目印の下や 看板に出す。街・ほらあな・空港の行き先。
     var placeName: String? {
         switch self {
         case .hakodate: "函館"
+        case .matsumae: "松前"
+        case .onuma: "大沼"
         case .sapporo: "札幌"
+        case .otaru: "小樽"
         case .rausu: "羅臼"
         case .hakodateyama: "函館山"
+        case .komagatake: "駒ヶ岳"
         case .moiwa1, .moiwa2: "藻岩山"
         case .rausudake1, .rausudake2: "羅臼岳"
-        case .field, .innInside, .shopInside: nil
+        default: nil
+        }
+    }
+
+    /// どの地方の地図か。宿屋・道具屋の中は 入ってきた街で決まるので nil。
+    var region: Region? {
+        switch self {
+        case .hakodateArea, .hakodate, .matsumae, .onuma, .hakodateyama, .komagatake: .hakodate
+        case .sapporoArea, .sapporo, .otaru, .moiwa1, .moiwa2: .sapporo
+        case .shiretokoArea, .rausu, .rausudake1, .rausudake2: .shiretoko
+        default: nil
+        }
+    }
+
+    /// 地方の フィールドか。
+    var isField: Bool { Region.allCases.contains { $0.field == self } }
+
+    /// ほらあなか。
+    var isCave: Bool {
+        switch self {
+        case .hakodateyama, .komagatake, .moiwa1, .moiwa2, .rausudake1, .rausudake2: true
+        default: false
         }
     }
 
     /// 宿屋・道具屋の中か。
-    var isInterior: Bool { self == .innInside || self == .shopInside }
+    var isInterior: Bool { self == .innInside || self == .shopInside || isHouse }
+
+    /// 街の 家の中か。
+    var isHouse: Bool { World.houses.contains(self) }
 
     /// 街かどうか（宿屋・道具屋から戻る先になれるか）。
     var isTown: Bool { townInfo != nil }
@@ -104,11 +166,21 @@ enum MapID: String, Codable, CaseIterable {
     var townInfo: TownInfo? {
         switch self {
         case .hakodate: .hakodate
+        case .matsumae: .matsumae
+        case .onuma: .onuma
         case .sapporo: .sapporo
+        case .otaru: .otaru
         case .rausu: .rausu
         default: nil
         }
     }
+}
+
+/// 真ん中に しばらく出す 地名の札（街に入ったとき・ひこうきで着いたとき）。
+struct PlaceBanner: Equatable {
+    let name: String
+    let reading: String
+    let tagline: String
 }
 
 /// 街ごとの ちがい。奥の街ほど 宿代は高く、道具屋の品ぞろえは強くなる。
@@ -125,14 +197,28 @@ struct TownInfo: Equatable {
     /// 道具屋の品ぞろえ。まだ早い装備も、もう用のない装備も置かない。
     let stock: [Item]
 
+    var banner: PlaceBanner { PlaceBanner(name: name, reading: reading, tagline: tagline) }
+
     /// みなとの街。旅のはじめなので 安く、そろえも いちばん下。
     static let hakodate = TownInfo(name: "函館", reading: "はこだて", tagline: "みなとの 街",
                                    innBase: 2, innPerLevel: 3,
                                    stock: [.herb, .copperSword, .leatherArmor])
+    /// 城と さくらの 町。函館の つぎに たずねる。
+    static let matsumae = TownInfo(name: "松前", reading: "まつまえ", tagline: "城と さくらの 町",
+                                   innBase: 3, innPerLevel: 3,
+                                   stock: [.herb, .copperSword, .leatherArmor])
+    /// 湖の ほとりの 町。駒ヶ岳の ふもと。
+    static let onuma = TownInfo(name: "大沼", reading: "おおぬま", tagline: "駒ヶ岳を うつす 湖の 町",
+                                innBase: 3, innPerLevel: 4,
+                                stock: [.herb, .copperSword, .leatherArmor])
     /// 大きな街。鋼の剣が ここで買える。
     static let sapporo = TownInfo(name: "札幌", reading: "さっぽろ", tagline: "北の 大きな 街",
                                   innBase: 4, innPerLevel: 5,
                                   stock: [.herb, .copperSword, .leatherArmor, .steelSword])
+    /// 運河の みなと町。札幌の となりで、品ぞろえも 札幌と ほぼ同じ。
+    static let otaru = TownInfo(name: "小樽", reading: "おたる", tagline: "運河と ガラスの みなと町",
+                                innBase: 5, innPerLevel: 5,
+                                stock: [.herb, .leatherArmor, .steelSword])
     /// さいはての町。運ぶのが大変なぶん 宿も品も高い。銅の剣・革の鎧は もう置かない。
     static let rausu = TownInfo(name: "羅臼", reading: "らうす", tagline: "知床の さいはての 町",
                                 innBase: 6, innPerLevel: 8,
@@ -166,6 +252,12 @@ struct Plaque: Equatable {
     /// 板に書く名前（2〜3文字。それより長いと 板からはみ出す）。
     let title: String
     let lines: [String]
+}
+
+/// 名所の看板の 見分け（「めいしょ スタンプ」の記録に使う）。
+struct PlaqueID: Hashable, Codable {
+    let map: MapID
+    let point: Point
 }
 
 struct Warp: Equatable {

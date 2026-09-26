@@ -60,10 +60,11 @@ struct GroupBattleTests {
         // エリアと、そこに着くころのレベル・装備。
         let cases: [(String, EnemyKind, Int, Item, Item)] = [
             ("函館のまわり", .kelpSlime, 1, .woodStick, .clothes),
-            ("藻岩山へむかう道", .fox, 5, .copperSword, .leatherArmor),
-            ("知床へむかう道", .cod, 8, .copperSword, .leatherArmor),
-            ("羅臼岳へむかう道", .snowman, 9, .copperSword, .leatherArmor),
-            ("羅臼岳B2", .iceGolem, 11, .steelSword, .chainMail),
+            ("大沼のまわり", .dango, 5, .copperSword, .leatherArmor),
+            ("藻岩山のふもと", .fox, 8, .copperSword, .leatherArmor),
+            ("知床へむかう道", .cod, 11, .steelSword, .chainMail),
+            ("羅臼岳へむかう道", .snowman, 12, .steelSword, .chainMail),
+            ("羅臼岳B2", .iceGolem, 14, .steelSword, .chainMail),
         ]
         for (zone, kind, level, weapon, armor) in cases {
             var losses = 0
@@ -103,12 +104,13 @@ struct GroupBattleTests {
     @Test func heroUsuallyStrikesFirstOnTheField() {
         // 区域と、そこを歩くころのレベル。
         let zones: [(String, Int)] = [
-            ("函館のまわり", 1), ("函館山のふもと", 2), ("札幌へむかう道", 4),
-            ("藻岩山へむかう道", 6), ("知床へむかう道", 8), ("羅臼岳へむかう道", 10),
+            ("函館のまわり", 1), ("函館山のふもと", 2), ("松前へむかう道", 4), ("大沼のまわり", 5),
+            ("札幌のまわり", 7), ("藻岩山のふもと", 8), ("知床へむかう道", 11), ("羅臼岳へむかう道", 12),
         ]
         for (name, level) in zones {
             let heroAgility = LevelTable.row(level).agility
-            let area = World.map(.field).encounterAreas.first { $0.name == name }
+            let area = Region.allCases.flatMap { World.map($0.field).encounterAreas }.first { $0.name == name }
+            #expect(area != nil, "\(name) という区域がない")
             for kind in area?.enemies ?? [] {
                 let chance = firstStrikeChance(heroAgility: heroAgility, enemyAgility: kind.stats.agility)
                 #expect(chance >= 0.85,

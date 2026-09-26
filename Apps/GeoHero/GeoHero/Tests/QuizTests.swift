@@ -42,17 +42,17 @@ struct QuizTests {
     /// 答えは その土地の街の人から かならず聞ける（知らないと解けない問題は出さない）。
     @Test(arguments: QuizRegion.allCases)
     func everyAnswerIsTaughtInItsTown(region: QuizRegion) {
-        let map = World.map(region.town)
-        let spoken = map.npcs.compactMap { npc -> String? in
+        let maps = region.towns.map(World.map)
+        let spoken = maps.flatMap(\.npcs).compactMap { npc -> String? in
             switch npc.role {
             case let .villager(lines): lines.joined()
             case let .resident(resident): resident.everyLine.joined()
             default: nil
             }
         }
-        let text = (spoken + map.plaques.values.map { $0.lines.joined() }).joined(separator: "\n")
+        let text = (spoken + maps.flatMap(\.plaques.values).map { $0.lines.joined() }).joined(separator: "\n")
         for quiz in region.quizzes {
-            #expect(text.contains(quiz.correctChoice), "「\(quiz.correctChoice)」を \(region.town) の だれも 教えてくれない")
+            #expect(text.contains(quiz.correctChoice), "「\(quiz.correctChoice)」を \(region.towns) の だれも 教えてくれない")
         }
     }
 
@@ -61,20 +61,26 @@ struct QuizTests {
     @Test func eachPlaceAsksItsOwnQuizzes() {
         #expect(QuizRegion.at(.hakodate, Point(x: 7, y: 9)) == .hakodate)
         #expect(QuizRegion.at(.hakodateyama, Point(x: 7, y: 2)) == .hakodate)
-        #expect(QuizRegion.at(.field, Point(x: 16, y: 35)) == .hakodate, "函館の外")
-        #expect(QuizRegion.at(.field, Point(x: 33, y: 29)) == .hakodate, "函館山の前")
-        #expect(QuizRegion.at(.field, Point(x: 14, y: 17)) == .sapporo, "札幌の外")
-        #expect(QuizRegion.at(.field, Point(x: 26, y: 9)) == .sapporo, "藻岩山の前")
+        #expect(QuizRegion.at(.hakodateArea, Point(x: 46, y: 28)) == .hakodate, "函館の外")
+        #expect(QuizRegion.at(.hakodateArea, Point(x: 38, y: 34)) == .hakodate, "函館山の前")
+        #expect(QuizRegion.at(.hakodateArea, Point(x: 13, y: 35)) == .matsumae, "松前の外")
+        #expect(QuizRegion.at(.matsumae, Point(x: 13, y: 20)) == .matsumae)
+        #expect(QuizRegion.at(.hakodateArea, Point(x: 30, y: 18)) == .onuma, "大沼の外")
+        #expect(QuizRegion.at(.hakodateArea, Point(x: 40, y: 11)) == .onuma, "駒ヶ岳の前")
+        #expect(QuizRegion.at(.komagatake, Point(x: 8, y: 13)) == .onuma)
+        #expect(QuizRegion.at(.sapporoArea, Point(x: 27, y: 18)) == .sapporo, "札幌の外")
+        #expect(QuizRegion.at(.otaru, Point(x: 10, y: 13)) == .sapporo, "小樽")
+        #expect(QuizRegion.at(.sapporoArea, Point(x: 17, y: 26)) == .sapporo, "藻岩山の前")
         #expect(QuizRegion.at(.moiwa2, Point(x: 1, y: 1)) == .sapporo)
-        #expect(QuizRegion.at(.field, Point(x: 46, y: 10)) == .rausu, "知床の外")
+        #expect(QuizRegion.at(.shiretokoArea, Point(x: 18, y: 22)) == .rausu, "知床の外")
         #expect(QuizRegion.at(.rausudake2, Point(x: 1, y: 1)) == .rausu)
         #expect(QuizRegion.at(.innInside, Point(x: 4, y: 4)) == nil, "宿屋の中")
     }
 
     /// 奥のボスほど まもりが厚い。
     @Test func laterBossesHaveThickerVeils() {
-        let layers = [EnemyKind.squidLord, .bearLord, .guardian].map(\.veilLayers)
-        #expect(layers == layers.sorted() && Set(layers).count == 3, "\(layers)")
+        let layers = [EnemyKind.squidLord, .komaLord, .bearLord, .guardian].map(\.veilLayers)
+        #expect(layers == layers.sorted() && Set(layers).count == 4, "\(layers)")
         #expect(EnemyKind.allCases.filter { !$0.isBoss }.allSatisfy { $0.veilLayers == 0 }, "ざこに まもりがある")
     }
 

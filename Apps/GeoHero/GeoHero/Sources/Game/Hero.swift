@@ -26,6 +26,10 @@ enum LevelTable {
         LevelRow(maxHP: 96, maxMP: 36, attack: 29, defense: 21, agility: 17, exp: 780),
         LevelRow(maxHP: 104, maxMP: 40, attack: 32, defense: 23, agility: 19, exp: 1050),
         LevelRow(maxHP: 112, maxMP: 45, attack: 35, defense: 25, agility: 20, exp: 1400),
+        // 函館エリアを 広げて 旅が 3か所 のびたぶん、上を 足した。
+        LevelRow(maxHP: 120, maxMP: 50, attack: 38, defense: 27, agility: 22, exp: 1800),
+        LevelRow(maxHP: 128, maxMP: 55, attack: 41, defense: 29, agility: 23, exp: 2250),
+        LevelRow(maxHP: 136, maxMP: 60, attack: 44, defense: 31, agility: 25, exp: 2750),
     ]
 
     static var maxLevel: Int { rows.count }

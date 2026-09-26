@@ -10,6 +10,8 @@ struct SaveData: Codable, Equatable {
     var defeatedBosses: Set<EnemyKind> = []
     /// 物語の進みぐあい。
     var storyFlags: Set<StoryFlag> = []
+    /// 読んだ 名所の看板（めいしょ スタンプ）。
+    var readPlaques: Set<PlaqueID> = []
     /// 宿屋・道具屋の中でセーブしたとき、出る先の街と扉の前。
     var lastTown: MapID = World.startMap
     var interiorReturn: Point?
@@ -25,6 +27,7 @@ extension SaveData {
         openedChests = try c.decode(Set<String>.self, forKey: .openedChests)
         defeatedBosses = try c.decodeIfPresent(Set<EnemyKind>.self, forKey: .defeatedBosses) ?? []
         storyFlags = try c.decodeIfPresent(Set<StoryFlag>.self, forKey: .storyFlags) ?? []
+        readPlaques = try c.decodeIfPresent(Set<PlaqueID>.self, forKey: .readPlaques) ?? []
         lastTown = try c.decodeIfPresent(MapID.self, forKey: .lastTown) ?? World.startMap
         interiorReturn = try c.decodeIfPresent(Point.self, forKey: .interiorReturn)
     }

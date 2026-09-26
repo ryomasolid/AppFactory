@@ -20,13 +20,13 @@ struct StoryTests {
 
     /// その人の となりの 歩けるマスに立って 向きあい、話を 最後まで読む。読んだ せりふを返す。
     @discardableResult
-    private func talk(to resident: Resident, in game: GameState) throws -> [String] {
-        let map = World.map(.hakodate)
-        let npc = try #require(map.npcs.first { $0.role == .resident(resident) }, "\(resident) が 函館にいない")
+    private func talk(to resident: Resident, in game: GameState, town: MapID = .hakodate) throws -> [String] {
+        let map = World.map(town)
+        let npc = try #require(map.npcs.first { $0.role == .resident(resident) }, "\(resident) が \(town) にいない")
         let side = try #require(Direction.allCases.first { direction in
             map.isWalkable(npc.position + direction.delta, progress: game.progress)
         }, "\(resident) の となりに 立てない")
-        game.mapID = .hakodate
+        game.mapID = town
         game.position = npc.position + side.delta
         game.facing = [.up: Direction.down, .down: .up, .left: .right, .right: .left][side]!
         game.pressA()
@@ -40,8 +40,8 @@ struct StoryTests {
 
     /// 函館山の前に立って 1歩 入ろうとする。
     private func tryEnteringHakodateyama(_ game: GameState) async {
-        let gate = World.field.warps.first { $0.value.to == .hakodateyama }!.key
-        game.mapID = .field
+        let gate = World.hakodateArea.warps.first { $0.value.to == .hakodateyama }!.key
+        game.mapID = .hakodateArea
         game.position = gate + Point(x: 0, y: 1)
         await game.walk(.up)
     }
@@ -49,7 +49,7 @@ struct StoryTests {
     @Test func hakodateyamaIsClosedWithoutThePass() async {
         let game = makeGame()
         await tryEnteringHakodateyama(game)
-        #expect(game.mapID == .field)
+        #expect(game.mapID == .hakodateArea)
         #expect(game.currentPage?.joined().contains("てがた") == true)
     }
 
@@ -121,11 +121,13 @@ struct StoryTests {
         #expect(game.mapID == .hakodateyama)
     }
 
-    /// 物語の人は みな 函館の はじめの場所から 話しかけに行ける。
-    @Test func everyoneInHakodateIsReachable() {
-        let map = World.map(.hakodate)
-        var seen: Set<Point> = [World.startPoint]
-        var queue = [World.startPoint]
+    /// 街の人・宝箱・看板には みな 街の入口から 話しかけに行ける（大沼の 島の ひなも）。
+    @Test(arguments: MapID.allCases.filter(\.isTown))
+    func everyoneInTownIsReachable(town: MapID) throws {
+        let map = World.map(town)
+        let entrance = try #require(map.warps.first { $0.value.to.isField }).key + Point(x: 0, y: -1)
+        var seen: Set<Point> = [entrance]
+        var queue = [entrance]
         while let point = queue.popLast() {
             for direction in Direction.allCases {
                 let next = point + direction.delta
@@ -136,11 +138,116 @@ struct StoryTests {
         let targets = map.npcs.map(\.position) + map.chests.map(\.position) + Array(map.plaques.keys)
         for target in targets {
             let reachable = Direction.allCases.contains { seen.contains(target + $0.delta) }
-            #expect(reachable, "\(target) に 話しかけられない")
+            #expect(reachable, "\(town) の \(target) に 話しかけられない")
         }
         for plaque in map.plaques.keys {
             #expect(map.tile(at: plaque) == .signpost, "\(plaque) に 看板のマスがない")
         }
+    }
+
+    // MARK: - 函館エリアの つづき（松前・大沼）
+
+    /// 駒ヶ岳の前に立って 1歩 入ろうとする。
+    private func tryEnteringKomagatake(_ game: GameState) async {
+        let gate = World.hakodateArea.warps.first { $0.value.to == .komagatake }!.key
+        game.mapID = .hakodateArea
+        game.position = gate + Point(x: 0, y: 1)
+        await game.walk(.up)
+    }
+
+    /// 殿様は イカのぬしを倒した ゆうしゃにだけ 火よけの おふだを さずける。
+    @Test func lordGivesTheCharmAfterTheSquid() throws {
+        let game = makeGame()
+        try talk(to: .lord, in: game, town: .matsumae)
+        #expect(!game.storyFlags.contains(.fireCharm), "ぬしを倒す前に おふだが もらえた")
+        game.defeatedBosses = [.squidLord]
+        let lines = try talk(to: .lord, in: game, town: .matsumae)
+        #expect(lines.joined().contains("おふだ"))
+        #expect(game.storyFlags.contains(.fireCharm))
+    }
+
+    @Test func komagatakeNeedsTheCharm() async {
+        let game = makeGame()
+        game.defeatedBosses = [.squidLord]
+        await tryEnteringKomagatake(game)
+        #expect(game.mapID == .hakodateArea)
+        #expect(game.currentPage?.joined().contains("おふだ") == true)
+        while game.currentPage != nil { game.advanceMessage() }
+        game.storyFlags.insert(.fireCharm)
+        await tryEnteringKomagatake(game)
+        #expect(game.mapID == .komagatake)
+    }
+
+    /// ぬしを倒した 奉行は 松前へ 行くよう 教える（つぎに どこへ行けばいいか 分かるように）。
+    @Test func magistratePointsToMatsumaeAfterTheSquid() throws {
+        let game = makeGame()
+        game.defeatedBosses = [.squidLord]
+        let lines = try talk(to: .magistrate, in: game)
+        #expect(lines.joined().contains("松前"))
+    }
+
+    /// 島の ひなを 見つけると 岸へ もどり、せわがかりが 1度だけ お礼をくれる。
+    @Test func cygnetSwimsHomeAndKeeperThanksOnce() throws {
+        let game = makeGame()
+        let map = World.map(.onuma)
+        let lost = try #require(map.npcs.first { $0.role == .resident(.lostCygnet) }).position
+        #expect(map.tile(at: lost + Point(x: -1, y: 0)) == .townFloor, "ひなは 島の上に いるはず")
+
+        let gold = game.hero.gold
+        try talk(to: .swanKeeper, in: game, town: .onuma)
+        #expect(game.hero.gold == gold, "見つける前に お礼が出た")
+        try talk(to: .lostCygnet, in: game, town: .onuma)
+        #expect(!game.npcs.contains { $0.position == lost })
+        try talk(to: .swanKeeper, in: game, town: .onuma)
+        #expect(game.hero.gold == gold + 120)
+        try talk(to: .swanKeeper, in: game, town: .onuma)
+        #expect(game.hero.gold == gold + 120, "お礼を 2度 もらえる")
+    }
+
+    // MARK: - めいしょ スタンプ
+
+    /// 名所の看板を はじめて読むと スタンプが たまる。2度目は たまらない。
+    @Test func readingAPlaqueStampsOnce() throws {
+        let game = makeGame()
+        let plaque = try #require(World.stampPlaques.first { $0.map == .hakodate })
+        let map = World.map(.hakodate)
+        let side = try #require(Direction.allCases.first { map.isWalkable(plaque.point + $0.delta) })
+        game.position = plaque.point + side.delta
+        game.facing = [.up: Direction.down, .down: .up, .left: .right, .right: .left][side]!
+        game.pressA()
+        var lines: [String] = []
+        while let page = game.currentPage { lines += page; game.advanceMessage() }
+        #expect(lines.joined().contains("スタンプ"))
+        #expect(game.stamps == 1)
+        game.pressA()
+        while game.currentPage != nil { game.advanceMessage() }
+        #expect(game.stamps == 1)
+    }
+
+    /// 案内所は 半分で 薬草、ぜんぶで ゴールドをくれる。それぞれ 1度だけ。
+    @Test func guideRewardsHalfAndAllStamps() throws {
+        #expect(World.stampTotal >= 10, "名所が すくない: \(World.stampTotal)")
+        let game = makeGame()
+        let herbs = game.hero.inventory[.herb, default: 0]
+        game.readPlaques = Set(World.stampPlaques.prefix((World.stampTotal + 1) / 2))
+        try talk(to: .guide, in: game)
+        #expect(game.hero.inventory[.herb, default: 0] == herbs + 3)
+        try talk(to: .guide, in: game)
+        #expect(game.hero.inventory[.herb, default: 0] == herbs + 3, "薬草を 2度 もらえる")
+
+        let gold = game.hero.gold
+        game.readPlaques = Set(World.stampPlaques)
+        try talk(to: .guide, in: game)
+        #expect(game.hero.gold == gold + 300)
+        try talk(to: .guide, in: game)
+        #expect(game.hero.gold == gold + 300, "ゴールドを 2度 もらえる")
+    }
+
+    @Test func stampsSurviveSaving() throws {
+        var save = SaveData(hero: Hero(), map: .onuma, position: Point(x: 13, y: 20), openedChests: [])
+        save.readPlaques = [PlaqueID(map: .onuma, point: Point(x: 5, y: 3))]
+        let decoded = try JSONDecoder().decode(SaveData.self, from: JSONEncoder().encode(save))
+        #expect(decoded == save)
     }
 
     /// 物語の前の セーブ（新しい項目がない）も 読める。

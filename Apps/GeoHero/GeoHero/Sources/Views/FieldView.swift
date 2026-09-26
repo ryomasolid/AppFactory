@@ -52,8 +52,8 @@ struct FieldView: View {
             }
             // 真ん中の勇者に かぶらないよう、ステータスの下あたりに出す。
             .overlay(alignment: .top) {
-                if let town = game.arrivalBanner {
-                    TownBanner(town: town)
+                if let banner = game.arrivalBanner {
+                    PlaceBannerView(banner: banner)
                         .padding(.top, 150)
                         .transition(.opacity.combined(with: .scale(scale: 0.9)))
                         .allowsHitTesting(false)
@@ -84,19 +84,19 @@ extension FieldView {
     }
 }
 
-/// 街に入ったときに 真ん中に しばらく出す 地名の札。
-struct TownBanner: View {
-    let town: TownInfo
+/// 街に入ったとき・ひこうきで着いたときに 真ん中に しばらく出す 地名の札。
+struct PlaceBannerView: View {
+    let banner: PlaceBanner
 
     var body: some View {
         VStack(spacing: 6) {
-            Text(town.reading)
+            Text(banner.reading)
                 .font(Retro.font(14))
                 .foregroundStyle(Retro.dim)
-            Text(town.name)
-                .font(Retro.font(40))
+            Text(banner.name)
+                .font(Retro.font(banner.name.count > 3 ? 32 : 40))
                 .foregroundStyle(Retro.accent)
-            Text(town.tagline)
+            Text(banner.tagline)
                 .font(Retro.font(15))
                 .foregroundStyle(Retro.ink)
         }
@@ -129,6 +129,7 @@ struct MapLayer: View {
         switch tile {
         case .town: (.townLarge, 2.0)
         case .cave: (.caveLarge, 1.7)
+        case .airport: (.airportLarge, 1.8)
         default: nil
         }
     }

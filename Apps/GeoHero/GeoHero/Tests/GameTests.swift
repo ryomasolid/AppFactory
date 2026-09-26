@@ -106,21 +106,45 @@ struct MapTests {
         #expect(!World.hakodate.npcs.contains { $0.role == .innkeeper || $0.role == .shopkeeper })
     }
 
-    /// 街と街、街と ほらあなは 歩きごたえのある距離をあける（近いと すぐ着いてしまう）。
-    @Test func landmarksAreFarApart() throws {
-        let field = World.map(.field)
-        func landing(_ id: MapID) throws -> Point {
-            let entrance = try #require(field.warps.first { $0.value.to == id })
-            return entrance.key + Point(x: 0, y: 1)
+    /// 街の扉は どれも 中に入れる（飾りの扉を 作らない）。
+    @Test(arguments: MapID.allCases.filter(\.isTown))
+    func everyDoorLeadsInside(town: MapID) {
+        let map = World.map(town)
+        for y in 0..<map.height {
+            for x in 0..<map.width where map.tile(at: Point(x: x, y: y)) == .door {
+                let warp = map.warps[Point(x: x, y: y)]
+                #expect(warp?.to.isInterior == true, "\(town) の (\(x), \(y)) の扉に 入れない")
+            }
         }
-        let legs: [(String, MapID, MapID, Int)] = [
-            ("函館 → 函館山", .hakodate, .hakodateyama, 15),
-            ("函館 → 札幌", .hakodate, .sapporo, 20),
-            ("札幌 → 藻岩山", .sapporo, .moiwa1, 15),
-            ("札幌 → 知床", .sapporo, .rausu, 30),
-            ("知床 → 羅臼岳", .rausu, .rausudake1, 15),
+    }
+
+    /// 家の中には 宝箱か、ヒントをくれる人がいる（入っても 何もない家を 作らない）。
+    @Test(arguments: World.houses)
+    func everyHouseHasSomething(house: MapID) {
+        let map = World.map(house)
+        #expect(!map.chests.isEmpty || !map.npcs.isEmpty, "\(house) に 何もない")
+        #expect(map.npcs.contains { if case .villager = $0.role { true } else { false } }, "\(house) に 話せる人がいない")
+    }
+
+    /// 街と街、街と ほらあなは 歩きごたえのある距離をあける（近いと すぐ着いてしまう）。
+    /// 函館山だけは 本当に 街の すぐ そばなので 短めでよい。
+    @Test func landmarksAreFarApart() throws {
+        let legs: [(String, MapID, MapID, MapID, Int)] = [
+            ("函館 → 函館山", .hakodateArea, .hakodate, .hakodateyama, 12),
+            ("函館 → 松前", .hakodateArea, .hakodate, .matsumae, 40),
+            ("函館 → 大沼", .hakodateArea, .hakodate, .onuma, 20),
+            ("大沼 → 駒ヶ岳", .hakodateArea, .onuma, .komagatake, 15),
+            ("札幌 → 藻岩山", .sapporoArea, .sapporo, .moiwa1, 15),
+            ("札幌 → 小樽", .sapporoArea, .sapporo, .otaru, 15),
+            ("中標津 → 羅臼", .shiretokoArea, .sapporoArea, .rausu, 15),
+            ("羅臼 → 羅臼岳", .shiretokoArea, .rausu, .rausudake1, 15),
         ]
-        for (name, from, to, least) in legs {
+        for (name, fieldID, from, to, least) in legs {
+            let field = World.map(fieldID)
+            func landing(_ id: MapID) throws -> Point {
+                let entrance = try #require(field.warps.first { $0.value.to == id })
+                return entrance.key + Point(x: 0, y: 1)
+            }
             let walked = try #require(steps(on: field, from: try landing(from), to: try landing(to)),
                                       "\(name) が歩いてつながっていない")
             #expect(walked >= least, "\(name) が \(walked) 歩しかない（\(least) 歩ほしい）")

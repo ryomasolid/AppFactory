@@ -13,12 +13,31 @@ enum StoryFlag: String, Codable, CaseIterable {
     case childReturned
     /// イカのぬしを倒したあと、親方から お礼をもらった。
     case fisherThanked
+    /// 松前の殿様から 駒ヶ岳へ入る 火よけの おふだを もらった。
+    case fireCharm
+    /// 大沼で まいごの 白鳥の ひなを 見つけた（ひなは 岸へ およいでいく）。
+    case cygnetFound
+    /// 白鳥の せわがかりから ひなの お礼をもらった。
+    case cygnetReturned
+    /// 駒ヶ岳のぬしを倒したあと、大沼の山守から お礼をもらった。
+    case rangerThanked
+    /// 名所の スタンプを 半分 あつめて、案内所から お礼をもらった。
+    case stampHalf
+    /// 名所の スタンプを ぜんぶ あつめて、案内所から お礼をもらった。
+    case stampAll
+    /// 札幌ゆきの ひこうきの きっぷ。駒ヶ岳のぬしを倒すと もらえる。
+    case ticketToSapporo
+    /// 知床ゆきの ひこうきの きっぷ。藻岩山の ヒグマのぬしを倒すと もらえる。
+    case ticketToShiretoko
 
     /// このボスを倒していれば、立っていなくても 立っていることにする。
     /// 手形の仕組みより前のセーブで、もう ぬしを倒している人を 山の前で止めないため。
+    /// きっぷは ボスを倒すと もらえるので、印を立てずに ここで決める。
     var impliedBy: EnemyKind? {
         switch self {
         case .hakodateyamaPass: .squidLord
+        case .fireCharm, .ticketToSapporo: .komaLord
+        case .ticketToShiretoko: .bearLord
         default: nil
         }
     }
@@ -30,6 +49,17 @@ enum StoryFlag: String, Codable, CaseIterable {
             ["山の いりぐちに さくが ある。",
              "ばんにん「函館山は いま 立ち入り禁止だ。",
              "　五稜郭の 奉行さまの てがたを もってきな。」"]
+        case .fireCharm:
+            ["山の いりぐちから あつい けむりが ふきだしている。",
+             "とても さきへは すすめない。",
+             "（火よけの おふだが あれば……）"]
+        case .ticketToSapporo:
+            ["かかりいん「札幌ゆきの きっぷを おもちですか？",
+             "　……きっぷが ないと おのせ できません。",
+             "　いまは 駒ヶ岳の けむりで とばない びんも おおくて。」"]
+        case .ticketToShiretoko:
+            ["かかりいん「知床ゆきの きっぷを おもちですか？",
+             "　……きっぷが ないと おのせ できません。」"]
         default:
             ["さきへ すすめない。"]
         }
@@ -40,6 +70,8 @@ enum StoryFlag: String, Codable, CaseIterable {
 struct StoryProgress {
     var flags: Set<StoryFlag>
     var defeatedBosses: Set<EnemyKind>
+    /// 押した 名所の スタンプの数（函館エリアの 看板を 読んだ数）。
+    var stamps = 0
 
     func has(_ flag: StoryFlag) -> Bool {
         flags.contains(flag) || flag.impliedBy.map(defeatedBosses.contains) == true
@@ -69,12 +101,26 @@ enum Resident: String, CaseIterable {
     case childAtHome
     /// 港の子。イカが もどるのを待っている。
     case portKid
+    /// 函館の 観光案内所の人。名所の スタンプを 見て お礼をくれる。
+    case guide
+    /// 松前の殿様。駒ヶ岳へ入る 火よけの おふだを もつ。
+    case lord
+    /// 大沼の山守。駒ヶ岳の ようすを 教える。
+    case ranger
+    /// 大沼の 白鳥の せわがかり。まいごの ひなを さがしている。
+    case swanKeeper
+    /// 湖の 島で まいごになっている 白鳥の ひな。見つけると 岸へ およいでいく。
+    case lostCygnet
+    /// せわがかりの ところへ もどった ひな。
+    case cygnetHome
 
     /// いま地図に出ているか。
     func isPresent(_ progress: StoryProgress) -> Bool {
         switch self {
         case .lostChild: !progress.has(.childFound)
         case .childAtHome: progress.has(.childFound)
+        case .lostCygnet: !progress.has(.cygnetFound)
+        case .cygnetHome: progress.has(.cygnetFound)
         default: true
         }
     }
@@ -84,11 +130,19 @@ enum Resident: String, CaseIterable {
         let squidGone = progress.defeatedBosses.contains(.squidLord)
         switch self {
         case .magistrate:
+            if progress.defeatedBosses.contains(.komaLord) {
+                return StoryScene(lines: [
+                    "ぶぎょう「駒ヶ岳の けむりも おさまった。 みごとじゃ。",
+                    "　札幌ゆきの ひこうきは 街の 東の 函館空港から でる。",
+                    "　北の 札幌でも ようすが おかしいと いう。 たのんだぞ。」",
+                ])
+            }
             if squidGone {
                 return StoryScene(lines: [
                     "ぶぎょう「みごとじゃ。 みなとに イカが もどったと きいた。",
-                    "　北の 札幌でも ようすが おかしいと いう。",
-                    "　たのんだぞ、ゆうしゃどの。」",
+                    "　だが 北の 駒ヶ岳が けむりを ふき、ひこうきも とばぬ。",
+                    "　山へ 入るには 火よけの おふだが いる。",
+                    "　松前の 殿様が もっておられる。 松前は 西の はてじゃ。」",
                 ])
             }
             if progress.has(.hakodateyamaPass) {
@@ -185,17 +239,137 @@ enum Resident: String, CaseIterable {
                 "こども「みなとに イカが よりつかなくなっちゃった。",
                 "　イカは 函館の 市の さかな なのに！」",
             ])
+
+        case .guide:
+            let total = World.stampTotal
+            let half = (total + 1) / 2
+            if progress.has(.stampAll) {
+                return StoryScene(lines: [
+                    "あんないじょ「函館エリアの 名所を ぜんぶ まわるなんて！",
+                    "　あなたは りっぱな めいしょ はかせね。」",
+                ])
+            }
+            if progress.stamps >= total {
+                return StoryScene(lines: [
+                    "あんないじょ「まあ！ スタンプが \(total)こ ぜんぶ そろってる！",
+                    "　これは めいしょ はかせへの ごほうびよ。」",
+                    "300ゴールドを てにいれた！",
+                ], gold: 300, sets: [.stampHalf, .stampAll])
+            }
+            if progress.stamps >= half, !progress.has(.stampHalf) {
+                return StoryScene(lines: [
+                    "あんないじょ「スタンプが \(progress.stamps)こ！ もう 半分ね。",
+                    "　たびの おともに どうぞ。 のこりも がんばって！」",
+                    "薬草を 3つ てにいれた！",
+                ], items: [.herb, .herb, .herb], sets: [.stampHalf])
+            }
+            return StoryScene(lines: [
+                "あんないじょ「ようこそ 函館へ！ 名所の かんばんを よむと",
+                "　めいしょ スタンプが たまるの。 函館・松前・大沼に あるわ。",
+                "　いま \(progress.stamps)こ ／ \(total)こ。 \(half)こで 薬草、",
+                "　ぜんぶ そろえば 300ゴールド あげる！」",
+            ])
+
+        case .lord:
+            if progress.defeatedBosses.contains(.komaLord) {
+                return StoryScene(lines: [
+                    "とのさま「駒ヶ岳の ぬしを しずめたか。 あっぱれじゃ。",
+                    "　春には 城の さくらを 見に まいれ。",
+                    "　松前の さくらは 250しゅるいも あるのじゃぞ。」",
+                ])
+            }
+            if progress.has(.fireCharm) {
+                return StoryScene(lines: [
+                    "とのさま「おふだを もって 駒ヶ岳へ ゆけ。",
+                    "　駒ヶ岳は 大沼の 北じゃ。 函館から 北へ のぼれ。」",
+                ])
+            }
+            if squidGone {
+                return StoryScene(lines: [
+                    "とのさま「そなたが イカのぬしを たおした ゆうしゃか。",
+                    "　この 松前藩に つたわる 火よけの おふだを さずける。",
+                    "　駒ヶ岳の ぬしを しずめてくれ。」",
+                    "火よけの おふだを てにいれた！",
+                ], sets: [.fireCharm])
+            }
+            return StoryScene(lines: [
+                "とのさま「わしは 松前藩の 殿様じゃ。",
+                "　この 松前城は 北海道で ただ ひとつの 日本式の 城よ。",
+                "　……函館山の ばけものも たおせぬ ものに 用は ない。」",
+            ])
+
+        case .ranger:
+            if progress.defeatedBosses.contains(.komaLord) {
+                if progress.has(.rangerThanked) {
+                    return StoryScene(lines: [
+                        "やまもり「駒ヶ岳が しずかに なった。",
+                        "　あの 山は うまの かたちに 見えるから 駒ヶ岳と いうんだ。」",
+                    ])
+                }
+                return StoryScene(lines: [
+                    "やまもり「ぬしを たおしたのか！ これで 大沼も あんしんだ。",
+                    "　みんなから あつめた おれいだ。 うけとってくれ。」",
+                    "150ゴールドを てにいれた！",
+                ], gold: 150, sets: [.rangerThanked])
+            }
+            if progress.has(.fireCharm) {
+                return StoryScene(lines: [
+                    "やまもり「おお、火よけの おふだ！ それなら 山へ 入れる。",
+                    "　駒ヶ岳の ほらあなは 湖の 北東だ。 あつさに 気をつけろ。」",
+                ])
+            }
+            return StoryScene(lines: [
+                "やまもり「駒ヶ岳に ぬしが すみついて 山が けむりを ふいてる。",
+                "　あつくて だれも 近づけねえ。",
+                "　松前の 殿様の 火よけの おふだでも なけりゃ むりだ。」",
+            ])
+
+        case .swanKeeper:
+            if progress.has(.cygnetReturned) {
+                return StoryScene(lines: [
+                    "せわがかり「冬に なると ハクチョウが シベリアから",
+                    "　大沼へ わたってくるのよ。 ひなも げんきに そだってるわ。」",
+                ])
+            }
+            if progress.has(.cygnetFound) {
+                return StoryScene(lines: [
+                    "せわがかり「ああ、ひなが およいで もどってきた！",
+                    "　ありがとう。 これは ほんの おれいよ。」",
+                    "120ゴールドを てにいれた！",
+                ], gold: 120, sets: [.cygnetReturned])
+            }
+            return StoryScene(lines: [
+                "せわがかり「ハクチョウの ひなが 1わ いないの。",
+                "　湖には 126もの 島が あって、はしで つながってるの。",
+                "　どこかの 島に いると おもうんだけど……」",
+            ])
+
+        case .lostCygnet:
+            return StoryScene(lines: [
+                "ハクチョウの ひな「ピィ……ピィ……」",
+                "ひなは せわがかりの ほうへ およいでいった。",
+            ], sets: [.cygnetFound])
+
+        case .cygnetHome:
+            return StoryScene(lines: [
+                "ハクチョウの ひな「ピィ！」",
+                "げんきそうだ。",
+            ])
         }
     }
 
     /// この人が 言うかもしれない せりふ ぜんぶ（`QuizTests` で 答えが街で聞けるかを見る）。
+    /// 印の組み合わせは ぜんぶだと 多すぎるので、ひとつずつ 立てていった すじみちを たどる。
     var everyLine: [String] {
-        let bosses: [Set<EnemyKind>] = [[], [.squidLord]]
-        let flagSets: [Set<StoryFlag>] = (0..<(1 << StoryFlag.allCases.count)).map { mask in
-            Set(StoryFlag.allCases.enumerated().filter { mask & (1 << $0.offset) != 0 }.map(\.element))
-        }
+        let bosses: [Set<EnemyKind>] = [[], [.squidLord], [.squidLord, .komaLord], [.squidLord, .komaLord, .bearLord]]
+        var flagSets: [Set<StoryFlag>] = [[]]
+        for flag in StoryFlag.allCases { flagSets.append(flagSets.last!.union([flag])) }
+        for flag in StoryFlag.allCases { flagSets.append([flag]) }
+        let stamps = [0, (World.stampTotal + 1) / 2, World.stampTotal]
         return bosses.flatMap { defeated in
-            flagSets.flatMap { scene(StoryProgress(flags: $0, defeatedBosses: defeated)).lines }
+            flagSets.flatMap { flags in
+                stamps.flatMap { scene(StoryProgress(flags: flags, defeatedBosses: defeated, stamps: $0)).lines }
+            }
         }
     }
 }

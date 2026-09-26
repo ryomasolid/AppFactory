@@ -32,11 +32,11 @@ struct GameStateTests {
     @Test func walkOutOfVillageToField() async {
         let game = makeGame()
         // 着地点は村の出口のワープ定義から引く（地図を広げても落ちないように）。
-        let exit = World.map(.hakodate).warps.first { $0.value.to == .field }
+        let exit = World.map(.hakodate).warps.first { $0.value.to == .hakodateArea }
         let landing = try! #require(exit?.value.at)
         game.position = World.revivePoint.point
         await game.walk(.down)
-        #expect(game.mapID == .field)
+        #expect(game.mapID == .hakodateArea)
         #expect(game.position == landing)
     }
 
@@ -63,9 +63,9 @@ struct GameStateTests {
     @Test func battleReleasesHeldDirection() async throws {
         let game = makeGame()
         game.hero.receive(.steelSword)
-        game.mapID = .field
+        game.mapID = .hakodateArea
         // 座標は直書きせず、左へ歩ける陸地を地図から探す（海岸線を変えても落ちないように）。
-        let field = World.map(.field)
+        let field = World.map(.hakodateArea)
         let start = try #require(
             (0..<field.height).flatMap { y in (1..<field.width).map { Point(x: $0, y: y) } }
                 .first { point in
@@ -241,36 +241,51 @@ struct GameStateTests {
         #expect(game.battle?.end == .lost)
         await game.finishBattle()
         #expect(game.screen == .field)
-        #expect(game.mapID == .hakodate)
+        // 知床で負けたので 知床の はじめの街（羅臼）で 目を覚ます。
+        #expect(game.mapID == .rausu)
         #expect(game.hero.gold == 50)
         #expect(game.hero.hp == game.hero.maxHP)
     }
 
-    /// 前のボスを倒すまで つぎの ほらあなに入れない。倒すと通れる。
-    @Test func gatedCaveOpensAfterItsBoss() async throws {
-        let field = World.map(.field)
-        let (gate, warp) = try #require(field.warps.first { $0.value.requires != nil })
-        let needed = try #require(warp.requires)
+    /// 空港は きっぷが ないと とべない。駒ヶ岳のぬしを倒すと きっぷが もらえて 札幌へ とべる。
+    @Test func airportNeedsATicket() async throws {
+        let field = World.map(.hakodateArea)
+        let (gate, warp) = try #require(field.warps.first { $0.value.to.isField })
+        #expect(warp.to == .sapporoArea)
+        #expect(field.tile(at: gate) == .airport)
 
         let game = makeGame()
-        game.mapID = .field
+        game.mapID = .hakodateArea
         game.position = gate + Point(x: 0, y: 1)
-        game.facing = .up
         await game.walk(.up)
-        #expect(game.mapID == .field, "ボスを倒す前なのに \(warp.to) へ入れてしまう")
-        #expect(game.currentPage != nil, "通れない理由が出ていない")
+        #expect(game.mapID == .hakodateArea, "きっぷが ないのに とべてしまう")
+        #expect(game.currentPage?.joined().contains("きっぷ") == true, "とべない理由が出ていない")
 
         while game.currentPage != nil { game.advanceMessage() }
-        game.defeatedBosses.insert(needed)
+        game.defeatedBosses = [.squidLord, .komaLord]
         game.position = gate + Point(x: 0, y: 1)
-        game.facing = .up
         await game.walk(.up)
-        #expect(game.mapID == warp.to, "ボスを倒したのに 道がひらかない")
+        #expect(game.mapID == .sapporoArea, "ぬしを倒したのに とべない")
+        #expect(game.position == warp.at)
+        #expect(game.arrivalBanner?.name == Region.sapporo.banner.name, "着いた地方の札が出ていない")
+        #expect(game.musicTrack == .overworld)
+    }
+
+    /// 全滅したら いまの地方の はじめの街で目を覚ます（札幌で負けて 函館へ戻されない）。
+    @Test func defeatRevivesInTheSameRegion() async {
+        let game = makeGame()
+        game.mapID = .sapporoArea
+        game.position = Point(x: 27, y: 19)
+        game.startBattle(.snowFestival)
+        game.battle?.end = .lost
+        await game.finishBattle()
+        #expect(game.mapID == .sapporo)
+        #expect(game.map.isWalkable(game.position))
     }
 
     /// 途中のボスを倒しても終わらない。ラスボスだけが エンディングにつながる。
     @Test func onlyTheFinalBossEndsTheAdventure() async {
-        for kind in [EnemyKind.squidLord, .bearLord, .guardian] {
+        for kind in [EnemyKind.squidLord, .komaLord, .bearLord, .guardian] {
             let game = makeGame()
             game.mapID = .rausudake2
             // 確実に勝てるように、最高レベルで そうびも ととのえておく。
@@ -279,9 +294,15 @@ struct GameStateTests {
             game.hero.receive(.chainMail)
             game.startBattle(kind)
             for _ in 0..<80 where game.battle?.end == nil {
-                // 減ってきたら回復する（ラスボスは殴るだけでは倒せない）。
+                // 減ってきたら回復し、まもりは「ちしき」で やぶる（ラスボスは殴るだけでは倒せない）。
                 let low = game.hero.hp < game.hero.maxHP * 3 / 5
-                await game.command(low && game.hero.mp >= Spell.highHeal.mpCost ? .spell(.highHeal) : .attack)
+                if low && game.hero.mp >= Spell.highHeal.mpCost {
+                    await game.command(.spell(.highHeal))
+                } else if let battle = game.battle?.battle, battle.veil > 0, let quiz = battle.nextQuiz {
+                    await game.command(.quiz(answer: quiz.answer), target: 0)
+                } else {
+                    await game.command(.attack)
+                }
             }
             await game.finishBattle()
             #expect(game.defeatedBosses.contains(kind))

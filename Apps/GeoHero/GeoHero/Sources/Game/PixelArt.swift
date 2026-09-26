@@ -7,15 +7,17 @@ enum SpriteID: String, CaseIterable {
     case grass, forest, hills, mountain, water, road, bridge, town, cave
     case townFloor, house, innRoof, shopRoof, fountain, wall, caveFloor, stairsUp, stairsDown
     case houseWall, innSign, shopSign, door, woodFloor, counter, bed, shelf, innerWall, darkness
-    case exit, signpost
-    /// 街と ほらあなを 1マスより大きく描くための、背景を透かした版。
-    case townLarge, caveLarge
+    case exit, signpost, blossom, airport
+    /// 街と ほらあな・空港を 1マスより大きく描くための、背景を透かした版。
+    case townLarge, caveLarge, airportLarge
     case chestClosed, chestOpen
     // 人（勇者は hero1/hero2 が下向き、ほかの向きはそれぞれ歩きの2コマ）
     case hero1, hero2, heroUp1, heroUp2, heroLeft1, heroLeft2, heroRight1, heroRight2
     case elder, innkeeper, shopkeeper, villager
     /// 物語の人（奉行・港の親方・こども）。ふつうの村人と 見分けがつくように 絵を分ける。
     case magistrate, fisherman, child
+    /// 大沼の 白鳥の ひな。
+    case cygnet
 
     /// 向きと歩数から勇者の絵を選ぶ（1歩ごとに2コマを交互に）。
     static func hero(facing: Direction, step: Int) -> SpriteID {
@@ -32,12 +34,15 @@ enum SpriteID: String, CaseIterable {
     case cornSoldier, ramenGhost, lambSheep, squirrel, fox, snowFestival, flyingSquirrel, maitake, salamander
     case bearCub, fishOwl, woodpecker, deer, cod, salmon, seaEagle, snowman, orca
     case hikarigoke, icicleOgre, iceBat, phantomWolf, iceGolem, blizzardSpirit
-    /// ボス3体（函館山・藻岩山・羅臼岳）。
-    case squidLord, bearLord, guardian
+    case sakuraSpirit, matsumaeZuke, kitamaeShip, apple, dango, junsai, lavaSlime, pumiceGolem, sulfurSmoke
+    /// ボス4体（函館山・駒ヶ岳・藻岩山・羅臼岳）。
+    case squidLord, komaLord, bearLord, guardian
 
     static let art: [SpriteID: [String]] = TileArt.all
         .merging(CharacterArt.all) { first, _ in first }
         .merging(EnemyArt.all) { first, _ in first }
+        // 草の上に立つ 空港（ふつうのマス用）は、背景を透かした版に 草を敷いて作る。
+        .merging([.airport: (TileArt.all[.airportLarge] ?? []).map { $0.replacingOccurrences(of: ".", with: "g") }]) { first, _ in first }
 
     init(tile: Tile) {
         switch tile {
@@ -50,6 +55,8 @@ enum SpriteID: String, CaseIterable {
         case .bridge: self = .bridge
         case .town: self = .town
         case .cave: self = .cave
+        case .airport: self = .airport
+        case .blossom: self = .blossom
         case .townFloor: self = .townFloor
         case .exit: self = .exit
         case .signpost: self = .signpost
@@ -77,6 +84,7 @@ enum SpriteID: String, CaseIterable {
     init(enemy: EnemyKind) {
         switch enemy {
         case .squidLord: self = .squidLord
+        case .komaLord: self = .komaLord
         case .bearLord: self = .bearLord
         case .guardian: self = .guardian
         default: self = SpriteID(rawValue: enemy.rawValue) ?? .potato
@@ -91,10 +99,11 @@ enum SpriteID: String, CaseIterable {
         case .villager: self = .villager
         case .resident(let resident):
             switch resident {
-            case .magistrate: self = .magistrate
-            case .fisherBoss: self = .fisherman
+            case .magistrate, .lord: self = .magistrate
+            case .fisherBoss, .ranger: self = .fisherman
             case .lostChild, .childAtHome, .portKid: self = .child
-            case .mother: self = .villager
+            case .mother, .guide, .swanKeeper: self = .villager
+            case .lostCygnet, .cygnetHome: self = .cygnet
             }
         }
     }
@@ -123,6 +132,7 @@ enum Palette {
         "s": (248, 192, 152),  // 肌
         "p": (152, 88, 200),   // 紫
         "P": (80, 40, 112),    // 濃い紫
+        "m": (248, 168, 200),  // さくら色
     ]
 }
 

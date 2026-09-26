@@ -33,7 +33,7 @@ struct TransitionTests {
         let game = makeGame()
         game.position = World.revivePoint.point
         await game.walk(.down)
-        #expect(game.mapID == .field, "フィールドへ 移っていない")
+        #expect(game.mapID == .hakodateArea, "フィールドへ 移っていない")
         // 行き着いたときには幕は上がっている。
         #expect(game.curtain == 0)
         #expect(game.isTransitioning == false)
@@ -61,7 +61,7 @@ struct TransitionTests {
         game.bannerDuration = .milliseconds(100)
         game.position = World.revivePoint.point
         await game.walk(.down)
-        #expect(game.mapID == .field)
+        #expect(game.mapID == .hakodateArea)
         #expect(game.arrivalBanner == nil, "フィールドに出たのに 札が出ている")
         await game.walk(.up)
         #expect(game.mapID == .hakodate)
@@ -84,7 +84,7 @@ struct TransitionTests {
     /// 街の看板を しらべると 街の名前が読める。
     @Test func signpostTellsTheTownName() async {
         let game = makeGame()
-        for id in [MapID.hakodate, .sapporo, .rausu] {
+        for id in MapID.allCases where id.isTown {
             #expect(World.map(id).tiles.joined().contains(.signpost), "\(id) に看板がない")
         }
         // 出口の左の看板。
