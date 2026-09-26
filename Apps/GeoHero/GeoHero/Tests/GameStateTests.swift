@@ -34,7 +34,8 @@ struct GameStateTests {
         // 着地点は村の出口のワープ定義から引く（地図を広げても落ちないように）。
         let exit = World.map(.hakodate).warps.first { $0.value.to == .field }
         let landing = try! #require(exit?.value.at)
-        for _ in 0..<3 { await game.walk(.down) }
+        game.position = World.revivePoint.point
+        await game.walk(.down)
         #expect(game.mapID == .field)
         #expect(game.position == landing)
     }
@@ -49,9 +50,11 @@ struct GameStateTests {
 
     @Test func holdingWalksUntilWallAndReleaseStops() async throws {
         let game = makeGame()
+        // 函館の北、港と五稜郭の あいだの 通り。西の 湾の手前まで 何もない。
+        game.position = Point(x: 10, y: 9)
         game.hold(.left)
         try await Task.sleep(for: .milliseconds(200))
-        #expect(game.position == Point(x: 1, y: World.startPoint.y))
+        #expect(game.position == Point(x: 3, y: 9))
         game.hold(nil)
         #expect(game.heldDirection == nil)
     }
@@ -91,14 +94,30 @@ struct GameStateTests {
     /// 宿屋の扉から中に入り、下の扉から村の家の前に戻る。
     @Test func enterInnAndLeave() async {
         let game = makeGame()
-        game.position = Point(x: 3, y: 5)
+        game.position = Point(x: 14, y: 17)
         await game.walk(.up)
         #expect(game.mapID == .innInside)
         #expect(game.position == Point(x: 4, y: 4))
         #expect(game.musicTrack == .village)
         await game.walk(.down)
         #expect(game.mapID == .hakodate)
-        #expect(game.position == Point(x: 3, y: 5))
+        #expect(game.position == Point(x: 14, y: 17))
+    }
+
+    /// 中の地図は 宿屋・道具屋で1つずつを使いまわすので、出る先は 入った扉の前にする
+    /// （街ごとに 扉の位置が ちがう）。
+    @Test func leavingTheShopReturnsToItsOwnDoor() async throws {
+        for town in [MapID.hakodate, .sapporo] {
+            let game = makeGame()
+            let door = try #require(World.map(town).warps.first { $0.value.to == .shopInside }?.key)
+            game.mapID = town
+            game.position = door + Point(x: 0, y: 1)
+            await game.walk(.up)
+            #expect(game.mapID == .shopInside)
+            await game.walk(.down)
+            #expect(game.mapID == town)
+            #expect(game.position == door + Point(x: 0, y: 1), "\(town) の道具屋の前に 戻っていない")
+        }
     }
 
     /// 宿屋の主人にはカウンター越しに話しかける。

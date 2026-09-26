@@ -5,7 +5,8 @@ import Foundation
 /// ワープの到着点はワープ床の隣に置く（到着した瞬間にまた飛ばないように）。
 enum World {
     static let startMap: MapID = .hakodate
-    static let startPoint = Point(x: 7, y: 9)
+    /// 長老の すぐ下。
+    static let startPoint = Point(x: 18, y: 18)
 
     static func map(_ id: MapID) -> GameMap {
         switch id {
@@ -24,47 +25,102 @@ enum World {
     }
 
     /// 全滅したときに戻る場所。いちばん近い街ではなく、最初の街の入口にそろえる。
-    static let revivePoint = (map: MapID.hakodate, point: Point(x: 7, y: 11))
+    static let revivePoint = (map: MapID.hakodate, point: Point(x: 15, y: 24))
 
+    /// 函館。3つの地区に分かれていて、歩きまわって 話を聞くと 函館山への道がひらける。
+    /// - 北西: 港と朝市（西は函館湾）。赤レンガ倉庫・摩周丸の看板、港の親方、迷子をさがす母。
+    /// - 北東: 五稜郭（星のかたちの堀）。橋をわたった奥に 奉行がいる。
+    /// - 南西: 元町（函館山のふもと）。坂の看板と教会、迷子の子。
+    /// 親方の話 → 奉行の てがた → 函館山、の順（`Story.swift`）。
     static let hakodate = GameMap(
         id: .hakodate,
         name: "はこだて",
         rows: [
-            "###############",
-            "#____________~#",
-            "#_III_____SSS~#",
-            "#_III_____SSS~#",
-            "#_YdW_____ZdW~#",
-            "#___________~~#",
-            "#__t______t_~~#",
-            "#_____e_____~~#",
-            "#__________t~~#",
-            "#_____________#",
-            "#________t____#",
-            "#____P________#",
-            "######EEE######"
+            "###############################",
+            "#~~_____________________~_____#",
+            "#~~HHH_HHH______t______~_~____#",
+            "#~~WWW_WWW_________~~~~___~~~~#",
+            "#~~___P____26_______~_______~_#",
+            "#~~__________________~_HHH_~__#",
+            "#~~___t______________~_WdW_~__#",
+            "#~~___________ff_____~__1__~__#",
+            "#~~___________ff____~__~b~__~_#",
+            "#~~________________~~~~_b_~~~~#",
+            "#~~_3_________________P_______#",
+            "#~~_HHHHHHHH____t__________f__#",
+            "#~~_WWWWWWWWP______________f__#",
+            "#~~_____c__________________f__#",
+            "#~~P_________III___SSS________#",
+            "#~~__________III___SSS________#",
+            "#~~__________YdW___ZdW________#",
+            "#~~_______________e___________#",
+            "#~~~__t_____________4_________#",
+            "#~~~~_____________________t___#",
+            "#MMM______HHH_________________#",
+            "#MMMM_____WdW__P__t___________#",
+            "#MMMMM_c_5__________ff________#",
+            "#MMMMMM_____________ff________#",
+            "#MMMMMMM_____P________________#",
+            "##############EEE##############"
         ],
         // 壁の外は草原。出口のすきまの先に野原が見えて、外へ抜ける道だと分かる。
         outside: .grass,
         warps: [
             // 左の家（青い屋根・ベッドの看板）が宿屋、右の家（緑の屋根・お金のふくろ）が道具屋。
-            Point(x: 3, y: 4): Warp(to: .innInside, at: Point(x: 4, y: 4)),
-            Point(x: 11, y: 4): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
-            Point(x: 6, y: 12): Warp(to: .field, at: Point(x: 16, y: 35)),
-            Point(x: 7, y: 12): Warp(to: .field, at: Point(x: 16, y: 35)),
-            Point(x: 8, y: 12): Warp(to: .field, at: Point(x: 16, y: 35)),
+            Point(x: 14, y: 16): Warp(to: .innInside, at: Point(x: 4, y: 4)),
+            Point(x: 20, y: 16): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
+            Point(x: 14, y: 25): Warp(to: .field, at: Point(x: 16, y: 35)),
+            Point(x: 15, y: 25): Warp(to: .field, at: Point(x: 16, y: 35)),
+            Point(x: 16, y: 25): Warp(to: .field, at: Point(x: 16, y: 35)),
         ],
         // 戦闘の「ちしき」の答えは ここで聞ける（`QuizRegion.hakodate` と `QuizTests` を見る）。
+        // 人・看板・親方たちの せりふを あわせて、6つの問題の答えが ぜんぶ そろう。
         villagers: [
-            ["むすめ「函館山の ほらあなに イカのぬしが すみついたの。",
-             "　山から 見る やけいが じまんだったのに……」"],
-            ["おとこ「ここは 渡島半島の さきの みなとまち。",
-             "　星のかたちの 城あと 五稜郭も 見ていきな。」"],
+            ["おばさん「朝市は 朝 はやくから にぎやかだよ。",
+             "　カニに ホタテに ウニ。 でも イカだけが",
+             "　さっぱり とれなくなっちまってねえ。」"],
             ["ふなのり「この みなとは 津軽海峡に めんしてる。",
              "　むかしは 青函連絡船で 青森へ わたったもんさ。」"],
-            ["こども「みなとに イカが よりつかなくなっちゃった。",
-             "　イカは 函館の 市の さかな なのに！」"]
-        ]
+            ["おとこ「ここは 渡島半島の さきの みなとまち。",
+             "　北の 五稜郭には 奉行所が あるぞ。」"],
+            ["むすめ「函館山の ほらあなに イカのぬしが すみついたの。",
+             "　山から 見る やけいが じまんだったのに……」"],
+            ["たびびと「函館山には ロープウェイで のぼれるんだ。",
+             "　でも いまは 奉行所が 山を とじてしまってね。」"],
+            ["しんぷ「元町には 異国の 教会が ならんでいます。",
+             "　むかし 外国の 船が 来た みなとだからですよ。」"],
+        ],
+        residents: ["1": .magistrate, "2": .mother, "3": .fisherBoss, "4": .portKid, "5": .lostChild, "6": .childAtHome],
+        plaques: [
+            Point(x: 6, y: 4): Plaque(title: "朝市", lines: [
+                "かんばんに こう かいてある。",
+                "「函館朝市」",
+                "イカ・カニ・ホタテが ならぶ 朝の 市場。",
+            ]),
+            Point(x: 22, y: 10): Plaque(title: "五稜郭", lines: [
+                "かんばんに こう かいてある。",
+                "「特別史跡 五稜郭」",
+                "星のかたちを した 西洋式の 城あと。",
+                "いまは 奉行所が おかれている。",
+            ]),
+            Point(x: 12, y: 12): Plaque(title: "倉庫", lines: [
+                "かんばんに こう かいてある。",
+                "「金森赤レンガ倉庫」",
+                "みなとに ならぶ 明治の 倉庫。",
+                "船の 荷を しまっていた。",
+            ]),
+            Point(x: 3, y: 14): Plaque(title: "摩周丸", lines: [
+                "かんばんに こう かいてある。",
+                "「青函連絡船 記念館 摩周丸」",
+                "函館と 青森を むすんでいた 船。",
+            ]),
+            Point(x: 15, y: 21): Plaque(title: "八幡坂", lines: [
+                "かんばんに こう かいてある。",
+                "「八幡坂」",
+                "坂の 上から みなとと 海が まっすぐ 見える。",
+            ]),
+        ],
+        chestRewards: [.item(.herb), .gold(40)]
     )
 
     static let sapporo = GameMap(
@@ -347,11 +403,12 @@ enum World {
         ],
         outside: .water,
         warps: [
-            Point(x: 16, y: 34): Warp(to: .hakodate, at: Point(x: 7, y: 11)),
+            Point(x: 16, y: 34): Warp(to: .hakodate, at: Point(x: 15, y: 24)),
             Point(x: 14, y: 16): Warp(to: .sapporo, at: Point(x: 7, y: 11)),
             Point(x: 46, y: 9): Warp(to: .rausu, at: Point(x: 7, y: 11)),
             // ほらあなは順番に開く。前のボスを倒すまで入れない。
-            Point(x: 33, y: 28): Warp(to: .hakodateyama, at: Point(x: 6, y: 11)),
+            // 函館山だけは ボスではなく、奉行の てがたで ひらく（`StoryFlag.hakodateyamaPass`）。
+            Point(x: 33, y: 28): Warp(to: .hakodateyama, at: Point(x: 6, y: 11), needs: .hakodateyamaPass),
             Point(x: 26, y: 8): Warp(to: .moiwa1, at: Point(x: 6, y: 11), requires: .squidLord),
             Point(x: 59, y: 2): Warp(to: .rausudake1, at: Point(x: 6, y: 11), requires: .bearLord),
         ],
@@ -390,7 +447,7 @@ enum World {
         ],
         outside: .darkness,
         warps: [
-            // 出口の行き先は 入ってきた街に差し替わる（GameState が見る）。
+            // 出口の行き先は 入ってきた街の 扉の前に差し替わる（GameState が見る）。
             Point(x: 4, y: 5): Warp(to: .hakodate, at: Point(x: 3, y: 5)),
         ],
         markerFloor: .woodFloor

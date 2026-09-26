@@ -14,6 +14,8 @@ enum SpriteID: String, CaseIterable {
     // 人（勇者は hero1/hero2 が下向き、ほかの向きはそれぞれ歩きの2コマ）
     case hero1, hero2, heroUp1, heroUp2, heroLeft1, heroLeft2, heroRight1, heroRight2
     case elder, innkeeper, shopkeeper, villager
+    /// 物語の人（奉行・港の親方・こども）。ふつうの村人と 見分けがつくように 絵を分ける。
+    case magistrate, fisherman, child
 
     /// 向きと歩数から勇者の絵を選ぶ（1歩ごとに2コマを交互に）。
     static func hero(facing: Direction, step: Int) -> SpriteID {
@@ -87,6 +89,13 @@ enum SpriteID: String, CaseIterable {
         case .shopkeeper: self = .shopkeeper
         case .elder: self = .elder
         case .villager: self = .villager
+        case .resident(let resident):
+            switch resident {
+            case .magistrate: self = .magistrate
+            case .fisherBoss: self = .fisherman
+            case .lostChild, .childAtHome, .portKid: self = .child
+            case .mother: self = .villager
+            }
         }
     }
 }

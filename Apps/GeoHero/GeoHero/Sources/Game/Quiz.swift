@@ -1,7 +1,7 @@
 import Foundation
 
 /// 戦闘の「ちしき」で出す 地理の問題。3つから1つ選ぶ。
-/// 答えは その土地の 街の人・看板・長老の話に かならず書いておく（`QuizTests` が見張る）。
+/// 答えは その土地の 街の人・名所の看板・物語の人の話に かならず書いておく（`QuizTests` が見張る）。
 /// 話を聞いて覚える → 戦いで使う、という流れにするため。
 struct Quiz: Equatable, Hashable {
     let question: String
@@ -56,6 +56,9 @@ enum QuizRegion: CaseIterable {
             Quiz(question: "函館の 市の さかな は？", choices: ["サケ", "イカ", "タイ"], answer: 1),
             Quiz(question: "函館と 青森を むすんでいた 船は？", choices: ["青函連絡船", "黒船", "宝船"], answer: 0),
             Quiz(question: "函館が ある 半島は？", choices: ["知床半島", "積丹半島", "渡島半島"], answer: 2),
+            // 街の看板で 読める問題。歩きまわった ごほうびに なる。
+            Quiz(question: "函館の みなとに ならぶ 明治の 倉庫は？", choices: ["時計台", "五稜郭", "赤レンガ倉庫"], answer: 2),
+            Quiz(question: "函館で 朝に ひらかれる 市場は？", choices: ["夜市", "朝市", "のみの市"], answer: 1),
         ]
         case .sapporo: [
             Quiz(question: "札幌の まちなかに ある 白い 木の たてものは？", choices: ["五稜郭", "時計台", "赤レンガ倉庫"], answer: 1),

@@ -14,6 +14,7 @@ struct FieldView: View {
                 ZStack(alignment: .topLeading) {
                     MapLayer(
                         map: game.map,
+                        npcs: game.npcs,
                         openedChests: game.openedChests,
                         boss: game.bossPoint,
                         tile: tile,
@@ -111,6 +112,8 @@ struct MapLayer: View {
     static let padding = 7
 
     let map: GameMap
+    /// いま出ている人（迷子のように 出たり消えたりする人がいる）。
+    let npcs: [NPC]
     let openedChests: Set<String>
     /// まだ立っているボスのマス。倒したあとは nil（絵も消す）。
     let boss: Point?
@@ -172,8 +175,12 @@ struct MapLayer: View {
             if let town = map.id.townInfo {
                 for y in yRange {
                     for x in xRange where map.tile(at: Point(x: x, y: y)) == .signpost {
-                        let board = rect(for: Point(x: x, y: y))
-                        let text = context.resolve(Text(town.name).font(Retro.font(tile * 0.34)).foregroundColor(.black))
+                        let point = Point(x: x, y: y)
+                        let board = rect(for: point)
+                        // 名所の看板には その名前、ほかは 街の名前。3文字は 板に収まるよう 小さくする。
+                        let title = map.plaques[point]?.title ?? town.name
+                        let size = tile * (title.count > 2 ? 0.25 : 0.34)
+                        let text = context.resolve(Text(title).font(Retro.font(size)).foregroundColor(.black))
                         context.draw(text, at: CGPoint(x: board.midX, y: board.minY + board.height * 5.5 / 16))
                     }
                 }
@@ -194,7 +201,7 @@ struct MapLayer: View {
                 let sprite: SpriteID = openedChests.contains(chest.id) ? .chestOpen : .chestClosed
                 context.draw(SpriteCache.image(sprite), in: rect(for: chest.position))
             }
-            for npc in map.npcs {
+            for npc in npcs {
                 context.draw(SpriteCache.image(SpriteID(npc: npc.role)), in: rect(for: npc.position))
             }
             if let boss {

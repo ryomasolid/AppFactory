@@ -94,6 +94,9 @@ enum MapID: String, Codable, CaseIterable {
         }
     }
 
+    /// 宿屋・道具屋の中か。
+    var isInterior: Bool { self == .innInside || self == .shopInside }
+
     /// 街かどうか（宿屋・道具屋から戻る先になれるか）。
     var isTown: Bool { townInfo != nil }
 
@@ -158,11 +161,20 @@ struct EncounterArea: Equatable {
     }
 }
 
+/// 名所の看板。板には 短い名前、しらべると 説明が出る。
+struct Plaque: Equatable {
+    /// 板に書く名前（2〜3文字。それより長いと 板からはみ出す）。
+    let title: String
+    let lines: [String]
+}
+
 struct Warp: Equatable {
     let to: MapID
     let at: Point
     /// この敵を倒していないと入れない。順番に進ませるための関所。
     var requires: EnemyKind?
+    /// この印が立っていないと入れない。街の人の頼みを片づけて 道をひらく関所。
+    var needs: StoryFlag?
 }
 
 enum NPCRole: Equatable {
@@ -170,6 +182,8 @@ enum NPCRole: Equatable {
     case shopkeeper
     case elder
     case villager(lines: [String])
+    /// 物語にかかわる人。進みぐあいで せりふが変わる（`Story.swift`）。
+    case resident(Resident)
 }
 
 struct NPC: Equatable {
@@ -203,6 +217,8 @@ struct GameMap {
     let encounters: [Tile: [EnemyKind]]
     /// 区域ごとに出る敵。こちらがあれば 地形より優先する。フィールドで使う。
     let encounterAreas: [EncounterArea]
+    /// A で しらべると読める 名所の看板（`P` のマス）。載っていない看板は 街の名前を出す。
+    let plaques: [Point: Plaque]
 
     var width: Int { tiles.first?.count ?? 0 }
     var height: Int { tiles.count }
@@ -229,13 +245,24 @@ struct GameMap {
         return encounters[tile(at: point)]
     }
 
-    func npc(at point: Point) -> NPC? { npcs.first { $0.position == point } }
+    /// いま出ている人。迷子のように 進みぐあいで 出たり消えたりする人がいる。
+    func npcs(_ progress: StoryProgress) -> [NPC] {
+        npcs.filter { npc in
+            if case let .resident(resident) = npc.role { return resident.isPresent(progress) }
+            return true
+        }
+    }
+
+    func npc(at point: Point, _ progress: StoryProgress? = nil) -> NPC? {
+        (progress.map(npcs) ?? npcs).first { $0.position == point }
+    }
     func chest(at point: Point) -> Chest? { chests.first { $0.position == point } }
 
     /// 歩いて入れるか（地形・人・宝箱・ボスで判定）。
     /// ボスは 倒すと いなくなるので、そのあとは `bossRemains` に false を渡して 通れるようにする。
-    func isWalkable(_ point: Point, bossRemains: Bool = true) -> Bool {
-        contains(point) && tile(at: point).isPassable && npc(at: point) == nil && chest(at: point) == nil
+    /// `progress` を渡すと、いまは いない人のマスも 通れる（渡さなければ 全員いることにする）。
+    func isWalkable(_ point: Point, bossRemains: Bool = true, progress: StoryProgress? = nil) -> Bool {
+        contains(point) && tile(at: point).isPassable && npc(at: point, progress) == nil && chest(at: point) == nil
             && !(bossRemains && boss == point)
     }
 
@@ -247,6 +274,9 @@ struct GameMap {
         outside: Tile,
         warps: [Point: Warp],
         villagers: [[String]] = [],
+        /// 数字の印（1〜9）に置く 物語の人。
+        residents: [Character: Resident] = [:],
+        plaques: [Point: Plaque] = [:],
         chestRewards: [ChestReward] = [],
         bossKind: EnemyKind? = nil,
         encounters: [Tile: [EnemyKind]] = [:],
@@ -277,6 +307,9 @@ struct GameMap {
                     chests.append(Chest(id: "\(id.rawValue)-\(chests.count)", position: point, reward: reward))
                     line.append(markerFloor)
                 case "B": boss = point; line.append(.caveFloor)
+                case let mark where residents[mark] != nil:
+                    npcs.append(NPC(position: point, role: .resident(residents[mark]!)))
+                    line.append(markerFloor)
                 default: line.append(Tile(rawValue: char) ?? outside)
                 }
             }
@@ -293,5 +326,6 @@ struct GameMap {
         self.boss = boss
         self.encounters = encounters
         self.encounterAreas = encounterAreas
+        self.plaques = plaques
     }
 }

@@ -42,10 +42,15 @@ struct QuizTests {
     /// 答えは その土地の街の人から かならず聞ける（知らないと解けない問題は出さない）。
     @Test(arguments: QuizRegion.allCases)
     func everyAnswerIsTaughtInItsTown(region: QuizRegion) {
-        let text = World.map(region.town).npcs.compactMap { npc -> String? in
-            if case let .villager(lines) = npc.role { return lines.joined() }
-            return nil
-        }.joined(separator: "\n")
+        let map = World.map(region.town)
+        let spoken = map.npcs.compactMap { npc -> String? in
+            switch npc.role {
+            case let .villager(lines): lines.joined()
+            case let .resident(resident): resident.everyLine.joined()
+            default: nil
+            }
+        }
+        let text = (spoken + map.plaques.values.map { $0.lines.joined() }).joined(separator: "\n")
         for quiz in region.quizzes {
             #expect(text.contains(quiz.correctChoice), "「\(quiz.correctChoice)」を \(region.town) の だれも 教えてくれない")
         }

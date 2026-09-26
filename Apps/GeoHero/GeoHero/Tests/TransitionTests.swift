@@ -31,7 +31,8 @@ struct TransitionTests {
     /// 村から出るときに幕を下ろし、着いたら上げる。
     @Test func walkingThroughAWarpDrawsTheCurtain() async {
         let game = makeGame()
-        for _ in 0..<3 { await game.walk(.down) }
+        game.position = World.revivePoint.point
+        await game.walk(.down)
         #expect(game.mapID == .field, "フィールドへ 移っていない")
         // 行き着いたときには幕は上がっている。
         #expect(game.curtain == 0)
@@ -43,7 +44,8 @@ struct TransitionTests {
     @Test func cannotWalkWhileTheCurtainIsMoving() async {
         // 幕の上げ下げに時間をかけて、途中の状態をつかまえる。
         let game = makeGame(fade: .milliseconds(200))
-        let walking = Task { for _ in 0..<3 { await game.walk(.down) } }
+        game.position = World.revivePoint.point
+        let walking = Task { await game.walk(.down) }
         try? await Task.sleep(for: .milliseconds(260))
         #expect(game.isTransitioning, "暗転中のはずが そうなっていない")
         #expect(game.canWalk == false, "暗転中なのに 歩けてしまう")
@@ -57,7 +59,8 @@ struct TransitionTests {
     @Test func enteringATownShowsItsName() async {
         let game = makeGame()
         game.bannerDuration = .milliseconds(100)
-        for _ in 0..<3 { await game.walk(.down) }
+        game.position = World.revivePoint.point
+        await game.walk(.down)
         #expect(game.mapID == .field)
         #expect(game.arrivalBanner == nil, "フィールドに出たのに 札が出ている")
         await game.walk(.up)
@@ -70,7 +73,7 @@ struct TransitionTests {
     /// 宿屋から 街へ戻ったときは 札を出さない（街の中を 行き来しただけなので）。
     @Test func leavingTheInnDoesNotShowTheName() async {
         let game = makeGame()
-        game.position = Point(x: 3, y: 5)
+        game.position = Point(x: 14, y: 17)
         await game.walk(.up)
         #expect(game.mapID == .innInside)
         await game.walk(.down)
@@ -84,12 +87,21 @@ struct TransitionTests {
         for id in [MapID.hakodate, .sapporo, .rausu] {
             #expect(World.map(id).tiles.joined().contains(.signpost), "\(id) に看板がない")
         }
-        await game.walk(.left)
-        await game.walk(.left)
+        // 出口の左の看板。
+        game.position = Point(x: 13, y: 23)
         await game.walk(.down)
-        #expect(game.position == Point(x: 5, y: 10))
+        #expect(game.position == Point(x: 13, y: 23))
         game.pressA()
         #expect(game.currentPage?.joined().contains("函館") == true)
+    }
+
+    /// 名所の看板は 街の名前ではなく その名所の説明を出す。
+    @Test func landmarkPlaqueTellsAboutThePlace() async {
+        let game = makeGame()
+        game.position = Point(x: 12, y: 13)
+        await game.walk(.up)
+        game.pressA()
+        #expect(game.currentPage?.joined().contains("赤レンガ倉庫") == true)
     }
 
     // MARK: - 宿屋

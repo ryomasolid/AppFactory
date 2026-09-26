@@ -8,6 +8,26 @@ struct SaveData: Codable, Equatable {
     var openedChests: Set<String>
     /// 倒したボス。どこまで進んだかを覚えておく。
     var defeatedBosses: Set<EnemyKind> = []
+    /// 物語の進みぐあい。
+    var storyFlags: Set<StoryFlag> = []
+    /// 宿屋・道具屋の中でセーブしたとき、出る先の街と扉の前。
+    var lastTown: MapID = World.startMap
+    var interiorReturn: Point?
+}
+
+extension SaveData {
+    /// あとから足した項目は なくても読む（物語の仕組みより前のセーブを そのまま続けられるように）。
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        hero = try c.decode(Hero.self, forKey: .hero)
+        map = try c.decode(MapID.self, forKey: .map)
+        position = try c.decode(Point.self, forKey: .position)
+        openedChests = try c.decode(Set<String>.self, forKey: .openedChests)
+        defeatedBosses = try c.decodeIfPresent(Set<EnemyKind>.self, forKey: .defeatedBosses) ?? []
+        storyFlags = try c.decodeIfPresent(Set<StoryFlag>.self, forKey: .storyFlags) ?? []
+        lastTown = try c.decodeIfPresent(MapID.self, forKey: .lastTown) ?? World.startMap
+        interiorReturn = try c.decodeIfPresent(Point.self, forKey: .interiorReturn)
+    }
 }
 
 enum SaveStore {

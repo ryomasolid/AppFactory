@@ -82,6 +82,13 @@ final class GameState {
     var defeatedBosses: Set<EnemyKind> = []
     /// 宿屋・道具屋から出たときに戻る街。
     var lastTown: MapID = World.startMap
+    /// 宿屋・道具屋から出たときに立つ場所（入った扉の前）。街ごとに扉の位置が ちがうため。
+    var interiorReturn: Point?
+    /// 物語の進みぐあい（人の頼みを片づけると立つ）。
+    var storyFlags: Set<StoryFlag> = []
+    var progress: StoryProgress { StoryProgress(flags: storyFlags, defeatedBosses: defeatedBosses) }
+    /// いまの地図に 出ている人。
+    var npcs: [NPC] { map.npcs(progress) }
     /// 土地ごとの「ちしき」の問題の山。戦いをまたいで続きから出す（毎回 同じ問題から始まらないように）。
     /// セーブには残さない（試作）。
     @ObservationIgnored var quizDecks: [QuizRegion: [Quiz]] = [:]
@@ -189,7 +196,9 @@ final class GameState {
         facing = .down
         openedChests = []
         defeatedBosses = []
+        storyFlags = []
         lastTown = World.startMap
+        interiorReturn = nil
         enterField()
         say([
             "まおうが この国の 5つの地方の",
@@ -199,7 +208,9 @@ final class GameState {
             "そなたには いにしえの ゆうしゃの ちが ながれておる。",
             "この北海道の 守護神は 知床の おくに とらわれておる。",
             "だが 道には まおうの てさきが 3ひき。",
-            "まずは 函館山の ぬしを たおすのじゃ。」",
+            "まずは 函館山に すみついた イカのぬしじゃ。",
+            "山は いま 奉行所が とじておる。",
+            "街の ものに 話を きいて まわるのじゃ。」",
             "（十字キーで あるき、Aで はなす・しらべる、",
             "Bで メニューを ひらけます）",
         ])
@@ -212,7 +223,15 @@ final class GameState {
         position = save.position
         openedChests = save.openedChests
         defeatedBosses = save.defeatedBosses
+        storyFlags = save.storyFlags
+        lastTown = save.lastTown
+        interiorReturn = save.interiorReturn
         if mapID.isTown { lastTown = mapID }
+        // 地図を描きなおした街で 古いセーブの位置が 建物や海の中に なっていたら、街の入口へ。
+        if !map.contains(position) || !map.tile(at: position).isPassable {
+            mapID = World.revivePoint.map
+            position = World.revivePoint.point
+        }
         facing = .down
         enterField()
     }
@@ -261,7 +280,7 @@ final class GameState {
         guard canWalk else { return }
         facing = direction
         let next = position + direction.delta
-        guard map.isWalkable(next, bossRemains: bossPoint != nil) else { return playSound(.bump) }
+        guard map.isWalkable(next, bossRemains: bossPoint != nil, progress: progress) else { return playSound(.bump) }
         isWalking = true
         lastMoveWasWarp = false
         walkFrame += 1
@@ -296,15 +315,27 @@ final class GameState {
                      "（\(needed.stats.name)を たおすと 道がひらける）"])
                 return
             }
+            // 頼まれごとを片づけていないと 入れない場所。
+            if let flag = warp.needs, !progress.has(flag) {
+                playSound(.bump)
+                say(flag.gateLines)
+                return
+            }
             // 出入りは 暗転をはさんで「移った」と分かるようにする。
             playSound(.stairs)
             await drawCurtain()
             lastMoveWasWarp = true
             if mapID.isTown { lastTown = mapID }
             let from = mapID
-            // 宿屋・道具屋から出るときは 入ってきた街へ戻す。
-            mapID = (mapID == .innInside || mapID == .shopInside) ? lastTown : warp.to
-            position = warp.at
+            if warp.to.isInterior { interiorReturn = position + Point(x: 0, y: 1) }
+            // 宿屋・道具屋から出るときは 入ってきた街の 扉の前へ戻す。
+            if from.isInterior {
+                mapID = lastTown
+                position = interiorReturn ?? warp.at
+            } else {
+                mapID = warp.to
+                position = warp.at
+            }
             stepsSinceBattle = 0
             hideBanner()
             await openCurtain()
@@ -420,11 +451,14 @@ final class GameState {
         var target = position + facing.delta
         // カウンター越しに、奥にいる人と話せる。
         if map.tile(at: target) == .counter { target = target + facing.delta }
-        if let npc = map.npc(at: target) {
+        if let npc = map.npc(at: target, progress) {
             playSound(.confirm)
             talk(to: npc)
         } else if let chest = map.chest(at: target) {
             open(chest)
+        } else if map.tile(at: target) == .signpost, let plaque = map.plaques[target] {
+            playSound(.confirm)
+            say(plaque.lines)
         } else if map.tile(at: target) == .signpost, let town = mapID.townInfo {
             playSound(.confirm)
             say(["かんばんに こう かいてある。", "「ここは \(town.name)（\(town.reading)）。", "\(town.tagline)」"])
@@ -445,10 +479,23 @@ final class GameState {
             say(elderHint())
         case .villager(let lines):
             say(lines)
+        case .resident(let resident):
+            play(resident.scene(progress))
         case .innkeeper:
             overlay = .inn
         case .shopkeeper:
             overlay = .shop
+        }
+    }
+
+    /// 物語の場面を出す。ごほうびは すぐ渡し（左上の所持金が せりふと そろうように）、
+    /// 印は 読み終えてから立てる（迷子が 話の途中で 消えないように）。
+    private func play(_ scene: StoryScene) {
+        if scene.gold > 0 || !scene.items.isEmpty || !scene.sets.isEmpty { playSound(.chest) }
+        hero.gold += scene.gold
+        for item in scene.items { hero.receive(item) }
+        say(scene.lines) { [weak self] in
+            self?.storyFlags.formUnion(scene.sets)
         }
     }
 
@@ -544,7 +591,8 @@ final class GameState {
     func save() {
         SaveStore.save(SaveData(
             hero: hero, map: mapID, position: position,
-            openedChests: openedChests, defeatedBosses: defeatedBosses
+            openedChests: openedChests, defeatedBosses: defeatedBosses,
+            storyFlags: storyFlags, lastTown: lastTown, interiorReturn: interiorReturn
         ))
         hasSave = true
     }
@@ -562,7 +610,11 @@ final class GameState {
 
     /// 長老の助言。どこまで進んだかで 言うことを変える。
     private func elderHint() -> [String] {
-        if !defeatedBosses.contains(.squidLord) {
+        if !progress.has(.hakodateyamaPass) {
+            ["ちょうろう「函館山は 奉行所が とじておる。",
+             "　五稜郭の 奉行に あかしを みせれば ひらくはずじゃ。",
+             "　五稜郭は 街の 北。 港の ものが なにか 見たらしいぞ。」"]
+        } else if !defeatedBosses.contains(.squidLord) {
             ["ちょうろう「函館山の ぬしは すみの まくで みを まもる。",
              "　函館の ことを よく しれば やぶれるはずじゃ。",
              "　街の ものの はなしを きいておくのじゃぞ。」"]

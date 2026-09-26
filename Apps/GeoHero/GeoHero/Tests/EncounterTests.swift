@@ -359,11 +359,11 @@ struct TownTests {
     }
 
     /// 街ごとに にぎわいと 家の数を変える。
+    /// 函館は 歩きまわって 話を聞く街（物語の はじまり）なので いちばん広く、人も多い。
     @Test func townsDifferInCrowdAndBuildings() {
         let people = route.map { World.map($0).npcs.count }
         #expect(Set(people).count == people.count, "どの街も 人の数が同じ: \(people)")
-        #expect(people[1] > people[0], "札幌が いちばん にぎやかであってほしい: \(people)")
-        #expect(people[2] < people[0], "羅臼は さいはての町なので 人が少ないほうがいい: \(people)")
+        #expect(people[2] == people.min(), "羅臼は さいはての町なので 人が少ないほうがいい: \(people)")
 
         let roofs = route.map { id -> Int in
             let map = World.map(id)
@@ -378,7 +378,7 @@ struct TownTests {
             }
             return count
         }
-        #expect(roofs[1] > roofs[0], "札幌に 家が多くない: \(roofs)")
+        #expect(roofs[1] > roofs[2], "札幌より 羅臼に 家が多い: \(roofs)")
     }
 
     /// どの街にも 宿屋と道具屋の入口がある。
