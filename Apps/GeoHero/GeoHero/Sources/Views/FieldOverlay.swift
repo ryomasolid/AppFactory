@@ -161,9 +161,9 @@ struct FieldOverlay: View {
     /// 持ちものに対してできること ひとつと、その説明。
     private func itemAction(_ item: Item, hero: Hero) -> (note: String, choice: Choice) {
         if case .consumable = item.kind {
-            return (effectNote(item), Choice(title: "つかう", isEnabled: hero.hp < hero.maxHP) {
+            return (item.effectNote, Choice(title: "つかう", isEnabled: hero.canUse(item)) {
                 selectedItem = nil
-                game.useHerbInField()
+                game.useInField(item)
             })
         }
         if hero.isEquipped(item) {
@@ -323,7 +323,7 @@ struct FieldOverlay: View {
         // 装備は「いまの値 → 買ったあとの値」だけを大きく出す。
         // 品物の素の強さ（+16 など）も並べると、買い替えの本当の伸び（+8）と食い違って紛らわしい。
         if case .consumable = item.kind {
-            note(effectNote(item))
+            note(item.effectNote)
         } else {
             statPreview(item, hero: hero)
         }
@@ -353,18 +353,6 @@ struct FieldOverlay: View {
             } else {
                 Text("\(gold)G").foregroundStyle(.yellow)
             }
-        }
-    }
-
-    /// 商品の効きめ。装備は上がり幅、薬草は回復量。
-    private func effectNote(_ item: Item) -> String {
-        switch item.kind {
-        case .consumable:
-            "つかうと HPが \(Item.herbPower.lowerBound)〜\(Item.herbPower.upperBound) かいふく"
-        case .weapon(let power):
-            "そうびすると こうげき +\(power)"
-        case .armor(let power):
-            "そうびすると しゅび +\(power)"
         }
     }
 

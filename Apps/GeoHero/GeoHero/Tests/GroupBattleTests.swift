@@ -105,7 +105,7 @@ struct GroupBattleTests {
         // 区域と、そこを歩くころのレベル。
         let zones: [(String, Int)] = [
             ("函館のまわり", 1), ("函館山のふもと", 2), ("松前へむかう道", 4), ("大沼のまわり", 5),
-            ("札幌のまわり", 7), ("小樽へむかう道", 8), ("中標津のまわり", 11), ("ウトロへむかう道", 12),
+            ("札幌のまわり", 8), ("小樽へむかう道", 8), ("中標津のまわり", 11), ("ウトロへむかう道", 12),
         ]
         for (name, level) in zones {
             let heroAgility = LevelTable.row(level).agility

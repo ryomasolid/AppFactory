@@ -4,7 +4,7 @@ struct BattleView: View {
     @Environment(GameState.self) private var game
     @State private var submenu: Submenu = .none
 
-    private enum Submenu: Equatable { case none, spells, items, targets, quiz }
+    private enum Submenu: Equatable { case none, spells, items, targets }
     /// 相手を選んだあとに出すコマンド（こうげき か 攻撃呪文）。
     @State private var pendingAttack: BattleCommand?
 
@@ -56,7 +56,8 @@ struct BattleView: View {
                 switch Launch.battleSubmenu {
                 case "spells": submenu = .spells
                 case "items": submenu = .items
-                case "quiz": askQuiz()
+                // 「ちしきの チャンス」を かならず出して 見る。
+                case "quiz": game.offerQuizChance(target: session.battle.defaultTarget, force: true)
                 default: break
                 }
             }
@@ -219,16 +220,28 @@ struct BattleView: View {
     /// 選べるものは2列に分ける。縦に積むと枠が高くなり、そのぶん戦いの絵が小さくなる。
     @ViewBuilder
     private func commandChoices(_ session: BattleSession) -> some View {
+        if let quiz = game.quizChance {
+            // 問題はメッセージの枠に出ている。ここは答えを選ぶだけ（もどれない。まちがえても こうげきは 当たる）。
+            let choices = Array(quiz.choices.enumerated())
+            let half = (choices.count + 1) / 2
+            TwoColumns {
+                ForEach(choices.prefix(half), id: \.offset) { answerChoice($0.offset, $0.element) }
+            } right: {
+                ForEach(choices.dropFirst(half), id: \.offset) { answerChoice($0.offset, $0.element) }
+            }
+        } else {
+            regularChoices(session)
+        }
+    }
+
+    @ViewBuilder
+    private func regularChoices(_ session: BattleSession) -> some View {
         let hero = game.hero
         switch submenu {
         case .none:
             TwoColumns {
                 RetroChoice(title: "こうげき") { aim(.attack, session) }
                 RetroChoice(title: "まほう", isEnabled: !hero.spells.isEmpty) { submenu = .spells }
-                // 問題のある土地（いまは函館のあたり）だけ出す。
-                if session.battle.nextQuiz != nil {
-                    RetroChoice(title: "ちしき") { askQuiz() }
-                }
             } right: {
                 RetroChoice(title: "どうぐ") { submenu = .items }
                 RetroChoice(title: "にげる") { run(.run) }
@@ -242,8 +255,13 @@ struct BattleView: View {
             }
             RetroChoice(title: "もどる") { submenu = .none }
         case .items:
-            RetroChoice(title: Item.herb.name, detail: "×\(hero.herbCount)", isEnabled: hero.herbCount > 0) {
-                run(.item(.herb))
+            // 持っている 回復の道具を 2列に ならべる。なければ ハスカップを 0こで 出す（ないことが 分かるように）。
+            let owned = hero.consumables.isEmpty ? [(item: Item.herb, count: 0)] : hero.consumables
+            let half = (owned.count + 1) / 2
+            TwoColumns {
+                ForEach(owned.prefix(half), id: \.item) { itemChoice($0.item, $0.count) }
+            } right: {
+                ForEach(owned.dropFirst(half), id: \.item) { itemChoice($0.item, $0.count) }
             }
             RetroChoice(title: "もどる") { submenu = .none }
         case .targets:
@@ -258,31 +276,19 @@ struct BattleView: View {
                 pendingAttack = nil
                 submenu = .none
             }
-        case .quiz:
-            // 問題はメッセージの枠に出ている。ここは答えを選ぶだけ。
-            let choices = Array((session.battle.nextQuiz?.choices ?? []).enumerated())
-            let half = (choices.count + 1) / 2
-            TwoColumns {
-                ForEach(choices.prefix(half), id: \.offset) { answerChoice($0.offset, $0.element, session) }
-            } right: {
-                ForEach(choices.dropFirst(half), id: \.offset) { answerChoice($0.offset, $0.element, session) }
-            }
-            RetroChoice(title: "もどる") {
-                game.withdrawQuiz()
-                submenu = .none
-            }
         }
     }
 
-    private func askQuiz() {
-        game.poseQuiz()
-        submenu = .quiz
+    private func answerChoice(_ index: Int, _ title: String) -> some View {
+        RetroChoice(title: title) {
+            submenu = .none
+            pendingAttack = nil
+            Task { await game.answerQuiz(index) }
+        }
     }
 
-    /// 答えは ボスがいれば ボスに、いなければ全員に効くので、相手は選ばせない。
-    private func answerChoice(_ index: Int, _ title: String, _ session: BattleSession) -> some View {
-        let target = session.battle.living.first { $0.kind.isBoss }?.id ?? session.battle.defaultTarget
-        return RetroChoice(title: title) { run(.quiz(answer: index), target: target) }
+    private func itemChoice(_ item: Item, _ count: Int) -> some View {
+        RetroChoice(title: item.name, detail: "×\(count)", isEnabled: count > 0) { run(.item(item)) }
     }
 
     private func spellChoice(_ spell: Spell, _ session: BattleSession) -> some View {
@@ -312,7 +318,12 @@ struct BattleView: View {
     private func run(_ command: BattleCommand, target: Int? = nil) {
         submenu = .none
         pendingAttack = nil
-        Task { await game.command(command, target: target) }
+        // こうげきは ときどき「ちしきの チャンス」が 出るので GameState に まかせる。
+        if command == .attack {
+            Task { await game.attack(target: target) }
+        } else {
+            Task { await game.command(command, target: target) }
+        }
     }
 }
 

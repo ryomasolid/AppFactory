@@ -103,8 +103,10 @@ final class GameState {
     /// 土地ごとの「ちしき」の問題の山。戦いをまたいで続きから出す（毎回 同じ問題から始まらないように）。
     /// セーブには残さない（試作）。
     @ObservationIgnored var quizDecks: [QuizRegion: [Quiz]] = [:]
-    /// 問題を出す前の戦闘メッセージ。「もどる」で元に戻す。
-    @ObservationIgnored private var logBeforeQuiz: [String]?
+    /// いま出ている「ちしきの チャンス」。答えを選ぶと こうげきと いっしょに 出す。
+    private(set) var quizChance: Quiz?
+    /// チャンスが出たときに ねらっていた相手。
+    @ObservationIgnored private var quizTarget: Int?
     var hasSave = SaveStore.load() != nil
 
     /// 表示中の会話（1ページ最大3行）。
@@ -224,6 +226,9 @@ final class GameState {
             "街の ものに 話を きいて まわるのじゃ。」",
             "（十字キーで あるき、Aで はなす・しらべる、",
             "Bで メニューを ひらけます）",
+            "（たたかいで こうげきすると ときどき",
+            "「ちしきの チャンス」が でます。",
+            "せいかいすると おいうちが きまります）",
         ])
     }
 
@@ -610,12 +615,15 @@ final class GameState {
         say(["\(hero.name)は \(spell.name)を となえた！", "HPが \(healed) かいふくした！"])
     }
 
-    func useHerbInField() {
-        guard hero.consume(.herb) else { return say(["どうぐが ない！"]) }
-        let healed = hero.heal(rng.next(in: Item.herbPower))
+    func useHerbInField() { useInField(.herb) }
+
+    /// 回復の道具を フィールドで つかう。
+    func useInField(_ item: Item) {
+        guard let effect = item.effect, hero.consume(item) else { return say(["どうぐが ない！"]) }
+        let (amount, isMP) = hero.apply(effect, rng: &rng)
         playSound(.heal)
         overlay = .none
-        say(["\(hero.name)は 薬草を つかった！", "HPが \(healed) かいふくした！"])
+        say(["\(hero.name)は \(item.name)を つかった！", "\(isMP ? "MP" : "HP")が \(amount) かいふくした！"])
     }
 
     func save() {
@@ -645,8 +653,8 @@ final class GameState {
              "　五稜郭の 奉行に あかしを みせれば ひらくはずじゃ。",
              "　五稜郭は 街の 北。 港の ものが なにか 見たらしいぞ。」"]
         } else if !defeatedBosses.contains(.squidLord) {
-            ["ちょうろう「函館山の ぬしは すみの まくで みを まもる。",
-             "　函館の ことを よく しれば やぶれるはずじゃ。",
+            ["ちょうろう「ぬしとの たたかいでは ちしきの チャンスが よく くる。",
+             "　函館の ことを よく しっておけば おいうちが きまるはずじゃ。",
              "　街の ものの はなしを きいておくのじゃぞ。」"]
         } else if !progress.has(.fireCharm) {
             ["ちょうろう「よくぞ ぬしを たおした。",
@@ -654,26 +662,25 @@ final class GameState {
              "　松前の 殿様を たずねよ。 函館湾を まわった 西の はてじゃ。」"]
         } else if !defeatedBosses.contains(.komaLord) {
             ["ちょうろう「駒ヶ岳は 大沼の 北じゃ。",
-             "　ぬしは ほのおの たてがみで みを まもる。",
-             "　大沼の ものの はなしを きいておくのじゃぞ。」"]
+             "　大沼の ものの はなしを きいておけば",
+             "　ちしきの チャンスで おいうちが きまるぞ。」"]
         } else if !defeatedBosses.contains(.tengu) && !progress.has(.musicBox) {
             ["ちょうろう「札幌の 赤れんが庁舎の 長官を たずねよ。",
              "　小樽の 天狗山には 天狗が おる。",
-             "　かくれみので みを まもるゆえ、小樽の ことを しっておくのじゃ。」"]
+             "　小樽の ことを しっておけば ちしきで おいうちが きまるぞ。」"]
         } else if !progress.has(.musicBox) {
             ["ちょうろう「天狗を こらしめたか。",
              "　小樽の オルゴール職人に しらせて やるのじゃ。」"]
         } else if !defeatedBosses.contains(.bearLord) {
             ["ちょうろう「藻岩山は 札幌の 南西じゃ。",
-             "　ぬしは 山の かごで みを まもる。",
              "　札幌の ものの はなしを きいておくのじゃぞ。」"]
         } else if !progress.has(.kamuiFeather) {
             ["ちょうろう「知床では 羅臼の エカシを たずねよ。",
              "　羅臼は 中標津から 東の 海ぞいを いった さきじゃ。",
-             "　知床岬の トドのぬしは 流氷の よろいで みを まもる。」"]
+             "　トドのぬしは 知床岬の ほらあなに おる。」"]
         } else if !defeatedBosses.contains(.guardian) {
             ["ちょうろう「のこるは 羅臼岳の 守護神。",
-             "　ふぶきの まくで みを まもり、ふぶきを おこす。",
+             "　はげしい ふぶきを おこす。",
              "　知床の ことを よく しり、HPに よゆうを もって いどむのじゃ。」"]
         } else {
             ["ちょうろう「よくぞ 守護神を 解きはなった。",
@@ -688,35 +695,29 @@ final class GameState {
         case .squidLord:
             ["シュルルル……",
              "イカのぬし「みなとの さかなは わたしのものだ。",
-             "　すみで まっくろに してやろう！」",
-             "（イカのぬしは すみの まくに つつまれている……）"]
+             "　すみで まっくろに してやろう！」"]
         case .komaLord:
             ["ヒヒーン……！",
              "駒ヶ岳のぬし「この 山の 火は わたしのものだ。",
-             "　ひこうきも 人も 近づけさせぬ！」",
-             "（駒ヶ岳のぬしは ほのおの たてがみに つつまれている……）"]
+             "　ひこうきも 人も 近づけさせぬ！」"]
         case .tengu:
             ["ヒュウウ……",
              "天狗「わっはっは！ この オルゴールの 音は わしの ものじゃ。",
-             "　人間の すがたなど 見えぬ ところから こらしめてくれる！」",
-             "（天狗は かくれみので すがたを かくしている……）"]
+             "　うちわの かぜで ふきとばしてくれる！」"]
         case .todoLord:
             ["オウッ オウッ……！",
              "トドのぬし「この はねは わたさんぞ。",
-             "　つめたい 海の そこへ しずめてくれる！」",
-             "（トドのぬしは 流氷の よろいを まとっている……）"]
+             "　つめたい 海の そこへ しずめてくれる！」"]
         case .bearLord:
             ["グオオオ……",
              "ヒグマのぬし「この山は とおさん。",
-             "　まおうさまの じゃまは させん！」",
-             "（ヒグマのぬしは 山の かごに まもられている……）"]
+             "　まおうさまの じゃまは させん！」"]
         default:
             ["ゴゴゴ……",
              "知床の守護神「……ちが、ながれて いる な。",
              "　だが われは まおうの もの。",
              "　ふぶきの なかで ねむるが よい！」",
-             "（あやつられた 守護神が おそいかかってきた！）",
-             "（守護神は ふぶきの まくに つつまれている……）"]
+             "（あやつられた 守護神が おそいかかってきた！）"]
         }
     }
 
@@ -815,7 +816,7 @@ final class GameState {
 
     func command(_ command: BattleCommand, target: Int? = nil) async {
         guard var session = battle, !session.isPlaying, session.end == nil else { return }
-        logBeforeQuiz = nil
+        quizChance = nil
         let result = session.battle.take(command, target: target, rng: &rng)
         if let region = QuizRegion.at(mapID, position), !session.battle.quizzes.isEmpty {
             quizDecks[region] = session.battle.quizzes
@@ -840,18 +841,31 @@ final class GameState {
         battle?.end = result.end
     }
 
-    /// 「ちしき」を選んだら、メッセージの枠に問題を出す。答えはコマンドの枠で選ぶ。
-    func poseQuiz() {
-        guard let quiz = battle?.battle.nextQuiz, logBeforeQuiz == nil else { return }
-        logBeforeQuiz = battle?.log
-        battle?.log = ["もんだい！", quiz.question]
+    /// 「こうげき」を選んだ。ときどき「ちしきの チャンス」が出て、答えを選ぶまで 待つ。
+    /// 出なければ そのまま こうげきする。
+    func attack(target: Int?) async {
+        if offerQuizChance(target: target) { return }
+        await command(.attack, target: target)
     }
 
-    /// 答えずに「もどる」。問題を出す前のメッセージに戻す。
-    func withdrawQuiz() {
-        guard let log = logBeforeQuiz else { return }
-        battle?.log = log
-        logBeforeQuiz = nil
+    /// 「ちしきの チャンス」を くじで出す。出たら メッセージの枠に 問題を出して true。
+    /// `force` は 表示確認用（かならず出す）。
+    @discardableResult
+    func offerQuizChance(target: Int?, force: Bool = false) -> Bool {
+        guard let session = battle, !session.isPlaying, session.end == nil, quizChance == nil,
+              let quiz = session.battle.nextQuiz,
+              force || rng.chance(session.battle.quizChanceDenominator) else { return false }
+        quizChance = quiz
+        quizTarget = target
+        playSound(.critical)
+        battle?.log = ["ちしきの チャンス！", quiz.question]
+        return true
+    }
+
+    /// 「ちしきの チャンス」に 答える。こうげきして、正解なら 追い打ち。
+    func answerQuiz(_ choice: Int) async {
+        guard quizChance != nil else { return }
+        await command(.quizAttack(answer: choice), target: quizTarget)
     }
 
     /// 行の前の間。同じ場面の続きは少し待って下に足し、行動が変わるときは長めに待って枠を空ける。

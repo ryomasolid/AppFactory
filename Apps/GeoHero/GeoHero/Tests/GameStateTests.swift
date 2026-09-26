@@ -294,12 +294,12 @@ struct GameStateTests {
             game.hero.receive(.chainMail)
             game.startBattle(kind)
             for _ in 0..<80 where game.battle?.end == nil {
-                // 減ってきたら回復し、まもりは「ちしき」で やぶる（ラスボスは殴るだけでは倒せない）。
+                // 減ってきたら回復し、ときどき「ちしきの チャンス」に 正解する（ラスボスは殴るだけでは倒せない）。
                 let low = game.hero.hp < game.hero.maxHP * 3 / 5
                 if low && game.hero.mp >= Spell.highHeal.mpCost {
                     await game.command(.spell(.highHeal))
-                } else if let battle = game.battle?.battle, battle.veil > 0, let quiz = battle.nextQuiz {
-                    await game.command(.quiz(answer: quiz.answer), target: 0)
+                } else if let battle = game.battle?.battle, let quiz = battle.nextQuiz, game.rng.chance(2) {
+                    await game.command(.quizAttack(answer: quiz.answer), target: 0)
                 } else {
                     await game.command(.attack)
                 }

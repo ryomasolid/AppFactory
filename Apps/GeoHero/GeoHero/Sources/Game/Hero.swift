@@ -87,14 +87,35 @@ enum Spell: String, Codable, CaseIterable, Identifiable {
     var isHealing: Bool { self == .heal || self == .highHeal }
 }
 
+/// 道具と装備。名前は 北海道の その土地の 名産に ちなむ。
+/// 内部の名前（herb・copperSword など）は セーブに 残るので 変えない。見せる名前だけ 変える。
+/// 回復の道具・武器・よろいは 旅の順に 強く、高くなる。上等な品は 貯めないと 買えない。
 enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
+    // 回復の道具
     case herb
+    case ikameshi
+    case dango
+    case misoRamen
+    case onsenTamago
+    case milk
+    case ikuraDon
+    // 武器
     case woodStick
+    case squidSpear
     case copperSword
+    case katana
     case steelSword
+    case glassSword
+    case orcaSpear
+    // よろい
     case clothes
+    case scallopPlate
     case leatherArmor
+    case samuraiArmor
     case chainMail
+    case herringMail
+    case attush
+    case driftIceArmor
 
     enum Kind: Equatable {
         case consumable
@@ -102,41 +123,100 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         case armor(power: Int)
     }
 
+    /// 回復の道具が なおすもの。
+    enum Effect: Equatable {
+        case hp(ClosedRange<Int>)
+        case mp(ClosedRange<Int>)
+    }
+
     var id: String { rawValue }
 
     var name: String {
         switch self {
-        case .herb: "薬草"
-        case .woodStick: "木の棒"
-        case .copperSword: "銅の剣"
-        case .steelSword: "鋼の剣"
-        case .clothes: "布の服"
-        case .leatherArmor: "革の鎧"
-        case .chainMail: "鎖帷子"
+        case .herb: "ハスカップ"
+        case .ikameshi: "いかめし"
+        case .dango: "大沼だんご"
+        case .misoRamen: "みそラーメン"
+        case .onsenTamago: "温泉たまご"
+        case .milk: "しぼりたて牛乳"
+        case .ikuraDon: "いくら丼"
+        case .woodStick: "ヤチダモの棒"
+        case .squidSpear: "イカつりの銛"
+        case .copperSword: "五稜郭の槍"
+        case .katana: "松前の刀"
+        case .steelSword: "時計台の剣"
+        case .glassSword: "小樽ガラスの剣"
+        case .orcaSpear: "シャチの銛"
+        case .clothes: "木綿のはんてん"
+        case .scallopPlate: "ホタテの胸当て"
+        case .leatherArmor: "五稜郭の鎧"
+        case .samuraiArmor: "松前藩士の鎧"
+        case .chainMail: "雪まつりの鎧"
+        case .herringMail: "ニシンのうろこ鎧"
+        case .attush: "アットゥシ"
+        case .driftIceArmor: "流氷の鎧"
         }
     }
 
     var kind: Kind {
         switch self {
-        case .herb: .consumable
+        case .herb, .ikameshi, .dango, .misoRamen, .onsenTamago, .milk, .ikuraDon: .consumable
         case .woodStick: .weapon(power: 2)
+        case .squidSpear: .weapon(power: 5)
         case .copperSword: .weapon(power: 8)
+        case .katana: .weapon(power: 11)
         case .steelSword: .weapon(power: 16)
+        case .glassSword: .weapon(power: 19)
+        case .orcaSpear: .weapon(power: 23)
         case .clothes: .armor(power: 2)
+        case .scallopPlate: .armor(power: 4)
         case .leatherArmor: .armor(power: 6)
+        case .samuraiArmor: .armor(power: 9)
         case .chainMail: .armor(power: 12)
+        case .herringMail: .armor(power: 15)
+        case .attush: .armor(power: 18)
+        case .driftIceArmor: .armor(power: 21)
+        }
+    }
+
+    /// 回復の道具の ききめ。装備なら nil。
+    var effect: Effect? {
+        switch self {
+        case .herb: .hp(25...35)
+        case .ikameshi: .hp(45...55)
+        case .dango: .mp(6...9)
+        case .misoRamen: .hp(80...100)
+        case .onsenTamago: .mp(15...20)
+        case .milk: .mp(25...32)
+        case .ikuraDon: .hp(130...160)
+        default: nil
         }
     }
 
     var price: Int {
         switch self {
         case .herb: 8
+        case .ikameshi: 18
+        case .dango: 30
+        case .misoRamen: 45
+        case .onsenTamago: 60
+        case .milk: 90
+        case .ikuraDon: 100
         case .woodStick: 5
+        case .squidSpear: 45
         case .copperSword: 100
+        case .katana: 260
         case .steelSword: 550
+        case .glassSword: 900
+        case .orcaSpear: 1500
         case .clothes: 10
+        case .scallopPlate: 50
         case .leatherArmor: 120
+        case .samuraiArmor: 300
         case .chainMail: 450
+        case .herringMail: 850
+        case .attush: 1300
+        case .driftIceArmor: 1900
         }
     }
 
@@ -148,8 +228,22 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         }
     }
 
-    /// 薬草の回復量。
-    static let herbPower: ClosedRange<Int> = 25...35
+    /// ハスカップ（いちばん 安い 回復の道具）の回復量。
+    static var herbPower: ClosedRange<Int> {
+        if case let .hp(range) = Item.herb.effect { return range }
+        return 0...0
+    }
+
+    /// ききめの説明（道具屋・どうぐの画面に出す）。
+    var effectNote: String {
+        switch (kind, effect) {
+        case let (_, .hp(range)?): "つかうと HPが \(range.lowerBound)〜\(range.upperBound) かいふく"
+        case let (_, .mp(range)?): "つかうと MPが \(range.lowerBound)〜\(range.upperBound) かいふく"
+        case let (.weapon(power), _): "そうびすると こうげき +\(power)"
+        case let (.armor(power), _): "そうびすると しゅび +\(power)"
+        default: ""
+        }
+    }
 }
 
 struct Hero: Codable, Equatable {
@@ -185,8 +279,7 @@ struct Hero: Codable, Equatable {
 
     /// 持っているもの。消耗品・ぶき・よろいの順に並べる。
     var belongings: [(item: Item, count: Int)] {
-        let order: [Item] = [.herb, .woodStick, .copperSword, .steelSword, .clothes, .leatherArmor, .chainMail]
-        return order.compactMap { item in
+        return Item.allCases.compactMap { item in
             let count = inventory[item, default: 0]
             return count > 0 ? (item, count) : nil
         }
@@ -200,6 +293,30 @@ struct Hero: Codable, Equatable {
     var isDead: Bool { hp <= 0 }
 
     var herbCount: Int { inventory[.herb, default: 0] }
+
+    /// 持っている 回復の道具（戦いの「どうぐ」に 並べる）。
+    var consumables: [(item: Item, count: Int)] { belongings.filter { $0.item.kind == .consumable } }
+
+    /// その道具を いま使って 意味があるか（HPも MPも まんたんなら つかえない）。
+    func canUse(_ item: Item) -> Bool {
+        switch item.effect {
+        case .hp?: hp < maxHP
+        case .mp?: mp < maxMP
+        case nil: false
+        }
+    }
+
+    /// 回復の道具の ききめを 受ける。なおった量を返す。
+    mutating func apply(_ effect: Item.Effect, rng: inout some RandomSource) -> (amount: Int, isMP: Bool) {
+        switch effect {
+        case let .hp(range):
+            return (heal(rng.next(in: range)), false)
+        case let .mp(range):
+            let before = mp
+            mp = min(maxMP, mp + rng.next(in: range))
+            return (mp - before, true)
+        }
+    }
 
     mutating func restoreFully() {
         hp = maxHP

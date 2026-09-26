@@ -211,39 +211,39 @@ struct TownInfo: Equatable {
     /// みなとの街。旅のはじめなので 安く、そろえも いちばん下。
     static let hakodate = TownInfo(name: "函館", reading: "はこだて", tagline: "みなとの 街",
                                    innBase: 2, innPerLevel: 3,
-                                   stock: [.herb, .copperSword, .leatherArmor])
+                                   stock: [.herb, .ikameshi, .squidSpear, .copperSword, .scallopPlate, .leatherArmor])
     /// 城と さくらの 町。函館の つぎに たずねる。
     static let matsumae = TownInfo(name: "松前", reading: "まつまえ", tagline: "城と さくらの 町",
                                    innBase: 3, innPerLevel: 3,
-                                   stock: [.herb, .copperSword, .leatherArmor])
+                                   stock: [.herb, .ikameshi, .copperSword, .katana, .leatherArmor, .samuraiArmor])
     /// 湖の ほとりの 町。駒ヶ岳の ふもと。
     static let onuma = TownInfo(name: "大沼", reading: "おおぬま", tagline: "駒ヶ岳を うつす 湖の 町",
                                 innBase: 3, innPerLevel: 4,
-                                stock: [.herb, .copperSword, .leatherArmor])
+                                stock: [.herb, .ikameshi, .dango, .katana, .samuraiArmor])
     /// 大きな街。鋼の剣が ここで買える。
     static let sapporo = TownInfo(name: "札幌", reading: "さっぽろ", tagline: "北の 大きな 街",
                                   innBase: 4, innPerLevel: 5,
-                                  stock: [.herb, .copperSword, .leatherArmor, .steelSword])
+                                  stock: [.herb, .misoRamen, .dango, .steelSword, .chainMail])
     /// 運河の みなと町。札幌の となりで、品ぞろえも 札幌と ほぼ同じ。
     static let otaru = TownInfo(name: "小樽", reading: "おたる", tagline: "運河と ガラスの みなと町",
                                 innBase: 5, innPerLevel: 5,
-                                stock: [.herb, .leatherArmor, .steelSword])
+                                stock: [.herb, .misoRamen, .steelSword, .glassSword, .chainMail, .herringMail])
     /// 山あいの 温泉街。札幌の 南西、藻岩山の さき。
     static let jozankei = TownInfo(name: "定山渓", reading: "じょうざんけい", tagline: "かっぱの すむ 温泉街",
                                    innBase: 5, innPerLevel: 6,
-                                   stock: [.herb, .steelSword, .chainMail])
+                                   stock: [.herb, .misoRamen, .onsenTamago, .glassSword, .herringMail])
     /// 酪農の町。知床への 空の入口。
     static let nakashibetsu = TownInfo(name: "中標津", reading: "なかしべつ", tagline: "牧場と 空港の 町",
                                        innBase: 5, innPerLevel: 7,
-                                       stock: [.herb, .steelSword, .chainMail])
+                                       stock: [.herb, .misoRamen, .milk, .glassSword, .attush])
     /// オホーツク海がわの 知床の 町。知床五湖の 入口。
     static let utoro = TownInfo(name: "ウトロ", reading: "うとろ", tagline: "オホーツクの 知床の 町",
                                 innBase: 6, innPerLevel: 7,
-                                stock: [.herb, .steelSword, .chainMail])
+                                stock: [.herb, .ikuraDon, .milk, .orcaSpear, .attush, .driftIceArmor])
     /// さいはての町。運ぶのが大変なぶん 宿も品も高い。銅の剣・革の鎧は もう置かない。
     static let rausu = TownInfo(name: "羅臼", reading: "らうす", tagline: "知床の さいはての 町",
                                 innBase: 6, innPerLevel: 8,
-                                stock: [.herb, .steelSword, .chainMail])
+                                stock: [.herb, .ikuraDon, .milk, .orcaSpear, .driftIceArmor])
 }
 
 /// フィールドの区域。目印（街・ほらあな）ごとに 出る敵を決める。

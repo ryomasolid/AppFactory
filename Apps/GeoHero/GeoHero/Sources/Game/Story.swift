@@ -258,8 +258,8 @@ enum Resident: String, CaseIterable {
                 return StoryScene(lines: [
                     "おやかた「おう！ イカが みなとに もどってきたぞ！",
                     "　これは 漁師 みんなからの おれいだ。」",
-                    "100ゴールドを てにいれた！",
-                ], gold: 100, sets: [.fisherThanked])
+                    "60ゴールドを てにいれた！",
+                ], gold: 60, sets: [.fisherThanked])
             }
             if progress.has(.heardFromFisher) {
                 return StoryScene(lines: [
@@ -287,7 +287,7 @@ enum Resident: String, CaseIterable {
                 return StoryScene(lines: [
                     "おかあさん「ああ、ぶじで よかった！",
                     "　みつけて くれて ありがとう。 これを どうぞ。」",
-                    "薬草を 2つ てにいれた！",
+                    "ハスカップを 2つ てにいれた！",
                 ], items: [.herb, .herb], sets: [.childReturned])
             }
             return StoryScene(lines: [
@@ -368,8 +368,8 @@ enum Resident: String, CaseIterable {
                 return StoryScene(lines: [
                     "やまもり「ぬしを たおしたのか！ これで 大沼も あんしんだ。",
                     "　みんなから あつめた おれいだ。 うけとってくれ。」",
-                    "150ゴールドを てにいれた！",
-                ], gold: 150, sets: [.rangerThanked])
+                    "90ゴールドを てにいれた！",
+                ], gold: 90, sets: [.rangerThanked])
             }
             if progress.has(.fireCharm) {
                 return StoryScene(lines: [
@@ -394,8 +394,8 @@ enum Resident: String, CaseIterable {
                 return StoryScene(lines: [
                     "せわがかり「ああ、ひなが およいで もどってきた！",
                     "　ありがとう。 これは ほんの おれいよ。」",
-                    "120ゴールドを てにいれた！",
-                ], gold: 120, sets: [.cygnetReturned])
+                    "70ゴールドを てにいれた！",
+                ], gold: 70, sets: [.cygnetReturned])
             }
             return StoryScene(lines: [
                 "せわがかり「ハクチョウの ひなが 1わ いないの。",
@@ -454,7 +454,7 @@ enum Resident: String, CaseIterable {
             return StoryScene(lines: [
                 "しょくにん「ここは オルゴール堂。 いちばんの オルゴールを",
                 "　天狗山の 天狗に うばわれて しまったんだ！",
-                "　天狗山は 街の 南。 あの 天狗は かくれみので すがたを かくすぞ。」",
+                "　天狗山は 街の 南。 あの 天狗は うちわの かぜが おそろしいぞ。」",
             ])
 
         case .ramenChef:
@@ -468,8 +468,8 @@ enum Resident: String, CaseIterable {
                 return StoryScene(lines: [
                     "おやじ「とどけて くれたか！ のびる まえに ありがとうよ。",
                     "　これは 出前の おだちんだ。」",
-                    "150ゴールドを てにいれた！",
-                ], gold: 150, sets: [.ramenThanked])
+                    "90ゴールドを てにいれた！",
+                ], gold: 90, sets: [.ramenThanked])
             }
             if progress.has(.ramenCarrying) {
                 return StoryScene(lines: [
@@ -508,7 +508,7 @@ enum Resident: String, CaseIterable {
                 return StoryScene(lines: [
                     "かいぬし「ミケ！ かえってきたのね！",
                     "　ほんとうに ありがとう。 これ、うけとって。」",
-                    "薬草を 2つ てにいれた！",
+                    "ハスカップを 2つ てにいれた！",
                 ], items: [.herb, .herb], sets: [.catReturned])
             }
             return StoryScene(lines: [
@@ -549,7 +549,7 @@ enum Resident: String, CaseIterable {
             if progress.has(.kamuiFeather) {
                 return StoryScene(lines: [
                     "エカシ「はねを もって 羅臼岳へ ゆけ。 ふぶきは はれよう。",
-                    "　守護神は ふぶきの まくで みを まもる。",
+                    "　守護神は はげしい ふぶきを おこす。",
                     "　知床の ことを よく しり、HPに よゆうを もって いどむのじゃ。」",
                 ])
             }
@@ -581,8 +581,8 @@ enum Resident: String, CaseIterable {
                 return StoryScene(lines: [
                     "ぼくじょうぬし「番屋に とどけて くれたか！ たすかったよ。",
                     "　これは おれいだ。」",
-                    "200ゴールドを てにいれた！",
-                ], gold: 200, sets: [.milkThanked])
+                    "120ゴールドを てにいれた！",
+                ], gold: 120, sets: [.milkThanked])
             }
             if progress.has(.milkCarrying) {
                 return StoryScene(lines: [
@@ -620,7 +620,7 @@ enum Resident: String, CaseIterable {
                 return StoryScene(lines: [
                     "レンジャー「キツネの子が もどってきた！ ありがとう。",
                     "　これ、たびに やくだてて。」",
-                    "薬草を 3つ てにいれた！",
+                    "ハスカップを 3つ てにいれた！",
                 ], items: [.herb, .herb, .herb], sets: [.foxReturned])
             }
             return StoryScene(lines: [
@@ -642,7 +642,7 @@ enum Resident: String, CaseIterable {
         }
     }
 
-    /// 案内所の 場面。半分で 薬草、ぜんぶで ゴールド。
+    /// 案内所の 場面。半分で ハスカップ、ぜんぶで ゴールド。
     private static func stampScene(_ region: Region, _ progress: StoryProgress,
                                    half halfFlag: StoryFlag, all allFlag: StoryFlag, towns: String) -> StoryScene {
         let total = World.stampTotal(in: region)
@@ -659,22 +659,39 @@ enum Resident: String, CaseIterable {
             return StoryScene(lines: [
                 "あんないじょ「まあ！ スタンプが \(total)こ ぜんぶ そろってる！",
                 "　これは めいしょ はかせへの ごほうびよ。」",
-                "300ゴールドを てにいれた！",
-            ], gold: 300, sets: [halfFlag, allFlag])
+                "200ゴールドを てにいれた！",
+            ], gold: 200, sets: [halfFlag, allFlag])
         }
         if stamps >= half, !progress.has(halfFlag) {
             return StoryScene(lines: [
                 "あんないじょ「スタンプが \(stamps)こ！ もう 半分ね。",
                 "　たびの おともに どうぞ。 のこりも がんばって！」",
-                "薬草を 3つ てにいれた！",
+                "ハスカップを 3つ てにいれた！",
             ], items: [.herb, .herb, .herb], sets: [halfFlag])
         }
         return StoryScene(lines: [
             "あんないじょ「ようこそ \(area)へ！ 名所の かんばんを よむと",
             "　めいしょ スタンプが たまるの。 \(towns)に あるわ。",
-            "　いま \(stamps)こ ／ \(total)こ。 \(half)こで 薬草、",
-            "　ぜんぶ そろえば 300ゴールド あげる！」",
+            "　いま \(stamps)こ ／ \(total)こ。 \(half)こで ハスカップ、",
+            "　ぜんぶ そろえば 200ゴールド あげる！」",
         ])
+    }
+
+    /// この人から もらえる ゴールドの 合計（お礼は 1度ずつ）。お金の つりあいを たしかめるのに使う。
+    var totalGold: Int {
+        var flags: Set<StoryFlag> = []
+        var total = 0
+        // 印を ひとつずつ 立てながら 話しかけ、もらった お礼を 足していく。
+        for defeated in [Set<EnemyKind>(), [.squidLord, .komaLord, .tengu, .bearLord, .todoLord]] {
+            for _ in 0..<8 {
+                let progress = StoryProgress(flags: flags, defeatedBosses: defeated, stamps: Dictionary(
+                    uniqueKeysWithValues: Region.allCases.map { ($0, World.stampTotal(in: $0)) }))
+                let scene = scene(progress)
+                total += scene.gold
+                flags.formUnion(scene.sets)
+            }
+        }
+        return total
     }
 
     /// この人が 言うかもしれない せりふ ぜんぶ（`QuizTests` で 答えが街で聞けるかを見る）。

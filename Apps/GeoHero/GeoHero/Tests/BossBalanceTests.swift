@@ -1,13 +1,14 @@
 import Testing
 @testable import GeoHero
 
-/// ボスは 着くころの レベル・装備で、「ちしき」で まもりを やぶり、回復しながら戦えば 勝てる。
+/// ボスは 着くころの レベル・装備で、ときどき出る「ちしきの チャンス」に 正解して まもりを やぶり、
+/// 回復しながら戦えば 勝てる。
 /// 駒ヶ岳のぬし・天狗を 足して 旅が のびたので、藻岩山・羅臼岳の ボスも 着くころのレベルに合わせた。
 struct BossBalanceTests {
 
     /// ボスと、倒しに行くころの レベル・装備・問題の土地。
     private let bosses: [(EnemyKind, Int, Item, Item, QuizRegion)] = [
-        (.squidLord, 5, .copperSword, .leatherArmor, .hakodate),
+        (.squidLord, 4, .copperSword, .leatherArmor, .hakodate),
         (.komaLord, 7, .copperSword, .leatherArmor, .onuma),
         (.tengu, 10, .copperSword, .leatherArmor, .otaru),
         (.bearLord, 11, .steelSword, .chainMail, .sapporo),
@@ -15,7 +16,7 @@ struct BossBalanceTests {
         (.guardian, 15, .steelSword, .chainMail, .rausu),
     ]
 
-    /// まもりが のこっていれば 問題に答え、HPが へったら 回復し、それ以外は こうげき。薬草は 5つ。
+    /// HPが へったら 回復し、それ以外は こうげき（チャンスが 出たら 正解する）。薬草は 5つ。
     private func wins(_ kind: EnemyKind, level: Int, weapon: Item, armor: Item, region: QuizRegion) -> Int {
         var wins = 0
         for seed in UInt64(1)...20 {
@@ -35,8 +36,9 @@ struct BossBalanceTests {
                     command = .spell(heal)
                 } else if me.hp < me.maxHP * 2 / 5, me.inventory[.herb, default: 0] > 0 {
                     command = .item(.herb)
-                } else if battle.veil > 0, let quiz = battle.nextQuiz {
-                    command = .quiz(answer: quiz.answer)
+                } else if let quiz = battle.nextQuiz, rng.chance(battle.quizChanceDenominator) {
+                    // 「ちしきの チャンス」は ときどき 出る。出たら 正解する。
+                    command = .quizAttack(answer: quiz.answer)
                 } else {
                     command = .attack
                 }

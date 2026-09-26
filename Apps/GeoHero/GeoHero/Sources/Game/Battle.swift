@@ -4,8 +4,9 @@ enum BattleCommand: Equatable {
     case attack
     case spell(Spell)
     case item(Item)
-    /// 「ちしき」。いまの問題（`Battle.nextQuiz`）に、選んだ番号で答える。
-    case quiz(answer: Int)
+    /// こうげきの ときに 出た「ちしきの チャンス」（`Battle.nextQuiz`）に 答えた こうげき。
+    /// ふつうに なぐったあと、正解なら 追い打ちの ダメージ。
+    case quizAttack(answer: Int)
     case run
 }
 
@@ -77,16 +78,13 @@ struct Battle {
     var hero: Hero
     private(set) var enemies: [Enemy]
     private(set) var end: BattleEnd?
-    /// 「ちしき」で出す問題の山。先頭が次の問題。空なら「ちしき」は出さない。
+    /// 「ちしきの チャンス」で出す問題の山。先頭が次の問題。空なら チャンスは 出ない。
     private(set) var quizzes: [Quiz]
-    /// ボスの まもり（すみの まく など）の のこり枚数。問題のない土地では まくを張らない（やぶる手がないため）。
-    private(set) var veil: Int
 
     init(hero: Hero, enemies: [Enemy], quizzes: [Quiz] = []) {
         self.hero = hero
         self.enemies = enemies
         self.quizzes = quizzes
-        self.veil = quizzes.isEmpty ? 0 : enemies.map(\.kind.veilLayers).max() ?? 0
     }
 
     init(hero: Hero, enemy: Enemy) {
@@ -101,8 +99,11 @@ struct Battle {
     var enemy: Enemy { enemies.first ?? Enemy(.potato) }
     /// ねらう相手が決まっていないときの相手。
     var defaultTarget: Int? { living.first?.id }
-    /// 「ちしき」を選んだときに出す問題。
+    /// 「ちしきの チャンス」で出す問題。
     var nextQuiz: Quiz? { quizzes.first }
+    /// こうげきの ときに「ちしきの チャンス」が 出る 確率（分母）。会心の一撃のように ときどき出る。
+    /// ボス戦は 見せ場なので 出やすくする。
+    var quizChanceDenominator: Int { isBoss ? 2 : 4 }
 
     private func index(of id: Int?) -> Int? {
         if let id, let found = enemies.firstIndex(where: { $0.id == id && !$0.isDead }) { return found }
@@ -155,16 +156,11 @@ struct Battle {
         guard let slot = index(of: target) else { return }
         switch command {
         case .attack:
-            say("\(hero.name)の こうげき！", .attack, pause: .beat, into: &result)
-            let damage: Int
-            let isCritical = rng.chance(16)
-            if isCritical {
-                say("かいしんの いちげき！", .critical, into: &result)
-                damage = Self.criticalDamage(attack: hero.attack, rng: &rng)
-            } else {
-                damage = Self.damage(attack: hero.attack, defense: enemies[slot].kind.stats.defense, rng: &rng)
-            }
-            hit(slot, for: softened(damage, at: slot, into: &result), isCritical: isCritical, into: &result)
+            attack(slot, rng: &rng, into: &result)
+
+        case .quizAttack(let choice):
+            attack(slot, rng: &rng, into: &result)
+            answer(choice, target: target, rng: &rng, into: &result)
 
         case .spell(let spell):
             guard hero.spells.contains(spell), hero.mp >= spell.mpCost else {
@@ -181,7 +177,7 @@ struct Battle {
                 // HP が満タンで 0 しか回復しないときは、粒と「+0」を出さない。
                 say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
             } else {
-                hit(slot, for: softened(amount, at: slot, into: &result), into: &result)
+                hit(slot, for: amount, into: &result)
             }
 
         case .item(let item):
@@ -190,11 +186,13 @@ struct Battle {
                 return
             }
             say("\(hero.name)は \(item.name)を つかった！", pause: .beat, into: &result)
-            let healed = hero.heal(rng.next(in: Item.herbPower))
-            say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
-
-        case .quiz(let choice):
-            answer(choice, target: slot, rng: &rng, into: &result)
+            guard let effect = item.effect else { return }
+            let (amount, isMP) = hero.apply(effect, rng: &rng)
+            if isMP {
+                say("MPが \(amount) かいふくした！", .heal, into: &result)
+            } else {
+                say("HPが \(amount) かいふくした！", .heal, effect: amount > 0 ? .heal(amount) : nil, into: &result)
+            }
 
         case .run:
             if isBoss {
@@ -212,17 +210,24 @@ struct Battle {
         }
     }
 
-    /// ボスの まもりが のこっていれば ダメージを半分にする（0 にはしない。レベルを上げれば 押しきれるように）。
-    private func softened(_ damage: Int, at slot: Int, into result: inout TurnResult) -> Int {
-        guard veil > 0, enemies[slot].kind.veilLayers > 0, damage > 0 else { return damage }
-        say("\(enemies[slot].kind.veilName)に はばまれた！", .miss, into: &result)
-        return max(1, damage / 2)
+    /// ふつうの こうげき。16回に1回 会心の一撃。
+    private mutating func attack(_ slot: Int, rng: inout some RandomSource, into result: inout TurnResult) {
+        say("\(hero.name)の こうげき！", .attack, pause: .beat, into: &result)
+        let damage: Int
+        let isCritical = rng.chance(16)
+        if isCritical {
+            say("かいしんの いちげき！", .critical, into: &result)
+            damage = Self.criticalDamage(attack: hero.attack, rng: &rng)
+        } else {
+            damage = Self.damage(attack: hero.attack, defense: enemies[slot].kind.stats.defense, rng: &rng)
+        }
+        hit(slot, for: damage, isCritical: isCritical, into: &result)
     }
 
-    /// 「ちしき」の答え合わせ。
-    /// 正解なら ボスには まもりを1枚やぶって 会心なみの一撃、ざこには 全員に ふつうの一撃。
-    /// まちがえたら 何も起きずに 敵の番になり、正解を見せる（覚えて 次に使えるように）。
-    private mutating func answer(_ choice: Int, target slot: Int, rng: inout some RandomSource, into result: inout TurnResult) {
+    /// 「ちしきの チャンス」の答え合わせ。こうげきの あとに 出す。
+    /// 正解なら 追い打ち（会心なみの一撃）。
+    /// まちがえたら 正解を見せる（覚えて 次に使えるように）。ふつうの こうげきは もう 当たっている。
+    private mutating func answer(_ choice: Int, target: Int?, rng: inout some RandomSource, into result: inout TurnResult) {
         guard let quiz = quizzes.first, quiz.choices.indices.contains(choice) else { return }
         quizzes.removeFirst()
         say("\(hero.name)「\(quiz.choices[choice])！」", .spell, pause: .beat, into: &result)
@@ -233,18 +238,10 @@ struct Battle {
             return
         }
         quizzes.append(quiz)
-        say("せいかい！ ちしきの ひかりが はなたれた！", .critical, effect: .flame(big: true), into: &result)
-        if veil > 0, enemies[slot].kind.veilLayers > 0 {
-            veil -= 1
-            let name = enemies[slot].kind.veilName
-            say(veil > 0 ? "\(name)が よわまった！（のこり \(veil)）" : "\(name)が きえさった！", into: &result)
-            hit(slot, for: Self.criticalDamage(attack: hero.attack, rng: &rng), isCritical: true, into: &result)
-            return
-        }
-        for other in enemies.indices where !enemies[other].isDead {
-            let damage = Self.damage(attack: hero.attack, defense: enemies[other].kind.stats.defense, rng: &rng)
-            hit(other, for: max(1, damage), into: &result)
-        }
+        // こうげきで たおしていたら、生きている 先頭に 追い打ちする。
+        guard let slot = index(of: target) else { return }
+        say("せいかい！ ちしきの ひかりで おいうち！", .critical, effect: .flame(big: true), into: &result)
+        hit(slot, for: Self.criticalDamage(attack: hero.attack, rng: &rng), isCritical: true, into: &result)
     }
 
     /// 生きている敵が上から順に動く。

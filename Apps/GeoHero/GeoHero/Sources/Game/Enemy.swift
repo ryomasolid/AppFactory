@@ -119,36 +119,36 @@ enum EnemyKind: String, Codable, CaseIterable {
         case .lavaSlime: Stats(name: "ようがんスライム", maxHP: 16, attack: 16, defense: 12, agility: 2, exp: 7, gold: 10)
         case .pumiceGolem: Stats(name: "かるいしゴーレム", maxHP: 17, attack: 15, defense: 14, agility: 1, exp: 7, gold: 10)
         case .sulfurSmoke: Stats(name: "いおうけむり", maxHP: 16, attack: 16, defense: 10, agility: 5, exp: 6, gold: 9)
-        case .cornSoldier: Stats(name: "とうきびへい", maxHP: 18, attack: 17, defense: 14, agility: 3, exp: 8, gold: 12)
-        case .ramenGhost: Stats(name: "ラーメンおばけ", maxHP: 19, attack: 17, defense: 13, agility: 4, exp: 9, gold: 13)
-        case .lambSheep: Stats(name: "ジンギスひつじ", maxHP: 20, attack: 17, defense: 14, agility: 4, exp: 11, gold: 15)
-        case .squirrel: Stats(name: "エゾリス", maxHP: 20, attack: 19, defense: 16, agility: 4, exp: 10, gold: 14)
-        case .fox: Stats(name: "きたきつね", maxHP: 21, attack: 19, defense: 14, agility: 6, exp: 9, gold: 13)
-        case .snowFestival: Stats(name: "ゆきまつりぞう", maxHP: 22, attack: 18, defense: 17, agility: 3, exp: 11, gold: 16)
-        case .flyingSquirrel: Stats(name: "エゾモモンガ", maxHP: 22, attack: 21, defense: 14, agility: 7, exp: 13, gold: 18)
-        case .maitake: Stats(name: "まいたけおばけ", maxHP: 24, attack: 21, defense: 19, agility: 9, exp: 22, gold: 30)
-        case .salamander: Stats(name: "サンショウウオ", maxHP: 22, attack: 21, defense: 17, agility: 6, exp: 17, gold: 24)
-        case .bearCub: Stats(name: "ヒグマのこ", maxHP: 31, attack: 25, defense: 25, agility: 6, exp: 24, gold: 32)
-        case .fishOwl: Stats(name: "シマフクロウ", maxHP: 30, attack: 26, defense: 20, agility: 7, exp: 19, gold: 26)
-        case .woodpecker: Stats(name: "クマゲラ", maxHP: 30, attack: 26, defense: 22, agility: 2, exp: 15, gold: 20)
-        case .deer: Stats(name: "エゾシカ", maxHP: 32, attack: 27, defense: 24, agility: 8, exp: 28, gold: 38)
-        case .cod: Stats(name: "タラこぞう", maxHP: 32, attack: 26, defense: 34, agility: 3, exp: 35, gold: 45)
-        case .salmon: Stats(name: "のぼりシャケ", maxHP: 34, attack: 27, defense: 26, agility: 6, exp: 31, gold: 42)
-        case .seaEagle: Stats(name: "オオワシ", maxHP: 35, attack: 30, defense: 30, agility: 9, exp: 36, gold: 48)
-        case .snowman: Stats(name: "ゆきおとこ", maxHP: 35, attack: 29, defense: 40, agility: 3, exp: 44, gold: 56)
-        case .orca: Stats(name: "シャチまる", maxHP: 37, attack: 30, defense: 32, agility: 7, exp: 40, gold: 52)
-        case .hikarigoke: Stats(name: "ひかりゴケ", maxHP: 32, attack: 31, defense: 36, agility: 2, exp: 46, gold: 60)
-        case .icicleOgre: Stats(name: "つららおに", maxHP: 29, attack: 32, defense: 46, agility: 6, exp: 55, gold: 70)
-        case .iceBat: Stats(name: "こおりコウモリ", maxHP: 34, attack: 31, defense: 38, agility: 9, exp: 50, gold: 64)
-        case .phantomWolf: Stats(name: "まぼろしオオカミ", maxHP: 29, attack: 34, defense: 46, agility: 11, exp: 60, gold: 80)
-        case .iceGolem: Stats(name: "りゅうひょうゴーレム", maxHP: 30, attack: 34, defense: 50, agility: 4, exp: 70, gold: 90)
-        case .blizzardSpirit: Stats(name: "ふぶきのせいれい", maxHP: 30, attack: 35, defense: 48, agility: 10, exp: 65, gold: 85)
-        case .squidLord: Stats(name: "イカのぬし", maxHP: 70, attack: 20, defense: 10, agility: 6, exp: 60, gold: 80)
-        case .komaLord: Stats(name: "駒ヶ岳のぬし", maxHP: 110, attack: 28, defense: 16, agility: 7, exp: 100, gold: 150)
-        case .tengu: Stats(name: "天狗", maxHP: 170, attack: 36, defense: 20, agility: 9, exp: 180, gold: 250)
-        case .todoLord: Stats(name: "トドのぬし", maxHP: 300, attack: 50, defense: 32, agility: 11, exp: 400, gold: 400)
-        case .bearLord: Stats(name: "ヒグマのぬし", maxHP: 260, attack: 45, defense: 26, agility: 10, exp: 250, gold: 300)
-        case .guardian: Stats(name: "知床の守護神", maxHP: 380, attack: 56, defense: 36, agility: 13, exp: 0, gold: 0)
+        case .cornSoldier: Stats(name: "とうきびへい", maxHP: 20, attack: 18, defense: 15, agility: 3, exp: 9, gold: 10)
+        case .ramenGhost: Stats(name: "ラーメンおばけ", maxHP: 20, attack: 19, defense: 14, agility: 4, exp: 10, gold: 10)
+        case .lambSheep: Stats(name: "ジンギスひつじ", maxHP: 21, attack: 18, defense: 16, agility: 4, exp: 11, gold: 12)
+        case .squirrel: Stats(name: "エゾリス", maxHP: 20, attack: 19, defense: 16, agility: 4, exp: 11, gold: 11)
+        case .fox: Stats(name: "きたきつね", maxHP: 21, attack: 19, defense: 14, agility: 6, exp: 12, gold: 10)
+        case .snowFestival: Stats(name: "ゆきまつりぞう", maxHP: 22, attack: 18, defense: 17, agility: 3, exp: 13, gold: 13)
+        case .flyingSquirrel: Stats(name: "エゾモモンガ", maxHP: 22, attack: 21, defense: 14, agility: 7, exp: 13, gold: 14)
+        case .maitake: Stats(name: "まいたけおばけ", maxHP: 24, attack: 21, defense: 19, agility: 9, exp: 22, gold: 24)
+        case .salamander: Stats(name: "サンショウウオ", maxHP: 22, attack: 21, defense: 17, agility: 6, exp: 17, gold: 19)
+        case .bearCub: Stats(name: "ヒグマのこ", maxHP: 31, attack: 25, defense: 25, agility: 6, exp: 24, gold: 26)
+        case .fishOwl: Stats(name: "シマフクロウ", maxHP: 30, attack: 26, defense: 20, agility: 7, exp: 19, gold: 21)
+        case .woodpecker: Stats(name: "クマゲラ", maxHP: 30, attack: 26, defense: 22, agility: 2, exp: 15, gold: 16)
+        case .deer: Stats(name: "エゾシカ", maxHP: 32, attack: 27, defense: 24, agility: 8, exp: 28, gold: 30)
+        case .cod: Stats(name: "タラこぞう", maxHP: 32, attack: 26, defense: 34, agility: 3, exp: 35, gold: 36)
+        case .salmon: Stats(name: "のぼりシャケ", maxHP: 34, attack: 27, defense: 26, agility: 6, exp: 31, gold: 34)
+        case .seaEagle: Stats(name: "オオワシ", maxHP: 35, attack: 30, defense: 30, agility: 9, exp: 36, gold: 38)
+        case .snowman: Stats(name: "ゆきおとこ", maxHP: 35, attack: 29, defense: 40, agility: 3, exp: 44, gold: 45)
+        case .orca: Stats(name: "シャチまる", maxHP: 37, attack: 30, defense: 32, agility: 7, exp: 40, gold: 42)
+        case .hikarigoke: Stats(name: "ひかりゴケ", maxHP: 32, attack: 31, defense: 36, agility: 2, exp: 46, gold: 48)
+        case .icicleOgre: Stats(name: "つららおに", maxHP: 29, attack: 32, defense: 46, agility: 6, exp: 55, gold: 56)
+        case .iceBat: Stats(name: "こおりコウモリ", maxHP: 34, attack: 31, defense: 38, agility: 9, exp: 50, gold: 51)
+        case .phantomWolf: Stats(name: "まぼろしオオカミ", maxHP: 29, attack: 34, defense: 46, agility: 11, exp: 60, gold: 64)
+        case .iceGolem: Stats(name: "りゅうひょうゴーレム", maxHP: 30, attack: 34, defense: 50, agility: 4, exp: 70, gold: 72)
+        case .blizzardSpirit: Stats(name: "ふぶきのせいれい", maxHP: 30, attack: 35, defense: 48, agility: 10, exp: 65, gold: 68)
+        case .squidLord: Stats(name: "イカのぬし", maxHP: 72, attack: 20, defense: 10, agility: 6, exp: 35, gold: 80)
+        case .komaLord: Stats(name: "駒ヶ岳のぬし", maxHP: 150, attack: 28, defense: 16, agility: 7, exp: 200, gold: 150)
+        case .tengu: Stats(name: "天狗", maxHP: 235, attack: 36, defense: 20, agility: 9, exp: 180, gold: 150)
+        case .todoLord: Stats(name: "トドのぬし", maxHP: 420, attack: 50, defense: 32, agility: 11, exp: 200, gold: 240)
+        case .bearLord: Stats(name: "ヒグマのぬし", maxHP: 350, attack: 45, defense: 26, agility: 10, exp: 150, gold: 180)
+        case .guardian: Stats(name: "知床の守護神", maxHP: 530, attack: 56, defense: 36, agility: 13, exp: 0, gold: 0)
         }
     }
 
@@ -157,32 +157,6 @@ enum EnemyKind: String, Codable, CaseIterable {
         switch self {
         case .squidLord, .komaLord, .tengu, .bearLord, .todoLord, .guardian: true
         default: false
-        }
-    }
-
-    /// ボスの まもり（すみの まく など）の枚数。のこっているうちは こうげき・呪文の ダメージが 半分になり、
-    /// 「ちしき」で1問 正解するたびに 1枚 やぶれる。奥のボスほど 多い。
-    var veilLayers: Int {
-        switch self {
-        case .squidLord: 3
-        case .komaLord: 4
-        case .tengu: 4
-        case .bearLord: 5
-        case .todoLord: 5
-        case .guardian: 6
-        default: 0
-        }
-    }
-
-    /// まもりの名前。メッセージに出す。
-    var veilName: String {
-        switch self {
-        case .komaLord: "ほのおの たてがみ"
-        case .tengu: "天狗の かくれみの"
-        case .bearLord: "山の かご"
-        case .todoLord: "流氷の よろい"
-        case .guardian: "ふぶきの まく"
-        default: "すみの まく"
         }
     }
 

@@ -84,90 +84,99 @@ struct QuizTests {
         #expect(QuizRegion.at(.innInside, Point(x: 4, y: 4)) == nil, "宿屋の中")
     }
 
-    /// 奥のボスほど まもりが厚い。
-    @Test func laterBossesHaveThickerVeils() {
-        #expect(EnemyKind.tengu.veilLayers >= EnemyKind.komaLord.veilLayers)
-        let layers = [EnemyKind.squidLord, .komaLord, .bearLord, .guardian].map(\.veilLayers)
-        #expect(layers == layers.sorted() && Set(layers).count == 4, "\(layers)")
-        #expect(EnemyKind.allCases.filter { !$0.isBoss }.allSatisfy { $0.veilLayers == 0 }, "ざこに まもりがある")
-    }
-
-    /// 問題のない土地では まくを張らない（やぶる手がないので、ただ固いだけになる）。
-    @Test func noVeilWithoutQuizzes() {
+    /// 問題のない土地では「ちしきの チャンス」は 出ない。
+    @Test func noQuizWithoutQuizzes() {
         let battle = Battle(hero: hero(), enemies: [Enemy(.squidLord)])
-        #expect(battle.veil == 0)
         #expect(battle.nextQuiz == nil)
     }
 
     // MARK: - 答え合わせ
 
-    @Test func rightAnswerTearsTheVeilAndHitsHard() throws {
+    /// 正解すると ふつうの こうげきの あとに 追い打ち（会心なみ）が 入る。
+    @Test func rightAnswerAddsABonusHit() throws {
         var rng = SeededRandomSource(seed: 1)
         var battle = Battle(hero: hero(), enemies: [Enemy(.squidLord)], quizzes: quizzes)
         let quiz = try #require(battle.nextQuiz)
-        #expect(battle.veil == 3)
 
-        let result = battle.take(.quiz(answer: quiz.answer), target: 0, rng: &rng)
-        #expect(battle.veil == 2)
+        let result = battle.take(.quizAttack(answer: quiz.answer), target: 0, rng: &rng)
         #expect(result.messages.contains { $0.hasPrefix("せいかい") })
-        let critical = result.lines.first { $0.enemyDamage != nil }
-        #expect(critical?.isCritical == true, "正解の一撃は会心なみ")
+        let hits = result.lines.filter { $0.enemyDamage != nil }
+        #expect(hits.count == 2, "こうげきと 追い打ちの 2発に なっていない")
+        #expect(hits.last?.isCritical == true, "追い打ちは 会心なみ")
         // 正解した問題は 山の下へ回す。
         #expect(battle.quizzes.last == quiz)
     }
 
-    @Test func wrongAnswerShowsTheAnswerAndComesBackSoon() throws {
+    /// まちがえても ふつうの こうげきは 当たる。追い打ちは なく、正解を 見せて すぐ また出す。
+    @Test func wrongAnswerStillAttacksAndShowsTheAnswer() throws {
         var rng = SeededRandomSource(seed: 1)
         var battle = Battle(hero: hero(), enemies: [Enemy(.squidLord)], quizzes: quizzes)
         let quiz = try #require(battle.nextQuiz)
 
-        let result = battle.take(.quiz(answer: wrongAnswer(quiz)), target: 0, rng: &rng)
-        #expect(battle.veil == 3, "まちがえても まくは やぶれない")
+        let result = battle.take(.quizAttack(answer: wrongAnswer(quiz)), target: 0, rng: &rng)
         #expect(result.messages.contains { $0.contains("こたえは「\(quiz.correctChoice)」") })
-        #expect(!result.lines.contains { $0.enemyDamage != nil }, "まちがえたら 敵に当たらない")
+        #expect(result.lines.filter { $0.enemyDamage != nil }.count == 1, "ふつうの こうげきだけが 当たる")
         #expect(battle.quizzes.firstIndex(of: quiz) == 2, "まちがえた問題は 2問あとに また出る")
         #expect(battle.quizzes.count == quizzes.count)
     }
 
-    /// まくが のこっているあいだは ふつうの こうげきが 半分になる。
-    @Test func veilHalvesPlainAttacks() throws {
+    /// ボスにも ふつうの こうげきは そのまま 通る（まもりで 半分に なったりしない）。
+    @Test func bossTakesFullDamage() throws {
         func attackDamage(quizzes: [Quiz]) throws -> Int {
             var rng = FixedRandomSource(pick: .max)
             var battle = Battle(hero: hero(level: 8), enemies: [Enemy(.squidLord)], quizzes: quizzes)
             let hit = battle.take(.attack, target: 0, rng: &rng).lines.first { $0.enemyDamage != nil }
             return try #require(hit?.enemyDamage)
         }
-        let veiled = try attackDamage(quizzes: quizzes)
-        let bare = try attackDamage(quizzes: [])
-        #expect(veiled == max(1, bare / 2), "まくがあるのに 半分になっていない: \(veiled) / \(bare)")
+        #expect(try attackDamage(quizzes: quizzes) == attackDamage(quizzes: []))
     }
 
-    /// 3問 正解すると まくが消える。
-    @Test func threeRightAnswersClearTheVeil() throws {
-        var rng = SeededRandomSource(seed: 3)
-        var battle = Battle(hero: hero(level: 6), enemies: [Enemy(.squidLord)], quizzes: quizzes)
-        var messages: [String] = []
-        for _ in 0..<3 where battle.end == nil {
-            let quiz = try #require(battle.nextQuiz)
-            messages += battle.take(.quiz(answer: quiz.answer), target: 0, rng: &rng).messages
-        }
-        #expect(battle.veil == 0)
-        #expect(messages.contains("すみの まくが きえさった！"))
-    }
-
-    /// ざこ戦で正解すると 全員に当たる（3体に囲まれたときの 切り札）。
-    @Test func rightAnswerHitsEveryFieldEnemy() throws {
+    /// こうげきで たおした あとに 正解したら、生きている ほかの敵に 追い打ちする。
+    @Test func bonusHitMovesToALivingEnemy() throws {
         var rng = FixedRandomSource(pick: .max)
-        let group = EnemyGroup.numbered([.potato, .kelpSlime, .scallop])
+        let group = EnemyGroup.numbered([.potato, .kelpSlime])
         var battle = Battle(hero: hero(), enemies: group, quizzes: quizzes)
         let quiz = try #require(battle.nextQuiz)
-
-        let result = battle.take(.quiz(answer: quiz.answer), rng: &rng)
+        let result = battle.take(.quizAttack(answer: quiz.answer), target: group[0].id, rng: &rng)
         let struck = Set(result.lines.compactMap(\.enemyID))
-        #expect(struck == Set(group.map(\.id)), "当たらなかった敵がいる: \(struck)")
+        #expect(struck.contains(group[1].id), "追い打ちが ほかの敵に 当たらない: \(struck)")
+    }
+
+    /// 「ちしきの チャンス」は ときどき出る。ボスは まもりを やぶる 手が これしかないので 出やすい。
+    @Test func quizChanceIsOccasional() {
+        let field = Battle(hero: hero(), enemies: [Enemy(.potato)], quizzes: quizzes)
+        let boss = Battle(hero: hero(), enemies: [Enemy(.squidLord)], quizzes: quizzes)
+        #expect(field.quizChanceDenominator > boss.quizChanceDenominator)
+        #expect(boss.quizChanceDenominator >= 2, "ボスでも 毎回は 出さない")
     }
 
     // MARK: - 戦いをまたいで
+
+    /// 「こうげき」で チャンスが 出たら 問題を 出して 待ち、答えると こうげきする。出なければ すぐ こうげき。
+    @MainActor
+    @Test func attackOffersAQuizSometimes() async throws {
+        let game = GameState()
+        game.newGame()
+        game.messageInterval = .zero
+        game.beatPause = .zero
+        game.waitsForTap = false
+        game.startBattle(.snowFestival)
+
+        // チャンスが 出ない くじ。そのまま こうげきする。
+        game.rng = AnyRandomSource(FixedRandomSource(pick: .max))
+        await game.attack(target: 0)
+        #expect(game.quizChance == nil)
+        #expect(game.battle?.lastHits.isEmpty == false || game.battle?.end != nil, "こうげきしていない")
+
+        // チャンスが 出る くじ。問題を 出して 答えを まつ。
+        game.rng = AnyRandomSource(FixedRandomSource(pick: .min))
+        await game.attack(target: 0)
+        let quiz = try #require(game.quizChance, "チャンスが 出ない")
+        #expect(game.battle?.log.first == "ちしきの チャンス！")
+        #expect(game.battle?.log.last == quiz.question)
+        await game.answerQuiz(quiz.answer)
+        #expect(game.quizChance == nil)
+    }
 
     @MainActor
     @Test func deckCarriesOverBetweenBattles() async throws {
@@ -178,14 +187,14 @@ struct QuizTests {
         game.waitsForTap = false
         game.startBattle(.potato)
         let first = try #require(game.battle?.battle.nextQuiz)
-        await game.command(.quiz(answer: first.answer), target: 0)
+        await game.command(.quizAttack(answer: first.answer), target: 0)
 
         game.battle = nil
         game.startBattle(.potato)
         #expect(game.battle?.battle.nextQuiz != first, "つぎの戦いで また同じ問題から始まった")
     }
 
-    /// 「ちしき」で 全員に当てた あとに 1体を なぐっても、ほかの敵は 揺れない
+    /// 追い打ちを 当てた あとに 別の1体を なぐっても、ほかの敵は 揺れない
     /// （最新の一撃だけを 見ていたころは、当たっていない敵まで 揺れて 点滅していた）。
     @MainActor
     @Test func attackAfterQuizShakesOnlyTheTarget() async throws {
@@ -195,11 +204,15 @@ struct QuizTests {
         game.beatPause = .zero
         game.waitsForTap = false
         game.rng = AnyRandomSource(SeededRandomSource(seed: 2))
+        // 固い敵にも ダメージが 通り、ひと振りでは たおれない 強さにする。
+        _ = game.hero.gainExp(LevelTable.row(14).exp)
+        game.hero.restoreFully()
         game.startBattle([.iceGolem, .iceGolem, .iceGolem])
-        let quiz = try #require(game.battle?.battle.nextQuiz)
-        await game.command(.quiz(answer: quiz.answer), target: 0)
+        for target in 0..<3 {
+            await game.command(.attack, target: target)
+        }
         let afterQuiz = try #require(game.battle?.lastHits)
-        #expect(afterQuiz.count == 3, "ちしきが 全員に 当たっていない")
+        #expect(afterQuiz.count == 3, "3体に 当たっていない")
 
         await game.command(.attack, target: 0)
         let afterAttack = try #require(game.battle?.lastHits)
@@ -207,17 +220,5 @@ struct QuizTests {
         for (id, hit) in afterQuiz where id != targetID {
             #expect(afterAttack[id] == hit, "なぐっていない 敵 \(id) の 一撃が かわった")
         }
-    }
-
-    @MainActor
-    @Test func withdrawingRestoresTheLog() {
-        let game = GameState()
-        game.newGame()
-        game.startBattle(.potato)
-        let before = game.battle?.log
-        game.poseQuiz()
-        #expect(game.battle?.log.first == "もんだい！")
-        game.withdrawQuiz()
-        #expect(game.battle?.log == before)
     }
 }

@@ -142,12 +142,12 @@ struct LayoutTests {
                 var battle = Battle(hero: hero, enemies: group, quizzes: longest?.quizzes ?? [])
                 var log = [EnemyGroup.encounterText(group)]
                 for turn in 0..<40 where battle.end == nil {
-                    // こうげき・じゅもん・どうぐ・ちしき（正解と まちがい）を混ぜて、出る行の種類をひととおり出す。
+                    // こうげき・じゅもん・どうぐ・ちしきの チャンス（正解と まちがい）を混ぜて、出る行の種類をひととおり出す。
                     let command: BattleCommand = switch turn % 4 {
                     case 0: .attack
                     case 1: battle.hero.spells.last.map { BattleCommand.spell($0) } ?? .attack
                     case 2: .item(.herb)
-                    default: .quiz(answer: (turn / 4) % 3)
+                    default: .quizAttack(answer: (turn / 4) % 3)
                     }
                     log += battle.take(command, target: battle.defaultTarget, rng: &rng).messages
                 }

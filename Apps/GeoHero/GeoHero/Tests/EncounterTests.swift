@@ -144,12 +144,14 @@ struct EncounterTests {
     }
 
     /// 場所ごとの、着いたころの レベル・装備。場所の順は `route` と同じ。
+    /// ストーリーどおりに 進んだときの レベル（`StoryPaceTests`）に そろえてある。
+    /// 札幌は 駒ヶ岳のぬしの 経験値で LV8 に なって 着くので、小樽へむかう道と 同じ LV8。
     /// 松前へむかう道は 函館山のボス（銅の剣・革の鎧で LV3〜5）を倒したあとに来る。
     /// 鋼の剣と 鎖帷子は 札幌・小樽で そろえ、藻岩山から 使う。
     private let arrivals: [(level: Int, weapon: Item, armor: Item)] = [
         (1, .woodStick, .clothes), (2, .woodStick, .clothes), (3, .woodStick, .clothes),
         (4, .copperSword, .leatherArmor), (5, .copperSword, .leatherArmor), (6, .copperSword, .leatherArmor),
-        (7, .copperSword, .leatherArmor), (8, .copperSword, .leatherArmor), (9, .copperSword, .leatherArmor),
+        (8, .copperSword, .leatherArmor), (8, .copperSword, .leatherArmor), (9, .copperSword, .leatherArmor),
         (10, .steelSword, .chainMail), (11, .steelSword, .chainMail), (12, .steelSword, .chainMail),
         (13, .steelSword, .chainMail), (14, .steelSword, .chainMail),
     ]

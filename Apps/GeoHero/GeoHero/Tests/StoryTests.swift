@@ -108,9 +108,9 @@ struct StoryTests {
         game.defeatedBosses = [.squidLord]
         let gold = game.hero.gold
         try talk(to: .fisherBoss, in: game)
-        #expect(game.hero.gold == gold + 100)
+        #expect(game.hero.gold == gold + 60)
         try talk(to: .fisherBoss, in: game)
-        #expect(game.hero.gold == gold + 100)
+        #expect(game.hero.gold == gold + 60)
     }
 
     /// てがたの仕組みより前に ぬしを倒した人は、山の前で止めない。
@@ -199,9 +199,9 @@ struct StoryTests {
         try talk(to: .lostCygnet, in: game, town: .onuma)
         #expect(!game.npcs.contains { $0.position == lost })
         try talk(to: .swanKeeper, in: game, town: .onuma)
-        #expect(game.hero.gold == gold + 120)
+        #expect(game.hero.gold == gold + 70)
         try talk(to: .swanKeeper, in: game, town: .onuma)
-        #expect(game.hero.gold == gold + 120, "お礼を 2度 もらえる")
+        #expect(game.hero.gold == gold + 70, "お礼を 2度 もらえる")
     }
 
     // MARK: - めいしょ スタンプ
@@ -238,9 +238,9 @@ struct StoryTests {
         let gold = game.hero.gold
         game.readPlaques = Set(World.stampPlaques(in: .hakodate))
         try talk(to: .guide, in: game)
-        #expect(game.hero.gold == gold + 300)
+        #expect(game.hero.gold == gold + 200)
         try talk(to: .guide, in: game)
-        #expect(game.hero.gold == gold + 300, "ゴールドを 2度 もらえる")
+        #expect(game.hero.gold == gold + 200, "ゴールドを 2度 もらえる")
     }
 
     @Test func stampsSurviveSaving() throws {
@@ -291,7 +291,7 @@ struct StoryTests {
         let gold = game.hero.gold
         try talk(to: .ramenChef, in: game, town: .sapporo)
         try talk(to: .ramenChef, in: game, town: .sapporo)
-        #expect(game.hero.gold == gold + 150, "お礼が 1度で ない")
+        #expect(game.hero.gold == gold + 90, "お礼が 1度で ない")
     }
 
     /// 倉庫の ネコを 見つけると かいぬしの となりに もどり、お礼は 1度だけ。
@@ -328,7 +328,7 @@ struct StoryTests {
         #expect(game.hero.gold == gold, "函館の スタンプで 札幌の ごほうびが 出た")
         game.readPlaques.formUnion(World.stampPlaques(in: .sapporo))
         try talk(to: .sapporoGuide, in: game, town: .sapporo)
-        #expect(game.hero.gold == gold + 300)
+        #expect(game.hero.gold == gold + 200)
     }
 
     // MARK: - 知床
@@ -370,7 +370,7 @@ struct StoryTests {
         let gold = game.hero.gold
         try talk(to: .rancher, in: game, town: .nakashibetsu)
         try talk(to: .rancher, in: game, town: .nakashibetsu)
-        #expect(game.hero.gold == gold + 200)
+        #expect(game.hero.gold == gold + 120)
     }
 
     /// 知床五湖の キツネの子を 見つけると レンジャーの となりに もどり、お礼は 1度だけ。
@@ -391,7 +391,7 @@ struct StoryTests {
         let gold = game.hero.gold
         game.readPlaques = Set(World.stampPlaques(in: .shiretoko))
         try talk(to: .shiretokoGuide, in: game, town: .rausu)
-        #expect(game.hero.gold == gold + 300)
+        #expect(game.hero.gold == gold + 200)
     }
 
     /// 物語の前の セーブ（新しい項目がない）も 読める。

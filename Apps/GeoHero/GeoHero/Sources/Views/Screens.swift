@@ -356,7 +356,7 @@ struct MessageBox: View {
     private func window(fillsFrame: Bool) -> some View {
         RetroWindow {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                Text(line).fixedSize()
+                PhraseLine(text: line)
             }
             if showsCursor {
                 HStack {
@@ -371,9 +371,74 @@ struct MessageBox: View {
     }
 }
 
-private extension Text {
-    func fixedSize() -> some View {
-        fixedSize(horizontal: false, vertical: true)
+/// ことばの区切り（半角スペース）でだけ 折り返す 一行。
+/// ふつうの Text は 枠から はみ出すと ことばの途中で 折り返すので、
+/// 「おもち｜ですか？」のような 読みにくい 切れ目に なっていた。
+/// せりふは ことばごとに 半角スペースで 区切って 書いてあるので、そこで 折る。
+/// 折り返した 2行目は 全角1文字ぶん 字下げして、「　」で 始まる つづきの行と そろえる。
+struct PhraseLine: View {
+    let text: String
+    var fontSize: CGFloat = 17
+
+    var body: some View {
+        // 行頭の「　」は 字下げとして 数える（そのまま Text に入れると 幅が 消えてしまう）。
+        let leading = text.prefix { $0 == "　" }.count
+        let words = text.dropFirst(leading).split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+        PhraseFlow(spacing: fontSize * 0.6, firstIndent: CGFloat(leading) * fontSize,
+                   indent: CGFloat(max(1, leading)) * fontSize, lineSpacing: 4) {
+            ForEach(Array(words.enumerated()), id: \.offset) { _, word in
+                Text(word).fixedSize()
+            }
+        }
+    }
+}
+
+/// ことばを 左から ならべ、はみ出す ことばは 次の行へ 送る。
+struct PhraseFlow: Layout {
+    /// ことばの あいだ（半角スペースの幅）。
+    var spacing: CGFloat
+    /// 1行目の 字下げ。
+    var firstIndent: CGFloat = 0
+    /// 折り返した行の 字下げ。
+    var indent: CGFloat
+    var lineSpacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(width: proposal.width, subviews: subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let placement = arrange(width: bounds.width, subviews: subviews)
+        for (subview, point) in zip(subviews, placement.points) {
+            subview.place(at: CGPoint(x: bounds.minX + point.x, y: bounds.minY + point.y), proposal: .unspecified)
+        }
+    }
+
+    private func arrange(width: CGFloat?, subviews: Subviews) -> (points: [CGPoint], size: CGSize) {
+        let limit = width ?? .infinity
+        var points: [CGPoint] = []
+        var x: CGFloat = firstIndent
+        var atRowStart = true
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var widest: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            // 行の はじめでなければ、あいだを あけて 入るか 見る。入らなければ 次の行へ。
+            if !atRowStart, x + spacing + size.width > limit {
+                y += rowHeight + lineSpacing
+                x = indent
+                rowHeight = 0
+            } else if !atRowStart {
+                x += spacing
+            }
+            atRowStart = false
+            points.append(CGPoint(x: x, y: y))
+            x += size.width
+            rowHeight = max(rowHeight, size.height)
+            widest = max(widest, x)
+        }
+        return (points, CGSize(width: width ?? widest, height: y + rowHeight))
     }
 }
 
