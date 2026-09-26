@@ -29,6 +29,8 @@ struct ContentView: View {
                 .animation(.easeInOut(duration: game.fadeSeconds), value: game.curtain)
         }
         .environment(game)
+        // App Store の アプリ内イベントから 開いたとき。
+        .onOpenURL { url in game.open(url) }
         .onAppear {
             game.playSound = { [audio] cue in audio.play(cue) }
         }
@@ -479,6 +481,11 @@ struct TitleView: View {
                 SpriteCache.image(.guardian).resizable().interpolation(.none).frame(width: 120, height: 120)
             }
             Spacer()
+            if let notice = game.eventNotice {
+                MessageBox(lines: notice)
+                    .onTapGesture { game.dismissEventNotice() }
+                    .padding(.horizontal, 12)
+            }
             VStack(spacing: 12) {
                 if game.hasSave {
                     RetroChoice(title: "つづきから") { game.continueGame() }
@@ -577,6 +584,8 @@ struct EndingView: View {
             Text("つづく").font(Retro.font(34)).foregroundStyle(Retro.accent)
             Text("LV \(game.hero.level)  \(game.hero.gold)G").font(Retro.font(16)).foregroundStyle(.white)
             Spacer()
+            RetroChoice(title: "きろくを シェア") { ShareSheet.present(game.adventureSummary) }
+                .frame(width: 200)
             RetroChoice(title: "タイトルへ") { game.backToTitle() }
                 .frame(width: 200)
             Spacer()

@@ -688,6 +688,57 @@ final class GameState {
         }
     }
 
+    // MARK: - イベントの おしらせ
+
+    /// App Store の アプリ内イベントから 開いたときに タイトルに 出す おしらせ。
+    private(set) var eventNotice: [String]?
+
+    /// `geohero://stamp-rally` のような リンクで 開かれた。知らない リンクなら 何もしない。
+    func open(_ url: URL) {
+        guard url.scheme == "geohero" else { return }
+        switch url.host {
+        case "stamp-rally":
+            eventNotice = [
+                "めいしょスタンプラリー かいさい中！",
+                "街の 名所の かんばんを よむと スタンプが たまるよ。",
+                "函館・札幌・羅臼の 案内所で ごほうびを もらおう！",
+            ]
+        default:
+            eventNotice = nil
+        }
+    }
+
+    func dismissEventNotice() { eventNotice = nil }
+
+    // MARK: - きろく・評価
+
+    /// シェアする きろくカードの 中身。
+    var adventureSummary: AdventureSummary {
+        let order: [EnemyKind] = [.squidLord, .komaLord, .tengu, .bearLord, .todoLord, .guardian]
+        let stampCount = stamps.values.reduce(0, +)
+        return AdventureSummary(
+            name: hero.name, level: hero.level, regionName: region.banner.name,
+            bosses: order.filter(defeatedBosses.contains).count, bossTotal: order.count,
+            stamps: stampCount, stampTotal: World.stampPlaques.count,
+            lastBoss: order.last(where: defeatedBosses.contains),
+            cleared: defeatedBosses.contains(.guardian)
+        )
+    }
+
+    static let reviewKey = "geohero.reviewAskedVersion"
+    /// 評価を たのんだ 回数。画面は これが 増えたら iOS の 評価の ダイアログを 出す。
+    private(set) var reviewRequests = 0
+    /// アプリの バージョン（評価を たのむのは バージョンごとに 1回だけ）。
+    @ObservationIgnored var appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+
+    /// 中ぐらいの ぬしを たおして 気分の いいときに、評価を たのむ（バージョンごとに 1回）。
+    private func askForReviewIfFitting(after kind: EnemyKind) {
+        guard [.komaLord, .bearLord, .todoLord].contains(kind),
+              UserDefaults.standard.string(forKey: Self.reviewKey) != appVersion else { return }
+        UserDefaults.standard.set(appVersion, forKey: Self.reviewKey)
+        reviewRequests += 1
+    }
+
     // MARK: - ボスのせりふ
 
     static func bossGreeting(_ kind: EnemyKind) -> [String] {
@@ -950,7 +1001,9 @@ final class GameState {
                 screen = .ending
             } else {
                 screen = .field
-                if let kind { say(GameState.bossDefeated(kind)) }
+                if let kind {
+                    say(GameState.bossDefeated(kind)) { [weak self] in self?.askForReviewIfFitting(after: kind) }
+                }
             }
         case .won, .fled:
             battle = nil

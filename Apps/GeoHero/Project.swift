@@ -25,13 +25,18 @@ let project = Project(
                     ],
                     "CFBundleDisplayName": "地理の勇者",
                     "CFBundleDevelopmentRegion": "ja",
-                    "CFBundleShortVersionString": "1.1",
-                    "CFBundleVersion": "6",
+                    "CFBundleShortVersionString": "1.2",
+                    "CFBundleVersion": "7",
                     "ITSAppUsesNonExemptEncryption": false,
                     // 十字キーの配置を1パターンに絞るため縦持ち固定。
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
                     "UIStatusBarHidden": true,
                     "UIRequiresFullScreen": true,
+                    // App Store の アプリ内イベントから 開く（geohero://stamp-rally など）。
+                    "CFBundleURLTypes": .array([.dictionary([
+                        "CFBundleURLName": .string("tech.sesame.geohero"),
+                        "CFBundleURLSchemes": .array([.string("geohero")]),
+                    ])]),
                 ]
             ),
             buildableFolders: [

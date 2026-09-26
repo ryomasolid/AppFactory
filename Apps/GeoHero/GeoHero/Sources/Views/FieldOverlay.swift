@@ -61,7 +61,10 @@ struct FieldOverlay: View {
                 }
                 row("ぶき", hero.weaponName)
                 row("よろい", hero.armorName)
-                ChoiceList([Choice(title: "もどる", isCancel: true) { game.overlay = .menu }])
+                ChoiceList([
+                    Choice(title: "きろくを シェア") { ShareSheet.present(game.adventureSummary) },
+                    Choice(title: "もどる", isCancel: true) { game.overlay = .menu },
+                ])
             }
 
         case .spells:

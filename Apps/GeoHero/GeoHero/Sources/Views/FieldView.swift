@@ -1,7 +1,9 @@
+import StoreKit
 import SwiftUI
 
 struct FieldView: View {
     @Environment(GameState.self) private var game
+    @Environment(\.requestReview) private var requestReview
 
     /// 横に見えるマス数（奇数にして勇者を真ん中に置く）。
     static let columns = 11
@@ -73,6 +75,8 @@ struct FieldView: View {
 
             ControlPad()
         }
+        // ぬしを たおした 話を 読みおえたら、iOS の 評価の ダイアログを 出す（バージョンごとに 1回）。
+        .onChange(of: game.reviewRequests) { _, _ in requestReview() }
     }
 }
 
