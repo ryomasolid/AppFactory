@@ -44,10 +44,12 @@ shot() {
 }
 
 mkdir -p "$OUT"
+rm -f "$OUT"/65_*.jpg
 echo "撮影中:"
 shot 1_title  4
-shot 2_field  4 -startMap field -startX 18 -startY 32 -startLevel 5
-shot 3_battle 5 -startBattle cornSoldier,ramenGhost,lambSheep -startLevel 5
-shot 4_boss   5 -startBattle guardian -startLevel 12
-shot 5_shop   4 -startMap sapporo -startX 7 -startY 9 -startLevel 8 -startOverlay shop -shopConfirm steelSword
+shot 2_field  4 -startMap field -startX 47 -startY 29 -startLevel 5
+shot 3_town   4 -startMap onuma -startX 13 -startY 9 -startLevel 5
+shot 4_quiz   4 -startBattle sakuraSpirit,matsumaeZuke,kitamaeShip -startLevel 5 -battleSubmenu quiz
+shot 5_boss   5 -startBattle tengu -startLevel 10
+shot 6_shop   4 -startMap otaru -startX 13 -startY 12 -startLevel 8 -startOverlay shop -shopBuy YES
 rm -rf "$TMP"

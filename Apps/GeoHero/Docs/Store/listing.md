@@ -11,7 +11,7 @@
 | サブタイトル | 北海道を歩く ドット絵のコマンドRPG |
 | ホーム画面の名前 | 地理の勇者（`CFBundleDisplayName`） |
 | バンドルID | `tech.sesame.geohero` |
-| バージョン / ビルド | 1.0 / 1 |
+| バージョン / ビルド | 1.1 / 6（1.0 / 1 は公開ずみ） |
 | プライマリ言語 | 日本語 |
 | カテゴリ | ゲーム → ロールプレイング（第2カテゴリ: アドベンチャー） |
 | 価格 | 無料（アプリ内課金なし） |
@@ -22,40 +22,64 @@
 
 ## 説明文（4000文字まで）
 
+1.1 で 3地方・9つの街に広げたので書き直した（2026-09-26）。
+
 ```
-北海道を歩いて、あやつられた守護神を解きはなつ——
-ドット絵とコマンド戦闘の、ちいさな一本道RPGです。
+北海道を旅して、まおうに あやつられた守護神を解きはなつ——
+歩いて 話して 地理を おぼえる、ドット絵のコマンドRPGです。
 
-■ 30分〜1時間で終わる、ちょうどいい冒険
-函館から札幌、そして知床へ。街で装備をととのえ、近くの山のほらあなへ。
-奥のぬしを倒すと 次の道がひらけます。これを3回くりかえすと結末です。
+■ 3つの地方を 飛行機でめぐる
+函館エリア（道南）→ 札幌・小樽 → 知床。
+地方ごとに 広いフィールドがあり、ボスを倒して もらう きっぷで
+空港から 次の地方へ 飛びます。
 
-■ 実在の地名を歩く
-舞台は北海道のかたちをした1枚の広いフィールド。
-函館・函館山・札幌・藻岩山・知床・羅臼岳を、街道づたいにたどります。
-次の目印へ近づくほど、出てくる魔物も手ごわくなります。
+■ 9つの街と 6つのほらあな
+函館・松前・大沼、札幌・小樽・定山渓、中標津・ウトロ・羅臼。
+五稜郭、松前城、大沼の島めぐり、小樽運河、定山渓の足湯、知床五湖……
+街を歩いて 人と話し、家に入り、名所の看板を読んで 物語を進めます。
+
+■ 地理の知識が 武器になる「ちしきの チャンス」
+こうげきすると ときどき 地理の問題が出ます。正解すれば おいうち！
+答えは 街の人や 看板が 教えてくれます。
+
+■ 寄り道も たっぷり
+ラーメンの出前、まいごの 白鳥のひな・ネコ・キツネの子さがし、
+名所をめぐる「めいしょスタンプ」、宝箱のある家。
+
+■ 名産の 道具と 装備
+ハスカップ、いかめし、みそラーメン、いくら丼。
+五稜郭の槍、松前の刀、小樽ガラスの剣、アットゥシ……
+お金をためて 上等な装備を ねらいましょう。
 
 ■ 北海道の魔物たち
-ポテトー、こんぶスライム、ホタテキッド、きたきつね、タラこぞう、
-ゆきおとこ、りゅうひょうゴーレム。1〜3体で出てきます。
-
-■ なつかしいコマンド戦闘
-こうげき・まほう・どうぐ・にげる。会心の一撃も出ます。
-レベルが上がると どこが伸びたか ひと目でわかり、
-ヒール・ファイア・ハイヒール・フレイムの4つを順に覚えます。
-やどやに泊まると自動でセーブします。
+ポテトー、こんぶスライム、さくらのせい、ななえりんご、ラーメンおばけ、
+シャチまる、りゅうひょうゴーレム。
+ボスは イカのぬし、駒ヶ岳のぬし、天狗、ヒグマのぬし、トドのぬし、そして 知床の守護神。
 
 ■ 絵も音も、すべてコードで
-ドット絵は16×16の文字列から、BGMと効果音はその場で合成しています。
+ドット絵は文字列から、BGMと効果音は その場で合成しています。
 外部の素材は使っていません。
 
 広告なし・課金なし・通信なし。オフラインで遊べます。
 ```
 
+## このバージョンの新機能（1.1）
+
+```
+大型アップデート！
+・北海道を 函館エリア／札幌・小樽／知床の 3地方に分け、空港から 飛行機で 旅するように
+・街が 3つから 9つに（松前・大沼・小樽・定山渓・中標津・ウトロ など）。家にも 入れます
+・新しいボス（駒ヶ岳のぬし・天狗・トドのぬし）と 新しい魔物
+・こうげき中に ときどき出る「ちしきの チャンス」。正解で おいうち
+・名産に ちなんだ 道具・装備が 22しゅるいに
+・寄り道の 頼まれごとと「めいしょスタンプ」
+・会話の 読みやすさや 戦いの バランスを 見なおしました
+```
+
 ## キーワード（100文字まで、カンマ区切り）
 
 ```
-RPG,ロールプレイング,ドット絵,レトロ,北海道,コマンドバトル,オフライン,広告なし,短編,冒険
+RPG,ドット絵,レトロ,北海道,地理,クイズ,函館,札幌,小樽,知床,コマンドバトル,オフライン,広告なし,冒険
 ```
 
 ## 英語（English (U.S.)）の掲載情報
@@ -69,22 +93,31 @@ RPG,ロールプレイング,ドット絵,レトロ,北海道,コマンドバト
 | Subtitle | Pixel-art RPG across Hokkaido |
 
 ```
-A small, hand-made RPG set on the island of Hokkaido, Japan.
+A hand-made RPG that travels across Hokkaido, Japan.
 Note: the game text is in Japanese only.
 
-- A one-hour adventure. Three towns, three caves, three bosses.
-- Real places: Hakodate, Mt. Hakodate, Sapporo, Mt. Moiwa, Shiretoko, Mt. Rausu.
-- Monsters get tougher the closer you walk to the next landmark.
-- Classic turn-based battles: Fight, Magic, Item, Run.
+- Three regions: Hakodate, Sapporo & Otaru, and Shiretoko. Fly between them from real airports.
+- Nine towns to explore: talk to people, enter houses, read landmark signs.
+- Geography quizzes pop up during attacks. Answer right for a bonus hit.
+- Side quests, a landmark stamp rally, and local-specialty items and gear.
+- Six bosses, including the Squid Lord, a Tengu, and the Guardian of Shiretoko.
 - Every sprite and every note is generated in code. No external assets.
 
 No ads. No in-app purchases. No network access. Plays fully offline.
 ```
 
+What's New（英語, 1.1）:
+
+```
+Big update! Hokkaido is now three regions (Hakodate, Sapporo & Otaru, Shiretoko) linked by flights.
+Nine towns with houses to enter, three new bosses, geography quiz chances during battle,
+22 local-specialty items and gear, side quests and a landmark stamp rally.
+```
+
 キーワード（英語, 100文字）:
 
 ```
-rpg,pixel,retro,turn-based,jrpg,offline,no ads,hokkaido,japan,adventure,short
+rpg,pixel,retro,turn-based,jrpg,offline,no ads,hokkaido,japan,geography,quiz,adventure
 ```
 
 ## URL
@@ -126,15 +159,16 @@ rpg,pixel,retro,turn-based,jrpg,offline,no ads,hokkaido,japan,adventure,short
 ## スクリーンショット
 
 `Tools/make_screenshots.sh` で撮り直せる。6.5インチ（1242×2688・透過なしJPEG）を
-`Docs/Store/screenshots/` に5枚。
+`Docs/Store/screenshots/` に6枚（1.1 で撮り直した）。
 
 | ファイル | 中身 |
 | --- | --- |
 | `65_1_title.jpg` | タイトル画面 |
-| `65_2_field.jpg` | 函館のまわり（街・ほらあな・宝箱・十字キー） |
-| `65_3_battle.jpg` | 魔物3体との戦闘 |
-| `65_4_boss.jpg` | ラスボス「知床の守護神」 |
-| `65_5_shop.jpg` | 道具屋（そうびの伸びしろが見える） |
+| `65_2_field.jpg` | 函館エリアのフィールド（函館の街・宝箱） |
+| `65_3_town.jpg` | 大沼の街（島を はしで わたる 湖） |
+| `65_4_quiz.jpg` | 戦闘の「ちしきの チャンス！」（松前の魔物3体） |
+| `65_5_boss.jpg` | ボス「天狗」 |
+| `65_6_shop.jpg` | 小樽の道具屋（名産の品ぞろえ） |
 
 **6.9インチ（1320×2868）は出さない。** 以前 別アプリで弾かれている。
 6.5インチだけ入れておけば、他のサイズは App Store 側が縮小して使う。
