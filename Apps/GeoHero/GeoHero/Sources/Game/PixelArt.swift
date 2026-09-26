@@ -36,7 +36,7 @@ enum SpriteID: String, CaseIterable {
     case hikarigoke, icicleOgre, iceBat, phantomWolf, iceGolem, blizzardSpirit
     case sakuraSpirit, matsumaeZuke, kitamaeShip, apple, dango, junsai, lavaSlime, pumiceGolem, sulfurSmoke
     /// ボス5体（函館山・駒ヶ岳・天狗山・藻岩山・羅臼岳）。
-    case squidLord, komaLord, tengu, bearLord, guardian
+    case squidLord, komaLord, tengu, bearLord, todoLord, guardian
 
     static let art: [SpriteID: [String]] = TileArt.all
         .merging(CharacterArt.all) { first, _ in first }
@@ -86,6 +86,7 @@ enum SpriteID: String, CaseIterable {
         case .squidLord: self = .squidLord
         case .komaLord: self = .komaLord
         case .tengu: self = .tengu
+        case .todoLord: self = .todoLord
         case .bearLord: self = .bearLord
         case .guardian: self = .guardian
         default: self = SpriteID(rawValue: enemy.rawValue) ?? .potato
@@ -101,9 +102,11 @@ enum SpriteID: String, CaseIterable {
         case .resident(let resident):
             switch resident {
             case .magistrate, .lord, .governor: self = .magistrate
-            case .fisherBoss, .ranger, .ramenChef, .yumori, .musicBoxMaker: self = .fisherman
+            case .ekashi: self = .elder
+            case .fisherBoss, .ranger, .ramenChef, .yumori, .musicBoxMaker, .rancher, .banyaOyaji: self = .fisherman
             case .lostChild, .childAtHome, .portKid, .student: self = .child
-            case .mother, .guide, .sapporoGuide, .swanKeeper, .catOwner: self = .villager
+            case .mother, .guide, .sapporoGuide, .shiretokoGuide, .swanKeeper, .catOwner, .foxRanger: self = .villager
+            case .lostFox, .foxHome: self = .fox
             case .lostCygnet, .cygnetHome: self = .cygnet
             case .lostCat, .catHome: self = .cat
             case .kappa: self = .kappa

@@ -138,8 +138,10 @@ struct MapTests {
             ("小樽 → 天狗山", .sapporoArea, .otaru, .tenguyama, 12),
             ("藻岩山 → 定山渓", .sapporoArea, .moiwa1, .jozankei, 12),
             ("札幌 → 小樽", .sapporoArea, .sapporo, .otaru, 20),
-            ("中標津 → 羅臼", .shiretokoArea, .sapporoArea, .rausu, 15),
-            ("羅臼 → 羅臼岳", .shiretokoArea, .rausu, .rausudake1, 15),
+            ("中標津 → 羅臼", .shiretokoArea, .nakashibetsu, .rausu, 25),
+            ("中標津 → ウトロ", .shiretokoArea, .nakashibetsu, .utoro, 25),
+            ("ウトロ → 知床岬", .shiretokoArea, .utoro, .shiretokoMisaki, 30),
+            ("羅臼 → 羅臼岳", .shiretokoArea, .rausu, .rausudake1, 10),
         ]
         for (name, fieldID, from, to, least) in legs {
             let field = World.map(fieldID)
@@ -158,7 +160,9 @@ struct MapTests {
         for id in MapID.allCases {
             let map = World.map(id)
             guard let boss = map.boss else { continue }
-            let walked = map.warps.keys.compactMap { steps(on: map, from: $0, toNeighbourOf: boss) }.min()
+            // 入口の階段の上ではなく、ほらあなに 着いた地点から 数える（階段が 通路を ふさいでいても 見つかるように）。
+            let arrivals = MapID.allCases.flatMap { World.map($0).warps.values }.filter { $0.to == id }.map(\.at)
+            let walked = arrivals.compactMap { steps(on: map, from: $0, toNeighbourOf: boss) }.min()
             #expect(walked != nil, "\(id) のボスまで歩いて行けない")
             #expect((walked ?? 0) >= 10, "\(id) のボスが 入口から \(walked ?? 0) 歩しかない")
         }
@@ -174,7 +178,8 @@ struct MapTests {
             if Direction.allCases.contains(where: { point + $0.delta == target }) { return distance }
             for direction in Direction.allCases {
                 let next = point + direction.delta
-                guard map.isWalkable(next), seen.insert(next).inserted else { continue }
+                // 階段などの ワープ床は 踏むと 外へ出てしまうので 通れない。
+                guard map.isWalkable(next), map.warps[next] == nil, seen.insert(next).inserted else { continue }
                 queue.append((next, distance + 1))
             }
         }

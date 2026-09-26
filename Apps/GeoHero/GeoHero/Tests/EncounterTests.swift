@@ -107,10 +107,10 @@ struct EncounterTests {
             ("小樽へむかう道", area("小樽へむかう道")),
             ("天狗山の ほらあな", cave(.tenguyama)),
             ("藻岩山の ほらあな", cave(.moiwa2)),
-            ("知床へむかう道", area("知床へむかう道")),
-            ("羅臼岳へむかう道", area("羅臼岳へむかう道")),
-            ("羅臼岳B1", cave(.rausudake1)),
-            ("羅臼岳B2", cave(.rausudake2)),
+            ("中標津のまわり", area("中標津のまわり")),
+            ("ウトロへむかう道", area("ウトロへむかう道")),
+            ("知床岬の ほらあな", cave(.shiretokoMisaki)),
+            ("羅臼岳の ほらあな", cave(.rausudake2)),
         ]
     }
 
@@ -224,7 +224,8 @@ struct EncounterTests {
             (.hakodateArea, .matsumae, .onuma), (.hakodateArea, .hakodate, .onuma),
             (.sapporoArea, .sapporo, .moiwa1), (.sapporoArea, .sapporo, .otaru),
             (.sapporoArea, .otaru, .tenguyama), (.sapporoArea, .moiwa1, .jozankei),
-            (.shiretokoArea, .rausu, .rausudake1),
+            (.shiretokoArea, .rausu, .rausudake1), (.shiretokoArea, .nakashibetsu, .rausu),
+            (.shiretokoArea, .nakashibetsu, .utoro), (.shiretokoArea, .utoro, .shiretokoMisaki),
         ]
         for (fieldID, from, to) in legs {
             let field = World.map(fieldID)
@@ -269,11 +270,11 @@ struct EncounterTests {
         return nil
     }
 
-    /// ボスのいる ほらあなは5つ（函館山・駒ヶ岳・天狗山・藻岩山・羅臼岳）。
-    @Test func thereAreFiveBosses() {
+    /// ボスのいる ほらあなは6つ（函館山・駒ヶ岳・天狗山・藻岩山・知床岬・羅臼岳）。
+    @Test func thereAreSixBosses() {
         let bosses = MapID.allCases.compactMap { World.map($0).bossKind }
-        #expect(Set(bosses) == [.squidLord, .komaLord, .tengu, .bearLord, .guardian], "ボスが そろっていない: \(bosses)")
-        #expect(bosses.count == 5, "ボスのいるマップが \(bosses.count) つ")
+        #expect(Set(bosses) == [.squidLord, .komaLord, .tengu, .bearLord, .todoLord, .guardian], "ボスが そろっていない: \(bosses)")
+        #expect(bosses.count == 6, "ボスのいるマップが \(bosses.count) つ")
     }
 
     /// 函館エリアの ほらあなは 物語で ひらく。函館山は 奉行の てがた、駒ヶ岳は 殿様の おふだ。
@@ -290,6 +291,10 @@ struct EncounterTests {
         #expect(sapporo.first { $0.to == .hakodateArea }?.needs == .ticketToSapporo, "函館へ もどれない")
         #expect(sapporo.first { $0.to == .shiretokoArea }?.needs == .ticketToShiretoko)
         #expect(World.map(.shiretokoArea).warps.values.first { $0.to == .sapporoArea }?.needs == .ticketToShiretoko)
+        // 羅臼岳は カムイの はねで ふぶきを はらってから。知床岬は いつでも。
+        let shiretoko = World.map(.shiretokoArea).warps.values
+        #expect(shiretoko.first { $0.to == .rausudake1 }?.needs == .kamuiFeather)
+        #expect(shiretoko.first { $0.to == .shiretokoMisaki }?.needs == nil)
         // きっぷは ボスを倒すと もらえる。
         #expect(StoryFlag.ticketToSapporo.impliedBy == .komaLord)
         #expect(StoryFlag.ticketToShiretoko.impliedBy == .bearLord)
@@ -321,7 +326,7 @@ struct EncounterTests {
         }
         let steps = [
             try toughness(.hakodateArea, .hakodateyama), try toughness(.hakodateArea, .komagatake),
-            try toughness(.sapporoArea, .tenguyama), try toughness(.shiretokoArea, .rausudake1),
+            try toughness(.sapporoArea, .tenguyama), try toughness(.shiretokoArea, .shiretokoMisaki),
         ]
         #expect(steps == steps.sorted() && Set(steps).count == steps.count, "ほらあなの前が 奥ほど 手ごわくない: \(steps)")
     }
@@ -329,7 +334,7 @@ struct EncounterTests {
 
 /// 街ごとの ちがい。旅が進むほど 宿代は高く、品ぞろえは強くなる。
 struct TownTests {
-    private let route: [MapID] = [.hakodate, .matsumae, .onuma, .sapporo, .otaru, .jozankei, .rausu]
+    private let route: [MapID] = [.hakodate, .matsumae, .onuma, .sapporo, .otaru, .jozankei, .nakashibetsu, .utoro, .rausu]
 
     /// 奥の街ほど 宿代が高い。
     @Test func innGetsMoreExpensiveAlongTheRoute() throws {
@@ -383,7 +388,9 @@ struct TownTests {
     @Test func townsDifferInCrowdAndBuildings() {
         let people = route.map { World.map($0).npcs.count }
         #expect(people[0] == people.max(), "函館が いちばん にぎやかで ないと: \(people)")
-        #expect(people.last == people.min(), "羅臼は さいはての町なので 人が少ないほうがいい: \(people)")
+        // 小さな 町（定山渓・中標津）は 大きな街（札幌）より 人が少ない。
+        let count = Dictionary(uniqueKeysWithValues: zip(route, people))
+        #expect(count[.jozankei]! < count[.sapporo]! && count[.nakashibetsu]! < count[.sapporo]!, "\(people)")
 
         let roofs = route.map { id -> Int in
             let map = World.map(id)

@@ -62,9 +62,9 @@ struct GroupBattleTests {
             ("函館のまわり", .kelpSlime, 1, .woodStick, .clothes),
             ("大沼のまわり", .dango, 5, .copperSword, .leatherArmor),
             ("小樽へむかう道", .fox, 8, .copperSword, .leatherArmor),
-            ("知床へむかう道", .cod, 11, .steelSword, .chainMail),
-            ("羅臼岳へむかう道", .snowman, 12, .steelSword, .chainMail),
-            ("羅臼岳B2", .iceGolem, 14, .steelSword, .chainMail),
+            ("中標津のまわり", .cod, 11, .steelSword, .chainMail),
+            ("ウトロへむかう道", .snowman, 12, .steelSword, .chainMail),
+            ("羅臼岳", .iceGolem, 14, .steelSword, .chainMail),
         ]
         for (zone, kind, level, weapon, armor) in cases {
             var losses = 0
@@ -105,7 +105,7 @@ struct GroupBattleTests {
         // 区域と、そこを歩くころのレベル。
         let zones: [(String, Int)] = [
             ("函館のまわり", 1), ("函館山のふもと", 2), ("松前へむかう道", 4), ("大沼のまわり", 5),
-            ("札幌のまわり", 7), ("小樽へむかう道", 8), ("知床へむかう道", 11), ("羅臼岳へむかう道", 12),
+            ("札幌のまわり", 7), ("小樽へむかう道", 8), ("中標津のまわり", 11), ("ウトロへむかう道", 12),
         ]
         for (name, level) in zones {
             let heroAgility = LevelTable.row(level).agility

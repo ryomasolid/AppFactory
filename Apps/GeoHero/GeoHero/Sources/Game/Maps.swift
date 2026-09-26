@@ -21,6 +21,9 @@ enum World {
         case .otaru: otaru
         case .jozankei: jozankei
         case .rausu: rausu
+        case .nakashibetsu: nakashibetsu
+        case .utoro: utoro
+        case .shiretokoMisaki: shiretokoMisaki
         case .hakodateyama: hakodateyama
         case .komagatake: komagatake
         case .tenguyama: tenguyama
@@ -47,6 +50,13 @@ enum World {
         case .orgelDo: orgelDo
         case .otaruSouko: otaruSouko
         case .onsenHouse: onsenHouse
+        case .bokujoHouse: bokujoHouse
+        case .nakaHouse: nakaHouse
+        case .utoroCenter: utoroCenter
+        case .utoroHouse: utoroHouse
+        case .banya: banya
+        case .ekashiHouse: ekashiHouse
+        case .rausuHouse: rausuHouse
         }
     }
 
@@ -57,7 +67,7 @@ enum World {
         switch region {
         case .hakodate: revivePoint
         case .sapporo: (.sapporo, Point(x: 15, y: 24))
-        case .shiretoko: (.rausu, Point(x: 7, y: 11))
+        case .shiretoko: (.nakashibetsu, Point(x: 12, y: 16))
         }
     }
 
@@ -602,42 +612,226 @@ enum World {
         chestRewards: [.gold(120)]
     )
 
+    /// 羅臼。知床半島の 東がわ、根室海峡に めんした 町。
+    /// - 北: 羅臼岳の すそ。 西: 間欠泉と エカシ（長老）の家。
+    /// - まんなか: 番屋と 昆布ほし場（牛乳を まつ おやじ）。 東: 漁港と 国後島の 見える 展望。
+    /// - 南: 宿屋・道具屋・観光案内所。
+    /// エカシの話 → 知床岬の トドのぬし → カムイの はね → 羅臼岳、の順（`Story.swift`）。
     static let rausu = GameMap(
         id: .rausu,
         name: "らうす",
         rows: [
-            "###############",
-            "#MM_________MM#",
-            "#_III_____SSS_#",
-            "#_III_____SSS_#",
-            "#_YdW_____ZdW_#",
-            "#_____________#",
-            "#MM_________MM#",
-            "#MM____t____MM#",
-            "#M_____e_____M#",
-            "#M_t_______t_M#",
-            "#MM_________MM#",
-            "#MMM_P_____MMM#",
-            "######EEE######"
+            "#############################",
+            "#MMMMMMMMMMMMMMMMMMMMM~~~~~~#",
+            "#MMMM______MMMMM___MMM~~~~~~#",
+            "#______P______________~~~~~~#",
+            "#_____________________~~~~~~#",
+            "#__www________HHHHH___~~~~~~#",
+            "#_____P_______WWdWW___~~~~~~#",
+            "#__________________3__~~~~~~#",
+            "#_________t_______________P~#",
+            "#_HHH________f_f_f_f__~~~~~~#",
+            "#_WdW__________P______~~~~~~#",
+            "#____1________________~~~~~~#",
+            "#____________________P~~~~~~#",
+            "#_____________2_______~~~~~~#",
+            "#_III___SSS___________~~~~~~#",
+            "#_III___SSS______e____~~~~~~#",
+            "#_YdW___ZdW___________~~~~~~#",
+            "#________________HHH__~~~~~~#",
+            "#____________t___WdW__~~~~~~#",
+            "#____t________________~~~~~~#",
+            "#________P__________c_~~~~~~#",
+            "############EEE##############"
         ],
         outside: .grass,
         warps: [
-            // 左の家（青い屋根・ベッドの看板）が宿屋、右の家（緑の屋根・お金のふくろ）が道具屋。
-            Point(x: 3, y: 4): Warp(to: .innInside, at: Point(x: 4, y: 4)),
-            Point(x: 11, y: 4): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
-            Point(x: 6, y: 12): Warp(to: .shiretokoArea, at: Point(x: 18, y: 22)),
-            Point(x: 7, y: 12): Warp(to: .shiretokoArea, at: Point(x: 18, y: 22)),
-            Point(x: 8, y: 12): Warp(to: .shiretokoArea, at: Point(x: 18, y: 22)),
+            // 家の扉。
+            Point(x: 16, y: 6): Warp(to: .banya, at: Point(x: 4, y: 4)),
+            Point(x: 3, y: 10): Warp(to: .ekashiHouse, at: Point(x: 4, y: 4)),
+            Point(x: 18, y: 18): Warp(to: .rausuHouse, at: Point(x: 4, y: 4)),
+            Point(x: 3, y: 16): Warp(to: .innInside, at: Point(x: 4, y: 4)),
+            Point(x: 9, y: 16): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
+            Point(x: 12, y: 21): Warp(to: .shiretokoArea, at: Point(x: 41, y: 25)),
+            Point(x: 13, y: 21): Warp(to: .shiretokoArea, at: Point(x: 41, y: 25)),
+            Point(x: 14, y: 21): Warp(to: .shiretokoArea, at: Point(x: 41, y: 25)),
         ],
-        // 戦闘の「ちしき」の答えは ここで聞ける（`QuizRegion.rausu` と `QuizTests` を見る）。
+        // 戦闘の「ちしき」の答えは ここと 中標津で 聞ける（`QuizRegion.rausu` と `QuizTests` を見る）。
         villagers: [
-            ["むすめ「ここは さいはての町。やども 品も 高いけど ゆるしてね。",
-             "　知床は アイヌの ことばで 『ちの はて』って いみなの。」"],
-            ["りょうし「羅臼の じまんは こんぶと シャチさ。",
-             "　冬には りゅうひょうが 岸まで ながれつくぞ。」"],
-            ["たびびと「知床は 世界自然遺産に えらばれた 土地。",
-             "　北がわには オホーツク海が ひろがっている。」"]
-        ]
+            ["りょうし「羅臼の 海には シャチが やってくる。",
+             "　船で 見に いけるんだぜ。」"],
+            ["むすめ「羅臼は 知床の 東がわ、",
+             "　根室海峡に めんした 町なの。」"],
+            ["こども「エカシの おじいちゃんは",
+             "　知床の ことを なんでも しってるんだよ。」"],
+        ],
+        residents: ["1": .ekashi, "2": .shiretokoGuide, "3": .banyaOyaji],
+        plaques: [
+            Point(x: 7, y: 3): Plaque(title: "羅臼岳", lines: [
+                "かんばんに こう かいてある。",
+                "「羅臼岳」",
+                "知床連山の 山。 いまは ふぶきに とざされている。",
+            ]),
+            Point(x: 6, y: 6): Plaque(title: "間欠泉", lines: [
+                "かんばんに こう かいてある。",
+                "「羅臼間欠泉」",
+                "ときどき 高く ゆが ふきあがる。",
+            ]),
+            Point(x: 26, y: 8): Plaque(title: "国後島", lines: [
+                "かんばんに こう かいてある。",
+                "「国後島 展望」",
+                "根室海峡の むこうに 国後島が 見える。",
+            ]),
+            Point(x: 15, y: 10): Plaque(title: "昆布", lines: [
+                "かんばんに こう かいてある。",
+                "「羅臼昆布」",
+                "だしの 王さまと よばれる 羅臼の こんぶ。",
+            ]),
+            Point(x: 21, y: 12): Plaque(title: "シャチ", lines: [
+                "かんばんに こう かいてある。",
+                "「シャチ ウォッチング」",
+                "羅臼の 海には シャチや クジラが くる。",
+            ]),
+        ],
+        chestRewards: [.gold(300)]
+    )
+
+    /// 中標津。知床への 空の入口の 酪農の町。牧場主が 羅臼の番屋へ 牛乳を たのむ。
+    static let nakashibetsu = GameMap(
+        id: .nakashibetsu,
+        name: "なかしべつ",
+        rows: [
+            "#########################",
+            "#__HHH___HH_____________#",
+            "#__WdW___WW_____P_______#",
+            "#____________1______t___#",
+            "#__f__f__f__f__f__f__f__#",
+            "#_______________________#",
+            "#_______________________#",
+            "#_III___SSS_______HHH___#",
+            "#_III___SSS___e___WdW___#",
+            "#_YdW___ZdW_____________#",
+            "#_______________________#",
+            "#____t__________________#",
+            "#__________________t____#",
+            "#___________P___________#",
+            "#_______________________#",
+            "#__c_____________P______#",
+            "#_______________________#",
+            "###########EEE###########"
+        ],
+        outside: .grass,
+        warps: [
+            Point(x: 4, y: 2): Warp(to: .bokujoHouse, at: Point(x: 4, y: 4)),
+            Point(x: 19, y: 8): Warp(to: .nakaHouse, at: Point(x: 4, y: 4)),
+            Point(x: 3, y: 9): Warp(to: .innInside, at: Point(x: 4, y: 4)),
+            Point(x: 9, y: 9): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
+            Point(x: 11, y: 17): Warp(to: .shiretokoArea, at: Point(x: 16, y: 32)),
+            Point(x: 12, y: 17): Warp(to: .shiretokoArea, at: Point(x: 16, y: 32)),
+            Point(x: 13, y: 17): Warp(to: .shiretokoArea, at: Point(x: 16, y: 32)),
+        ],
+        villagers: [
+            ["むすめ「牛さんたちの ごはんは 牧草。",
+             "　夏は いちめん みどりよ。」"],
+            ["たびびと「中標津空港から 知床までは",
+             "　まだまだ 歩くぜ。」"],
+            ["おじさん「羅臼へは 東へ、ウトロへは 北へ。",
+             "　どっちも 知床の 入口さ。」"],
+        ],
+        residents: ["1": .rancher],
+        plaques: [
+            Point(x: 16, y: 2): Plaque(title: "開陽台", lines: [
+                "かんばんに こう かいてある。",
+                "「開陽台」",
+                "360度 見わたせる 丘。",
+                "地球の まるみが 見えると いわれる。",
+            ]),
+            Point(x: 12, y: 13): Plaque(title: "酪農", lines: [
+                "かんばんに こう かいてある。",
+                "「酪農の 町 中標津」",
+                "牛の かずが 人より おおい 町。",
+            ]),
+        ],
+        chestRewards: [.gold(250)]
+    )
+
+    /// ウトロ。知床半島の 西がわ、オホーツク海に めんした 町。
+    /// 北に 港と オロンコ岩、東に 知床五湖（まいごの キツネの子）、西に オシンコシンの滝。
+    static let utoro = GameMap(
+        id: .utoro,
+        name: "うとろ",
+        rows: [
+            "###########################",
+            "#~~~~~~~~~~~~~~~~~MMM~~~~~#",
+            "#~~~~~~~~~~~~~~~~~MMM~~~~~#",
+            "#~~~~~~~~~~~~~~~~MMMMM~~~~#",
+            "#_____P_________P_________#",
+            "#________t________________#",
+            "#___________________ffffff#",
+            "#MM_________________f~2fff#",
+            "#Mw_____HHHHH_______ff_~ff#",
+            "#MwP____WWdWW_____P______f#",
+            "#MM__________34_____f~ffff#",
+            "#___________________ffff~f#",
+            "#___________________ff~fff#",
+            "#__III___SSS______________#",
+            "#__III___SSS_____e________#",
+            "#__YdW___ZdW________HHH___#",
+            "#___________________WdW___#",
+            "#_________________________#",
+            "#_____t_______________t___#",
+            "#_________________________#",
+            "#________P________c_______#",
+            "############EEE############"
+        ],
+        outside: .grass,
+        warps: [
+            Point(x: 10, y: 9): Warp(to: .utoroCenter, at: Point(x: 4, y: 4)),
+            Point(x: 21, y: 16): Warp(to: .utoroHouse, at: Point(x: 4, y: 4)),
+            Point(x: 4, y: 15): Warp(to: .innInside, at: Point(x: 4, y: 4)),
+            Point(x: 10, y: 15): Warp(to: .shopInside, at: Point(x: 4, y: 4)),
+            Point(x: 12, y: 21): Warp(to: .shiretokoArea, at: Point(x: 30, y: 12)),
+            Point(x: 13, y: 21): Warp(to: .shiretokoArea, at: Point(x: 30, y: 12)),
+            Point(x: 14, y: 21): Warp(to: .shiretokoArea, at: Point(x: 30, y: 12)),
+        ],
+        // 戦闘の「ちしき」の答えは ここで聞ける（`QuizRegion.utoro` と `QuizTests` を見る）。
+        villagers: [
+            ["りょうし「冬の ウトロの 海は りゅうひょうで",
+             "　まっしろに なるんだ。」"],
+            ["むすめ「知床は 世界自然遺産に",
+             "　えらばれた 土地なのよ。」"],
+            ["たびびと「知床岬へは この町から 海ぞいの 道を 北へ。",
+             "　けわしい 道だから 薬草を わすれずにな。」"],
+        ],
+        residents: ["2": .lostFox, "3": .foxRanger, "4": .foxHome],
+        plaques: [
+            Point(x: 6, y: 4): Plaque(title: "港", lines: [
+                "かんばんに こう かいてある。",
+                "「ウトロ漁港」",
+                "オホーツク海に めんした 港。",
+            ]),
+            Point(x: 16, y: 4): Plaque(title: "オロンコ", lines: [
+                "かんばんに こう かいてある。",
+                "「オロンコ岩」",
+                "港に そびえる 大きな 岩。",
+            ]),
+            Point(x: 18, y: 9): Plaque(title: "五湖", lines: [
+                "かんばんに こう かいてある。",
+                "「知床五湖」",
+                "原生林の なかに ならぶ 5つの 湖。",
+            ]),
+            Point(x: 3, y: 9): Plaque(title: "滝", lines: [
+                "かんばんに こう かいてある。",
+                "「オシンコシンの滝」",
+                "海ぞいに おちる 知床の 滝。",
+            ]),
+            Point(x: 9, y: 20): Plaque(title: "夕日", lines: [
+                "かんばんに こう かいてある。",
+                "「夕陽台」",
+                "オホーツク海に しずむ 夕日が 見える。",
+            ]),
+        ],
+        chestRewards: [.gold(350)]
     )
 
     static let hakodateyama = GameMap(
@@ -795,6 +989,39 @@ enum World {
         markerFloor: .caveFloor
     )
 
+    /// 知床岬の 海の ほらあな。いちばん奥に カムイの はねを うばった トドのぬしがいる。
+    static let shiretokoMisaki = GameMap(
+        id: .shiretokoMisaki,
+        name: "知床岬の ほらあな",
+        rows: [
+            "###################",
+            "#~~~~~,,,,,,,~~~~~#",
+            "#~~~~,,,,B,,,,~~~~#",
+            "#~~~~~,,,,,,,~~~~~#",
+            "#~~~~~~~,,,~~~~~~~#",
+            "#c,,,~~~,,,~~~,,,c#",
+            "#,#,,,,,,#,,,,,,#,#",
+            "#,#,~~~~,#,~~~~,#,#",
+            "#,#,,,,~,#,~,,,,#,#",
+            "#,####,~,,,~,####,#",
+            "#,,,,#,~~~~~,#,,,,#",
+            "####,#,,,,,,,#,####",
+            "#,,,,###,#,#####,,#",
+            "#,,,,,,,,U,,,,,,,,#",
+            "###################"
+        ],
+        outside: .wall,
+        warps: [
+            Point(x: 9, y: 13): Warp(to: .shiretokoArea, at: Point(x: 57, y: 3)),
+        ],
+        chestRewards: [.gold(500), .item(.herb)],
+        bossKind: .todoLord,
+        encounters: [
+            .caveFloor: [.hikarigoke, .icicleOgre, .iceBat],
+        ],
+        markerFloor: .caveFloor
+    )
+
     static let rausudake1 = GameMap(
         id: .rausudake1,
         name: "羅臼岳の ほらあな B1",
@@ -815,12 +1042,12 @@ enum World {
         ],
         outside: .wall,
         warps: [
-            Point(x: 7, y: 11): Warp(to: .shiretokoArea, at: Point(x: 21, y: 8)),
+            Point(x: 7, y: 11): Warp(to: .shiretokoArea, at: Point(x: 38, y: 17)),
             Point(x: 3, y: 9): Warp(to: .rausudake2, at: Point(x: 6, y: 9)),
         ],
         chestRewards: [.item(.steelSword)],
         encounters: [
-            .caveFloor: [.hikarigoke, .icicleOgre, .iceBat],
+            .caveFloor: [.phantomWolf, .iceGolem, .blizzardSpirit],
         ],
         markerFloor: .caveFloor
     )
@@ -988,7 +1215,7 @@ enum World {
             // 丘珠空港 → 函館空港（もどり）。
             Point(x: 42, y: 14): Warp(to: .hakodateArea, at: Point(x: 55, y: 28), needs: .ticketToSapporo),
             // 新千歳空港 → 中標津空港（知床）。
-            Point(x: 54, y: 32): Warp(to: .shiretokoArea, at: Point(x: 6, y: 26), needs: .ticketToShiretoko),
+            Point(x: 54, y: 32): Warp(to: .shiretokoArea, at: Point(x: 10, y: 30), needs: .ticketToShiretoko),
         ],
         chestRewards: [.gold(250), .item(.herb), .gold(400), .item(.herb)],
         // 札幌の まわりは やさしく、小樽・天狗山・定山渓の ほうは 手ごわい。
@@ -1004,55 +1231,74 @@ enum World {
         markerFloor: .grass
     )
 
-    /// 知床。42×30 マス。南西の 中標津空港から、北東へ のびる 知床半島へ。
-    /// 羅臼は 半島の 東がわ（海の むこうに 国後島）、羅臼岳は 半島の 背骨。
+    /// 知床。65×40 マス。南西の 中標津空港・中標津から、北東へ のびる 知床半島へ。
+    /// 北西の オホーツク海がわに ウトロ、南東の 根室海峡がわに 羅臼（海の むこうに 国後島）、
+    /// 半島の 背骨に 羅臼岳（知床峠で ウトロと 羅臼を むすぶ）、いちばん さきに 知床岬。
     static let shiretokoArea = GameMap(
         id: .shiretokoArea,
         name: "知床",
         rows: [
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.....~~~~~~~~",
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~.....c...~~~~~~~",
-            "~~~~~~~~~~~~~~~~~~~~~~~........MMM.~~~~~~~",
-            "~~~~~~~~~~~~~~~~~~~~~........MMMMM.~~~~~~~",
-            "~~~~~~~~~~~~~~~~~~~~.......MMMMMMM~~~~~~~~",
-            "~~~~~~~~~~~~~~~~~~.......MMMMMMM.~~~~~~~~~",
-            "~~~~~~~~~~~~~~~~.~.....MMMMMMM..~~~~~~~~~~",
-            "~~~~~~~~~~~~~~~~...~.CMMMMMM...~~~~~~~~~~~",
-            "~~~~~~~~~~~~~......MM=MMMM....~~~~~~~~~~~~",
-            "~~~~~~~~~~~~.....MMMM=MM.....~~~~~~~~~~~~~",
-            "~~~~~~~~~~.....MMMMMM=......~~~~~~~~~~~~~~",
-            "~~~~~~~~~....hhMMMMMh===h..~~~~~~~~~~~~~~~",
-            ".............hhMMMhhhhh=h.~~~~~~~~~~~~~~~~",
-            ".c...........hhhhhhhhhh=h.~~~~~~~~~~~~~~~~",
-            ".......................=.~~~~~~~~~~~~~~~~~",
-            "..fffffff.........======.~~~~~~~~~~~~~~~~~",
-            "..fffffff.........=.....~~~~~~~~~MMMMMMMM~",
-            "..fffffff.........=.....~~~~~~~~~MMMMMMMM~",
-            "..fffffff.........=....~~~~~~~~hhhhMMMMMM~",
-            "..fffffff.........=...~~~~~~~~~hhhhMMMMMM~",
-            "..................=..~~~~~~~~~~hhhhffffff~",
-            "..................T.~~~~~~~~~~~hhhhffffff~",
-            ".........fff=======~~~~~~~~~~~~hhhh~~~~~~~",
-            ".........fff=ff....~~~~~~~~~~~~hhhh~~~~~~~",
-            ".........fff=ff...~~~~~~~~~~~~~~~~~~~~~~~~",
-            "......A..fff=ff...~~~~~~~~~~~~~~~~~~~~~~~~",
-            "......=======ff..~~~~~~~~~~~~~~~~~~~~~~~~~",
-            ".................~~~~~~~~~~~~~~~~~~~~~~~~~",
-            ".................~~~~~~~~~~~~~~~~~~~~~~~~~",
-            "................~~~~~~~~~~~~~~~~~~~~~~~~~~"
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.........~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.............c.~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.........MMMM.C...~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...........MMMM==...~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...........MMMMMM....~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.......====MMMMMM.....~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...~..~..=...MMMMMM....~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~......~....=.MMMMMM.....~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~....~.......MMMMMM......~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...======b===MMMMMM.....~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.....=.......MMMMMM......~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~..T...=.....MMMMMM.......~~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~...=====.....MMMMMM......~~~~~~~~~~~~~",
+            "~~~~~~~~~~~~~~~~~~~~~~~~......=...=...MMMMMM.......~~~~~~~~~~~~~~",
+            "................~~~~~.=========...=.MMMMMM........~~~~~~~~~~~~~~~",
+            ".c....................=...hhhhhhhh=.MMMMMM.......~~~~~~~~~~~~~~~~",
+            "............hhhhhh....=...hhhhhhhhMMMMCM........~~~~MMMMMMMMMMMM~",
+            "............hhhhhh....=...hhhhhhMMMMMM=.........~~~~MMMMMMMMMMMM~",
+            "............hhhhhh....=...hhhhhhMMMMMM=........~~~~~MMMMMMMMMMMM~",
+            "............hhhhhh....=...hhhhMMMMMM..=.......~~~~~~MMMMMMMMMMMM~",
+            "..fffffffff.....=======.......MMMM....=......c~~hhhhhhhhhhh~~~~~~",
+            "..fffffffff.....=.............MMMM....=......~~~hhhhhhMMMMh~~~~~~",
+            "..fffffffff.....=.....................====...~~~hhhhhhMMMMh~~~~~~",
+            "..fffffffff.....=........................=...~~~hhhhhhMMMMh~~~~~~",
+            "..fffffffff.....=........................T..~~~~hhhhhhMMMMh~~~~~~",
+            "..fffffffff.....=...................======..~~~~hhhhhhhhhhh~~~~~~",
+            "..fffffffff.....=...................=......~~~~~hhhhhhhhhhh~~~~~~",
+            "................=...................=.....~~~~hhhhhhh~~~~~~~~~~~~",
+            "................=.......=============....~~~~~hhhhhhh~~~~~~~~~~~~",
+            "..........A.....=.......=...............~~~~~~hhhhhhh~~~~~~~~~~~~",
+            "....ffffff=======.......=..............~~~~~~~hhhhhhh~~~~~~~~~~~~",
+            "....ffffff......T.......=.............~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "....ffffff......=========............~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "....ffffff........fffffffff.........~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "....ffffff........fffffffff.........~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "....ffffff........fffffffff........~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "....ffffff........fffffffff........~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "..................fffffffff........~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "..................fffffffff......c~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            "..................................~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         ],
         outside: .water,
         warps: [
-            Point(x: 18, y: 21): Warp(to: .rausu, at: Point(x: 7, y: 11)),
-            Point(x: 21, y: 7): Warp(to: .rausudake1, at: Point(x: 6, y: 11)),
+            Point(x: 16, y: 31): Warp(to: .nakashibetsu, at: Point(x: 12, y: 16)),
+            Point(x: 30, y: 11): Warp(to: .utoro, at: Point(x: 13, y: 20)),
+            Point(x: 41, y: 24): Warp(to: .rausu, at: Point(x: 13, y: 20)),
+            // 知床岬は いつでも 入れる。羅臼岳は カムイの はねで ふぶきを はらってから。
+            Point(x: 57, y: 2): Warp(to: .shiretokoMisaki, at: Point(x: 8, y: 13)),
+            Point(x: 38, y: 16): Warp(to: .rausudake1, at: Point(x: 6, y: 11), needs: .kamuiFeather),
             // 中標津空港 → 新千歳空港（もどり）。
-            Point(x: 6, y: 25): Warp(to: .sapporoArea, at: Point(x: 54, y: 33), needs: .ticketToShiretoko),
+            Point(x: 10, y: 29): Warp(to: .sapporoArea, at: Point(x: 54, y: 33), needs: .ticketToShiretoko),
         ],
-        chestRewards: [.gold(500), .item(.herb)],
+        chestRewards: [.gold(500), .item(.herb), .item(.herb), .gold(600)],
+        // 中標津の まわりは やさしく、ウトロ・羅臼・知床岬の ほうは 手ごわい。
         encounterAreas: [
-            EncounterArea(name: "知床へむかう道", around: [Point(x: 6, y: 26), Point(x: 18, y: 22)],
+            EncounterArea(name: "中標津のまわり", around: [Point(x: 10, y: 30), Point(x: 16, y: 32), Point(x: 24, y: 31)],
                           enemies: [.deer, .cod, .salmon]),
-            EncounterArea(name: "羅臼岳へむかう道", around: [Point(x: 21, y: 8)],
+            // 斜里を まわる 道にも 中心を置く（中標津から ウトロ・羅臼へ 歩いて 弱いほうへ 戻らないように）。
+            EncounterArea(name: "ウトロへむかう道",
+                          around: [Point(x: 30, y: 12), Point(x: 41, y: 25), Point(x: 38, y: 17),
+                                   Point(x: 57, y: 3), Point(x: 16, y: 18)],
                           enemies: [.seaEagle, .snowman, .orca]),
         ],
         markerFloor: .grass
@@ -1098,7 +1344,7 @@ enum World {
     // MARK: - 家の中
 
     /// 家の中の地図（入れる順に）。
-    static let houses: [MapID] = [.doucho, .susukinoHouse, .orgelDo, .otaruSouko, .onsenHouse, .bugyosho, .asaichiSouko, .motomachiHouse, .bukeyashiki, .tsukemonoya, .ryoshiHouse, .noukaHouse, .dangoya, .yamagoya, .glassKobo, .tokeidaiHouse, .sapporoHouse]
+    static let houses: [MapID] = [.bokujoHouse, .nakaHouse, .utoroCenter, .utoroHouse, .banya, .ekashiHouse, .rausuHouse, .doucho, .susukinoHouse, .orgelDo, .otaruSouko, .onsenHouse, .bugyosho, .asaichiSouko, .motomachiHouse, .bukeyashiki, .tsukemonoya, .ryoshiHouse, .noukaHouse, .dangoya, .yamagoya, .glassKobo, .tokeidaiHouse, .sapporoHouse]
 
     /// 家の中を作る。出口は 下の まんなか、入ると その上に立つ。
     /// 出口の行き先は 入った扉の前に差し替わる（GameState が見る）が、地図の上でも 同じ場所を書いておく。
@@ -1440,6 +1686,139 @@ enum World {
         villagers: [
             ["おかみ「藻岩山の ほらあなは 2かいだて。",
              "　ぬしは いちばん 奥に いるそうだよ。」"],
+        ],
+        chestRewards: [.item(.herb)]
+    )
+
+    /// 中標津の 牧場の家。
+    static let bokujoHouse = house(
+        .bokujoHouse, name: "ぼくじょうの いえ",
+        rows: [
+            "XXXXXXXXX",
+            "XQotoLLcX",
+            "XoooooooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .nakashibetsu, door: Point(x: 4, y: 2),
+        villagers: [
+            ["むすこ「開陽台に のぼると 地球が まるく 見えるんだ。",
+             "　とうさんの 牛乳は 羅臼でも 大人気さ。」"],
+        ],
+        chestRewards: [.item(.herb)]
+    )
+
+    /// 中標津の 家。
+    static let nakaHouse = house(
+        .nakaHouse, name: "なかしべつの いえ",
+        rows: [
+            "XXXXXXXXX",
+            "XLLLoLLLX",
+            "XoooooooX",
+            "XcootoooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .nakashibetsu, door: Point(x: 19, y: 8),
+        villagers: [
+            ["おばあさん「知床の まものは つよいよ。",
+             "　宿屋で しっかり やすんで おいき。」"],
+        ],
+        chestRewards: [.gold(300)]
+    )
+
+    /// ウトロの 自然センター。
+    static let utoroCenter = house(
+        .utoroCenter, name: "しぜんセンター",
+        rows: [
+            "XXXXXXXXX",
+            "XLLtoLLcX",
+            "XoooooooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .utoro, door: Point(x: 10, y: 9),
+        villagers: [
+            ["しょくいん「知床岬の ほらあなの トドのぬしは 流氷の よろいを まとう。",
+             "　ウトロの ことを こたえれば よろいが とけるそうよ。」"],
+        ],
+        chestRewards: [.item(.herb)]
+    )
+
+    /// ウトロの 漁師の家。
+    static let utoroHouse = house(
+        .utoroHouse, name: "うとろの いえ",
+        rows: [
+            "XXXXXXXXX",
+            "XQotoLLcX",
+            "XoooooooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .utoro, door: Point(x: 21, y: 16),
+        villagers: [
+            ["りょうし「オシンコシンの 滝は 2すじに わかれて おちるから",
+             "　双美の滝とも いうんだ。」"],
+        ],
+        chestRewards: [.gold(350)]
+    )
+
+    /// 羅臼の 番屋（漁師の 作業小屋）。
+    static let banya = house(
+        .banya, name: "ばんや",
+        rows: [
+            "XXXXXXXXX",
+            "XLLLoLLLX",
+            "XoooooooX",
+            "XcootoooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .rausu, door: Point(x: 16, y: 6),
+        villagers: [
+            ["わかい りょうし「羅臼の こんぶは 夏に ほすんだ。",
+             "　おやじは 牛乳に 目が ないんだよ。」"],
+        ],
+        chestRewards: [.item(.herb)]
+    )
+
+    /// 羅臼の エカシの家。
+    static let ekashiHouse = house(
+        .ekashiHouse, name: "エカシの いえ",
+        rows: [
+            "XXXXXXXXX",
+            "XLLtoLLcX",
+            "XoooooooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .rausu, door: Point(x: 3, y: 10),
+        villagers: [
+            ["むすめ「父は コタンコロカムイの はねの 話を",
+             "　だれかに たくせる ひを まっていたの。」"],
+        ],
+        chestRewards: [.gold(400)]
+    )
+
+    /// 羅臼の 家。
+    static let rausuHouse = house(
+        .rausuHouse, name: "らうすの いえ",
+        rows: [
+            "XXXXXXXXX",
+            "XQotoLLcX",
+            "XoooooooX",
+            "XoooooooX",
+            "XoooooooX",
+            "XXXXdXXXX",
+        ],
+        town: .rausu, door: Point(x: 18, y: 18),
+        villagers: [
+            ["おとこ「羅臼岳の ほらあなは 2かいだて。",
+             "　守護神の ふぶきは つよい。 HPに よゆうを もて。」"],
         ],
         chestRewards: [.item(.herb)]
     )

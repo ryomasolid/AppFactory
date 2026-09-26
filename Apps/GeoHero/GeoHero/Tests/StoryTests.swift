@@ -331,6 +331,69 @@ struct StoryTests {
         #expect(game.hero.gold == gold + 300)
     }
 
+    // MARK: - 知床
+
+    /// 羅臼岳の前に立って 1歩 入ろうとする。
+    private func tryEnteringRausudake(_ game: GameState) async {
+        let gate = World.shiretokoArea.warps.first { $0.value.to == .rausudake1 }!.key
+        game.mapID = .shiretokoArea
+        game.position = gate + Point(x: 0, y: 1)
+        await game.walk(.up)
+    }
+
+    /// エカシの話 → トドのぬしを倒す → カムイの はね → 羅臼岳へ入れる。
+    @Test func kamuiFeatherOpensRausudake() async throws {
+        let game = makeGame()
+        game.defeatedBosses = [.squidLord, .komaLord, .tengu, .bearLord]
+        let first = try talk(to: .ekashi, in: game, town: .rausu)
+        #expect(first.joined().contains("知床岬"), "エカシが つぎの行き先を 言っていない")
+        #expect(!game.storyFlags.contains(.kamuiFeather))
+        await tryEnteringRausudake(game)
+        #expect(game.mapID == .shiretokoArea, "はねが ないのに 羅臼岳へ 入れる")
+        while game.currentPage != nil { game.advanceMessage() }
+
+        game.defeatedBosses.insert(.todoLord)
+        try talk(to: .ekashi, in: game, town: .rausu)
+        #expect(game.storyFlags.contains(.kamuiFeather))
+        await tryEnteringRausudake(game)
+        #expect(game.mapID == .rausudake1)
+    }
+
+    /// 牛乳の 出前: 中標津で あずかり、羅臼の 番屋へ とどけ、牧場主から お礼を 1度だけ。
+    @Test func milkDelivery() throws {
+        let game = makeGame()
+        try talk(to: .banyaOyaji, in: game, town: .rausu)
+        #expect(!game.storyFlags.contains(.milkDelivered), "あずかる前に とどけられた")
+        try talk(to: .rancher, in: game, town: .nakashibetsu)
+        try talk(to: .banyaOyaji, in: game, town: .rausu)
+        #expect(game.storyFlags.contains(.milkDelivered))
+        let gold = game.hero.gold
+        try talk(to: .rancher, in: game, town: .nakashibetsu)
+        try talk(to: .rancher, in: game, town: .nakashibetsu)
+        #expect(game.hero.gold == gold + 200)
+    }
+
+    /// 知床五湖の キツネの子を 見つけると レンジャーの となりに もどり、お礼は 1度だけ。
+    @Test func lostFoxGoesHome() throws {
+        let game = makeGame()
+        let herbs = game.hero.inventory[.herb, default: 0]
+        try talk(to: .lostFox, in: game, town: .utoro)
+        try talk(to: .foxRanger, in: game, town: .utoro)
+        try talk(to: .foxRanger, in: game, town: .utoro)
+        #expect(game.hero.inventory[.herb, default: 0] == herbs + 3)
+        #expect(World.utoro.npcs(game.progress).contains { $0.role == .resident(.foxHome) })
+    }
+
+    /// 羅臼の案内所は 知床の スタンプだけを 数える。
+    @Test func shiretokoGuideCountsItsOwnStamps() throws {
+        #expect(World.stampTotal(in: .shiretoko) >= 10, "知床の 名所が すくない")
+        let game = makeGame()
+        let gold = game.hero.gold
+        game.readPlaques = Set(World.stampPlaques(in: .shiretoko))
+        try talk(to: .shiretokoGuide, in: game, town: .rausu)
+        #expect(game.hero.gold == gold + 300)
+    }
+
     /// 物語の前の セーブ（新しい項目がない）も 読める。
     @Test func oldSaveWithoutStoryStillLoads() throws {
         let old = """

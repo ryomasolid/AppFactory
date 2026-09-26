@@ -40,6 +40,21 @@ enum StoryFlag: String, Codable, CaseIterable {
     /// 札幌・小樽の 名所の スタンプを 半分／ぜんぶ あつめて、札幌の案内所から お礼をもらった。
     case sapporoStampHalf
     case sapporoStampAll
+    /// 羅臼の エカシから コタンコロカムイ（シマフクロウ）の はねを もらった（羅臼岳の ふぶきが はれる）。
+    case kamuiFeather
+    /// 中標津の 牧場主から 羅臼の 番屋への 牛乳を あずかった。
+    case milkCarrying
+    /// 牛乳を とどけた。
+    case milkDelivered
+    /// 牧場主から 牛乳の お礼をもらった。
+    case milkThanked
+    /// 知床五湖で まいごの キツネの子を 見つけた。
+    case foxFound
+    /// レンジャーから キツネの子の お礼をもらった。
+    case foxReturned
+    /// 知床の 名所の スタンプを 半分／ぜんぶ あつめて、羅臼の案内所から お礼をもらった。
+    case shiretokoStampHalf
+    case shiretokoStampAll
     /// 札幌ゆきの ひこうきの きっぷ。駒ヶ岳のぬしを倒すと もらえる。
     case ticketToSapporo
     /// 知床ゆきの ひこうきの きっぷ。藻岩山の ヒグマのぬしを倒すと もらえる。
@@ -75,6 +90,10 @@ enum StoryFlag: String, Codable, CaseIterable {
         case .musicBox:
             ["ヒグマの こどもたちが 道を ふさいでいて とおれない。",
              "（しずかな 音色で なだめられたら……）"]
+        case .kamuiFeather:
+            ["もうれつな ふぶきで まえが 見えない。",
+             "とても 山へは 入れない。",
+             "（カムイの ちからが あれば……）"]
         case .ticketToShiretoko:
             ["かかりいん「知床ゆきの きっぷを おもちですか？",
              "　……きっぷが ないと おのせ できません。」"]
@@ -147,6 +166,20 @@ enum Resident: String, CaseIterable {
     case yumori
     /// 定山渓の 川に すむ かっぱ。
     case kappa
+    /// 羅臼の エカシ（アイヌの 長老）。羅臼岳の ふぶきを はらう はねの ことを 知っている。
+    case ekashi
+    /// 中標津の 牧場主。羅臼の 番屋へ 牛乳を たのむ。
+    case rancher
+    /// 羅臼の 番屋の おやじ。牛乳を まっている。
+    case banyaOyaji
+    /// ウトロの レンジャー。まいごの キツネの子を さがしている。
+    case foxRanger
+    /// 知床五湖の 木道の おくで まいごに なっている キツネの子。
+    case lostFox
+    /// レンジャーの ところへ もどった キツネの子。
+    case foxHome
+    /// 羅臼の 観光案内所の人。知床の スタンプを 見る。
+    case shiretokoGuide
     /// 松前の殿様。駒ヶ岳へ入る 火よけの おふだを もつ。
     case lord
     /// 大沼の山守。駒ヶ岳の ようすを 教える。
@@ -167,6 +200,8 @@ enum Resident: String, CaseIterable {
         case .cygnetHome: progress.has(.cygnetFound)
         case .lostCat: !progress.has(.catFound)
         case .catHome: progress.has(.catFound)
+        case .lostFox: !progress.has(.foxFound)
+        case .foxHome: progress.has(.foxFound)
         default: true
         }
     }
@@ -506,6 +541,104 @@ enum Resident: String, CaseIterable {
                 "　むかし この 川に すむ かっぱが わかものを",
                 "　ひきこんだって 伝説が あるんだ。 ……おいらじゃ ないよ？」",
             ])
+        case .shiretokoGuide:
+            return Self.stampScene(.shiretoko, progress, half: .shiretokoStampHalf, all: .shiretokoStampAll,
+                                   towns: "中標津・ウトロ・羅臼")
+
+        case .ekashi:
+            if progress.has(.kamuiFeather) {
+                return StoryScene(lines: [
+                    "エカシ「はねを もって 羅臼岳へ ゆけ。 ふぶきは はれよう。",
+                    "　守護神は ふぶきの まくで みを まもる。",
+                    "　知床の ことを よく しり、HPに よゆうを もって いどむのじゃ。」",
+                ])
+            }
+            if progress.defeatedBosses.contains(.todoLord) {
+                return StoryScene(lines: [
+                    "エカシ「トドのぬしを たおしたか！",
+                    "　これが コタンコロカムイ……村を まもる シマフクロウの はねじゃ。",
+                    "　これで 羅臼岳の ふぶきを はらえる。」",
+                    "カムイの はねを てにいれた！",
+                ], sets: [.kamuiFeather])
+            }
+            return StoryScene(lines: [
+                "エカシ「わしは この 地の エカシ（長老）じゃ。",
+                "　知床は アイヌの ことばで シリエトク……『ちの はて』の いみ。",
+                "　羅臼岳は まおうの ふぶきに とざされ、守護神も とらわれた。",
+                "　ふぶきを はらうには コタンコロカムイの はねが いる。",
+                "　はねは 知床岬の ほらあなの トドのぬしが うばっていった。",
+                "　岬へは ウトロから 海ぞいの 道を 北へ すすむのじゃ。」",
+            ])
+
+        case .rancher:
+            if progress.has(.milkThanked) {
+                return StoryScene(lines: [
+                    "ぼくじょうぬし「中標津は 酪農の 町。",
+                    "　牛の かずが 人より おおいんだぞ。」",
+                ])
+            }
+            if progress.has(.milkDelivered) {
+                return StoryScene(lines: [
+                    "ぼくじょうぬし「番屋に とどけて くれたか！ たすかったよ。",
+                    "　これは おれいだ。」",
+                    "200ゴールドを てにいれた！",
+                ], gold: 200, sets: [.milkThanked])
+            }
+            if progress.has(.milkCarrying) {
+                return StoryScene(lines: [
+                    "ぼくじょうぬし「牛乳は 羅臼の 番屋へ たのむよ。",
+                    "　羅臼は 東の 海ぞいを ずっと いった さきだ。」",
+                ])
+            }
+            return StoryScene(lines: [
+                "ぼくじょうぬし「たびの ひとかい？ ひとつ たのまれて くれないか。",
+                "　羅臼の 番屋の おやじに しぼりたての 牛乳を とどけてほしいんだ。」",
+                "牛乳を あずかった。",
+            ], sets: [.milkCarrying])
+
+        case .banyaOyaji:
+            if progress.has(.milkCarrying), !progress.has(.milkDelivered) {
+                return StoryScene(lines: [
+                    "ばんやの おやじ「中標津の 牛乳か！ ありがてえ。",
+                    "　牧場の あいつに よろしく いっといてくれ。」",
+                    "牛乳を とどけた。",
+                ], sets: [.milkDelivered])
+            }
+            return StoryScene(lines: [
+                "ばんやの おやじ「羅臼の こんぶは だしの 王さまよ。",
+                "　はれた 日には 海の むこうの 国後島も よく 見えるぞ。」",
+            ])
+
+        case .foxRanger:
+            if progress.has(.foxReturned) {
+                return StoryScene(lines: [
+                    "レンジャー「キタキツネに たべものを あげちゃ だめよ。",
+                    "　知床は 世界自然遺産。 どうぶつたちの すみかなの。」",
+                ])
+            }
+            if progress.has(.foxFound) {
+                return StoryScene(lines: [
+                    "レンジャー「キツネの子が もどってきた！ ありがとう。",
+                    "　これ、たびに やくだてて。」",
+                    "薬草を 3つ てにいれた！",
+                ], items: [.herb, .herb, .herb], sets: [.foxReturned])
+            }
+            return StoryScene(lines: [
+                "レンジャー「ほごしていた キツネの子が いなくなったの。",
+                "　知床五湖の 木道の おくの ほうへ いったみたい……」",
+            ])
+
+        case .lostFox:
+            return StoryScene(lines: [
+                "キツネの子「コンコン……」",
+                "キツネの子は レンジャーの ほうへ かけていった。",
+            ], sets: [.foxFound])
+
+        case .foxHome:
+            return StoryScene(lines: [
+                "キツネの子「コン！」",
+                "しっぽを ふっている。",
+            ])
         }
     }
 
@@ -548,7 +681,8 @@ enum Resident: String, CaseIterable {
     /// 印の組み合わせは ぜんぶだと 多すぎるので、ひとつずつ 立てていった すじみちを たどる。
     var everyLine: [String] {
         let bosses: [Set<EnemyKind>] = [[], [.squidLord], [.squidLord, .komaLord],
-                                         [.squidLord, .komaLord, .tengu], [.squidLord, .komaLord, .tengu, .bearLord]]
+                                         [.squidLord, .komaLord, .tengu], [.squidLord, .komaLord, .tengu, .bearLord],
+                                         [.squidLord, .komaLord, .tengu, .bearLord, .todoLord]]
         var flagSets: [Set<StoryFlag>] = [[]]
         for flag in StoryFlag.allCases { flagSets.append(flagSets.last!.union([flag])) }
         for flag in StoryFlag.allCases { flagSets.append([flag]) }

@@ -859,5 +859,24 @@ enum EnemyArt {
             "....nnn..nnn....",
             "....nn....nn....",
         ],
+        // 知床岬の トドのぬし。流氷の よろいを まとった 大きな トド。
+        .todoLord: [
+            "................",
+            "................",
+            "....NNNNN.......",
+            "...NNNNNNN......",
+            "..NNkNNNNNN.....",
+            "..NNNNNNNNN.....",
+            ".nNNwNwNNNNN....",
+            ".nnNNNNNNNNNN...",
+            "...NNNNNNNNNNN..",
+            "..cNNNNNNNNNNNc.",
+            ".ccNNNNNNNNNNNcc",
+            ".cwNNNNNNNNNNNwc",
+            "..NNN.NNNNN.NNN.",
+            ".NNN...NNN...NN.",
+            "cccccccccccccccc",
+            "cwccwcccwccccwcc",
+        ],
     ]
 }

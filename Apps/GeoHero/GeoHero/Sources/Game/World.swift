@@ -105,15 +105,16 @@ enum MapID: String, Codable, CaseIterable {
     /// 街。函館エリアは 函館・松前・大沼、札幌・小樽は 札幌・小樽、知床は 羅臼。
     case hakodate, matsumae, onuma
     case sapporo, otaru, jozankei
-    case rausu
+    case nakashibetsu, utoro, rausu
     /// ほらあな。
     case hakodateyama, komagatake
     case tenguyama, moiwa1, moiwa2
+    case shiretokoMisaki
     case rausudake1, rausudake2
     /// 宿屋と道具屋の中。どの街から入っても ここを使い、出るときに元の街へ戻る。
     case innInside, shopInside
     /// 街の 家の中。1軒ずつ ちがい、宝箱や ヒントをくれる人がいる。出るときは 入った扉の前へ戻る。
-    case bugyosho, asaichiSouko, motomachiHouse, bukeyashiki, tsukemonoya, ryoshiHouse, noukaHouse, dangoya, yamagoya, glassKobo, tokeidaiHouse, sapporoHouse, doucho, susukinoHouse, orgelDo, otaruSouko, onsenHouse
+    case bugyosho, asaichiSouko, motomachiHouse, bukeyashiki, tsukemonoya, ryoshiHouse, noukaHouse, dangoya, yamagoya, glassKobo, tokeidaiHouse, sapporoHouse, doucho, susukinoHouse, orgelDo, otaruSouko, onsenHouse, bokujoHouse, nakaHouse, utoroCenter, utoroHouse, banya, ekashiHouse, rausuHouse
 
     /// 漢字の地名。フィールドの目印の下や 看板に出す。街・ほらあな・空港の行き先。
     var placeName: String? {
@@ -125,6 +126,9 @@ enum MapID: String, Codable, CaseIterable {
         case .otaru: "小樽"
         case .jozankei: "定山渓"
         case .rausu: "羅臼"
+        case .nakashibetsu: "中標津"
+        case .utoro: "ウトロ"
+        case .shiretokoMisaki: "知床岬"
         case .hakodateyama: "函館山"
         case .komagatake: "駒ヶ岳"
         case .tenguyama: "天狗山"
@@ -139,7 +143,7 @@ enum MapID: String, Codable, CaseIterable {
         switch self {
         case .hakodateArea, .hakodate, .matsumae, .onuma, .hakodateyama, .komagatake: .hakodate
         case .sapporoArea, .sapporo, .otaru, .jozankei, .tenguyama, .moiwa1, .moiwa2: .sapporo
-        case .shiretokoArea, .rausu, .rausudake1, .rausudake2: .shiretoko
+        case .shiretokoArea, .nakashibetsu, .utoro, .rausu, .shiretokoMisaki, .rausudake1, .rausudake2: .shiretoko
         default: nil
         }
     }
@@ -150,7 +154,7 @@ enum MapID: String, Codable, CaseIterable {
     /// ほらあなか。
     var isCave: Bool {
         switch self {
-        case .hakodateyama, .komagatake, .tenguyama, .moiwa1, .moiwa2, .rausudake1, .rausudake2: true
+        case .hakodateyama, .komagatake, .tenguyama, .moiwa1, .moiwa2, .shiretokoMisaki, .rausudake1, .rausudake2: true
         default: false
         }
     }
@@ -174,6 +178,8 @@ enum MapID: String, Codable, CaseIterable {
         case .otaru: .otaru
         case .jozankei: .jozankei
         case .rausu: .rausu
+        case .nakashibetsu: .nakashibetsu
+        case .utoro: .utoro
         default: nil
         }
     }
@@ -226,6 +232,14 @@ struct TownInfo: Equatable {
     static let jozankei = TownInfo(name: "定山渓", reading: "じょうざんけい", tagline: "かっぱの すむ 温泉街",
                                    innBase: 5, innPerLevel: 6,
                                    stock: [.herb, .steelSword, .chainMail])
+    /// 酪農の町。知床への 空の入口。
+    static let nakashibetsu = TownInfo(name: "中標津", reading: "なかしべつ", tagline: "牧場と 空港の 町",
+                                       innBase: 5, innPerLevel: 7,
+                                       stock: [.herb, .steelSword, .chainMail])
+    /// オホーツク海がわの 知床の 町。知床五湖の 入口。
+    static let utoro = TownInfo(name: "ウトロ", reading: "うとろ", tagline: "オホーツクの 知床の 町",
+                                innBase: 6, innPerLevel: 7,
+                                stock: [.herb, .steelSword, .chainMail])
     /// さいはての町。運ぶのが大変なぶん 宿も品も高い。銅の剣・革の鎧は もう置かない。
     static let rausu = TownInfo(name: "羅臼", reading: "らうす", tagline: "知床の さいはての 町",
                                 innBase: 6, innPerLevel: 8,

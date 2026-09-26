@@ -76,7 +76,10 @@ struct QuizTests {
         #expect(QuizRegion.at(.otaru, Point(x: 13, y: 20)) == .otaru, "小樽")
         #expect(QuizRegion.at(.sapporoArea, Point(x: 29, y: 28)) == .sapporo, "藻岩山の前")
         #expect(QuizRegion.at(.moiwa2, Point(x: 1, y: 1)) == .sapporo)
-        #expect(QuizRegion.at(.shiretokoArea, Point(x: 18, y: 22)) == .rausu, "知床の外")
+        #expect(QuizRegion.at(.shiretokoArea, Point(x: 16, y: 32)) == .rausu, "中標津の外")
+        #expect(QuizRegion.at(.shiretokoArea, Point(x: 30, y: 12)) == .utoro, "ウトロの外")
+        #expect(QuizRegion.at(.shiretokoMisaki, Point(x: 8, y: 13)) == .utoro, "知床岬")
+        #expect(QuizRegion.at(.nakashibetsu, Point(x: 12, y: 16)) == .rausu, "中標津")
         #expect(QuizRegion.at(.rausudake2, Point(x: 1, y: 1)) == .rausu)
         #expect(QuizRegion.at(.innInside, Point(x: 4, y: 4)) == nil, "宿屋の中")
     }

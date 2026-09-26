@@ -11,6 +11,7 @@ struct BossBalanceTests {
         (.komaLord, 7, .copperSword, .leatherArmor, .onuma),
         (.tengu, 10, .copperSword, .leatherArmor, .otaru),
         (.bearLord, 11, .steelSword, .chainMail, .sapporo),
+        (.todoLord, 14, .steelSword, .chainMail, .utoro),
         (.guardian, 15, .steelSword, .chainMail, .rausu),
     ]
 

@@ -241,8 +241,8 @@ struct GameStateTests {
         #expect(game.battle?.end == .lost)
         await game.finishBattle()
         #expect(game.screen == .field)
-        // 知床で負けたので 知床の はじめの街（羅臼）で 目を覚ます。
-        #expect(game.mapID == .rausu)
+        // 知床で負けたので 知床の はじめの街（中標津）で 目を覚ます。
+        #expect(game.mapID == .nakashibetsu)
         #expect(game.hero.gold == 50)
         #expect(game.hero.hp == game.hero.maxHP)
     }

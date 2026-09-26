@@ -13,7 +13,7 @@ struct Quiz: Equatable, Hashable {
 
 /// 問題を出す土地。街・ちかくの ほらあな・その街へ むかう区域で、その街の問題を出す。
 enum QuizRegion: CaseIterable {
-    case hakodate, matsumae, onuma, sapporo, otaru, rausu
+    case hakodate, matsumae, onuma, sapporo, otaru, rausu, utoro
 
     /// 答えを教えてくれる街。定山渓の問題は 札幌の山に まぜてある。
     var towns: [MapID] {
@@ -23,7 +23,8 @@ enum QuizRegion: CaseIterable {
         case .onuma: [.onuma]
         case .sapporo: [.sapporo, .jozankei]
         case .otaru: [.otaru]
-        case .rausu: [.rausu]
+        case .rausu: [.rausu, .nakashibetsu]
+        case .utoro: [.utoro]
         }
     }
 
@@ -35,7 +36,8 @@ enum QuizRegion: CaseIterable {
         case .onuma: ["大沼のまわり"]
         case .sapporo: ["札幌のまわり"]
         case .otaru: ["小樽へむかう道"]
-        case .rausu: ["知床へむかう道", "羅臼岳へむかう道"]
+        case .rausu: ["中標津のまわり"]
+        case .utoro: ["ウトロへむかう道"]
         }
     }
 
@@ -47,7 +49,8 @@ enum QuizRegion: CaseIterable {
         case .onuma, .komagatake: .onuma
         case .sapporo, .jozankei, .moiwa1, .moiwa2: .sapporo
         case .otaru, .tenguyama: .otaru
-        case .rausu, .rausudake1, .rausudake2: .rausu
+        case .rausu, .nakashibetsu, .rausudake1, .rausudake2: .rausu
+        case .utoro, .shiretokoMisaki: .utoro
         case .hakodateArea, .sapporoArea, .shiretokoArea:
             World.map(mapID).area(at: point).flatMap { area in allCases.first { $0.areas.contains(area.name) } }
         default: nil
@@ -106,12 +109,20 @@ enum QuizRegion: CaseIterable {
             Quiz(question: "銀行が ならび「北の ウォール街」と よばれた 町は？", choices: ["松前", "羅臼", "小樽"], answer: 2),
         ]
         case .rausu: [
-            Quiz(question: "知床が えらばれた ものは？", choices: ["世界文化遺産", "世界自然遺産", "日本三景"], answer: 1),
-            Quiz(question: "冬に 知床の 海へ ながれつく ものは？", choices: ["りゅうひょう", "やけい", "さくら"], answer: 0),
-            Quiz(question: "知床半島の 北に ひろがる 海は？", choices: ["日本海", "瀬戸内海", "オホーツク海"], answer: 2),
             Quiz(question: "羅臼の 名物の 海そうは？", choices: ["わかめ", "こんぶ", "のり"], answer: 1),
             Quiz(question: "羅臼の 海で 見られる 大きな いきものは？", choices: ["シャチ", "ジンベエザメ", "ウミガメ"], answer: 0),
             Quiz(question: "「知床」は アイヌの ことばで どんな いみ？", choices: ["はなの みやこ", "ひの いずる くに", "ちの はて"], answer: 2),
+            Quiz(question: "羅臼の 海の むこうに 見える 島は？", choices: ["佐渡島", "国後島", "屋久島"], answer: 1),
+            Quiz(question: "中標津の 開陽台で 見えると いわれるのは？", choices: ["地球の まるみ", "富士山", "桜島"], answer: 0),
+            Quiz(question: "中標津で さかんな しごとは？", choices: ["みかんづくり", "茶づくり", "酪農"], answer: 2),
+        ]
+        case .utoro: [
+            Quiz(question: "知床が えらばれた ものは？", choices: ["世界文化遺産", "世界自然遺産", "日本三景"], answer: 1),
+            Quiz(question: "冬に 知床の 海へ ながれつく ものは？", choices: ["りゅうひょう", "やけい", "さくら"], answer: 0),
+            Quiz(question: "知床半島の 北に ひろがる 海は？", choices: ["日本海", "瀬戸内海", "オホーツク海"], answer: 2),
+            Quiz(question: "ウトロの ちかくに ある 5つの 湖は？", choices: ["富士五湖", "知床五湖", "大沼"], answer: 1),
+            Quiz(question: "ウトロの ちかくで 海ぞいに おちる 滝は？", choices: ["オシンコシンの滝", "華厳の滝", "那智の滝"], answer: 0),
+            Quiz(question: "ウトロの 港に そびえる 大きな 岩は？", choices: ["夫婦岩", "立岩", "オロンコ岩"], answer: 2),
         ]
         }
     }

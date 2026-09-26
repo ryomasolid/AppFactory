@@ -46,19 +46,19 @@ enum EnemyKind: String, Codable, CaseIterable {
     case fishOwl
     case woodpecker
     // ── 知床 ──
-    // 知床へむかう道
+    // 中標津のまわり
     case deer
     case cod
     case salmon
-    // 羅臼岳へむかう道
+    // ウトロへむかう道
     case seaEagle
     case snowman
     case orca
-    // 羅臼岳の ほらあな B1
+    // 知床岬の ほらあな
     case hikarigoke
     case icicleOgre
     case iceBat
-    // 羅臼岳の ほらあな B2
+    // 羅臼岳の ほらあな（B1・B2）
     case phantomWolf
     case iceGolem
     case blizzardSpirit
@@ -68,6 +68,8 @@ enum EnemyKind: String, Codable, CaseIterable {
     case komaLord
     /// 天狗山のボス。小樽の オルゴールを うばった。
     case tengu
+    /// 知床岬の ほらあなの ボス。コタンコロカムイの はねを うばった。
+    case todoLord
     /// 藻岩山のボス。倒すと 知床ゆきの きっぷが もらえる。
     case bearLord
     /// 羅臼岳のラスボス。
@@ -144,6 +146,7 @@ enum EnemyKind: String, Codable, CaseIterable {
         case .squidLord: Stats(name: "イカのぬし", maxHP: 70, attack: 20, defense: 10, agility: 6, exp: 60, gold: 80)
         case .komaLord: Stats(name: "駒ヶ岳のぬし", maxHP: 110, attack: 28, defense: 16, agility: 7, exp: 100, gold: 150)
         case .tengu: Stats(name: "天狗", maxHP: 170, attack: 36, defense: 20, agility: 9, exp: 180, gold: 250)
+        case .todoLord: Stats(name: "トドのぬし", maxHP: 300, attack: 50, defense: 32, agility: 11, exp: 400, gold: 400)
         case .bearLord: Stats(name: "ヒグマのぬし", maxHP: 260, attack: 45, defense: 26, agility: 10, exp: 250, gold: 300)
         case .guardian: Stats(name: "知床の守護神", maxHP: 380, attack: 56, defense: 36, agility: 13, exp: 0, gold: 0)
         }
@@ -152,7 +155,7 @@ enum EnemyKind: String, Codable, CaseIterable {
     /// ボスは 話しかけて始まる戦闘。群れず、逃げられない。
     var isBoss: Bool {
         switch self {
-        case .squidLord, .komaLord, .tengu, .bearLord, .guardian: true
+        case .squidLord, .komaLord, .tengu, .bearLord, .todoLord, .guardian: true
         default: false
         }
     }
@@ -165,6 +168,7 @@ enum EnemyKind: String, Codable, CaseIterable {
         case .komaLord: 4
         case .tengu: 4
         case .bearLord: 5
+        case .todoLord: 5
         case .guardian: 6
         default: 0
         }
@@ -176,6 +180,7 @@ enum EnemyKind: String, Codable, CaseIterable {
         case .komaLord: "ほのおの たてがみ"
         case .tengu: "天狗の かくれみの"
         case .bearLord: "山の かご"
+        case .todoLord: "流氷の よろい"
         case .guardian: "ふぶきの まく"
         default: "すみの まく"
         }
