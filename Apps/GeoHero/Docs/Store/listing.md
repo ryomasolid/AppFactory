@@ -40,7 +40,7 @@
 2026-09-29 に ビルド8・今風の スクショ（グラデーション背景＋iPhone の 枠＋飛び出す カード）で 審査へ 提出した。
 
 - **アプリ内イベント**: 「北海道 めいしょスタンプラリー」（10/3〜10/31、下書きずみ）。
-  1.2 公開後に ディープリンク `geohero://stamp-rally` を 入れて 審査へ。画像は `Docs/Store/event/`（`Tools/make_event_art.swift`）。
+  ディープリンク `geohero://stamp-rally`・公開開始 9/30 0:00 で、2026-09-29 に 1.2 と 同じ 提出物で 審査へ 出した。画像は `Docs/Store/event/`（`Tools/make_event_art.swift`）。
 
 ## 説明文（4000文字まで）
 
