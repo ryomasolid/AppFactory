@@ -15,6 +15,8 @@ import Foundation
 /// / `-startOverlay shop -shopBuy YES`（道具屋の「かう」一覧。街ごとの品ぞろえを見る）
 /// / `-openedChests hakodateyama-0,moiwa1-0`（開けた宝箱）
 /// / `-startMap field -startX 16 -startY 35 -autoStep up`（1秒後に1歩あるく。街に入ったときの地名の札を見る）
+/// / `-autoWalk right,right,up,up`（1秒後から 順に あるく。App プレビューの 動画を 撮る用）
+/// / `-startBattle sakuraSpirit -autoQuiz YES`（「ちしきの チャンス」を 出して 正解する。動画を 撮る用）
 @MainActor
 enum Launch {
     /// 戦闘で開いておくサブメニュー（`-battleSubmenu spells` / `items` / `quiz`）。表示確認用。
@@ -105,6 +107,17 @@ enum Launch {
                 await game.walk(step)
             }
         }
+        if let path = defaults.string(forKey: "autoWalk") {
+            let steps = path.split(separator: ",").compactMap { Direction(rawValue: String($0)) }
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                for step in steps {
+                    // 前の 1歩が 終わるまで 待ってから 次へ（歩いている あいだの 入力は 捨てられる）。
+                    while !game.canWalk { try? await Task.sleep(for: .milliseconds(30)) }
+                    await game.walk(step)
+                }
+            }
+        }
         if defaults.bool(forKey: "autoInn") {
             // 暗転とねむりの演出の確認用。あいさつを読み飛ばして眠りに入る。
             Task {
@@ -119,6 +132,21 @@ enum Launch {
             let kinds = battleName.split(separator: ",").compactMap { EnemyKind(rawValue: String($0)) }
             guard !kinds.isEmpty else { return }
             game.startBattle(kinds)
+            if defaults.bool(forKey: "autoQuiz") {
+                Task {
+                    // 敵が 出た 文を 読んでから 問題を 出し、少し 見せてから 正解する。
+                    try? await Task.sleep(for: .seconds(1.6))
+                    // 出現の 文が 流れ終わるまで 待つ。
+                    for _ in 0..<40 {
+                        if game.offerQuizChance(target: game.battle?.battle.defaultTarget, force: true) { break }
+                        try? await Task.sleep(for: .milliseconds(100))
+                    }
+                    try? await Task.sleep(for: .seconds(2.6))
+                    guard let quiz = game.quizChance else { return }
+                    await game.answerQuiz(quiz.answer)
+                }
+                return
+            }
             // 動きを撮るため、少し待ってから自動でコマンドを出す。
             let auto = defaults.bool(forKey: "autoAttack")
                 ? BattleCommand.attack

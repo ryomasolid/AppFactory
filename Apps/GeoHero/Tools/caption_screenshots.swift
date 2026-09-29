@@ -1,6 +1,7 @@
 // ストア用の スクリーンショットを 作る（6.5インチ・1242x2688・透過なしJPEG）。
 //
 //     swift Tools/caption_screenshots.swift
+//     swift Tools/caption_screenshots.swift edu   （先生・保護者 向けの カスタムプロダクトページ用）
 //
 // `Tools/make_screenshots.sh` で撮った `Docs/Store/screenshots/65_*.jpg` を iPhone の 枠に 入れ、
 // グラデーションの 背景・ラベル・大きな 見出しを つける。見どころ（ボスの ドット絵・クイズの 枠など）は
@@ -10,7 +11,9 @@ import AppKit
 // Apps/GeoHero で 実行する。
 let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 let input = root.appendingPathComponent("Docs/Store/screenshots")
-let output = root.appendingPathComponent("Docs/Store/screenshots_captioned")
+/// `edu` を つけると 見出しを 学び向けに かえ、`Docs/Store/screenshots_edu/` に 出す。
+let isEdu = CommandLine.arguments.dropFirst().first == "edu"
+let output = root.appendingPathComponent(isEdu ? "Docs/Store/screenshots_edu" : "Docs/Store/screenshots_captioned")
 try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
 
 let width: CGFloat = 1242, height: CGFloat = 2688
@@ -74,6 +77,16 @@ let shots: [Shot] = [
          popout: Popout(crop: NSRect(x: 19, y: 752, width: 1210, height: 418),
                         center: NSPoint(x: 621, y: 2080), cardWidth: 1100, tilt: -3),
          deviceShift: 0),
+]
+
+/// 先生・保護者 向けの 見出し（ラベル・1行目・2行目）。絵と 並びは 同じ。
+let eduTexts: [String: (tag: String, title: String, accent: String)] = [
+    "title": ("授業・自由研究に", "遊びながら", "北海道を 学ぶ"),
+    "quiz": ("地理クイズ", "五稜郭・運河・流氷", "楽しく 覚える"),
+    "field": ("地図で 学ぶ", "地方の 位置が", "歩いて わかる"),
+    "town": ("名所の 看板", "街の人と 看板が", "先生に なる"),
+    "boss": ("ご当地バトル", "正解すると", "有利に なる"),
+    "shop": ("安心して 遊べる", "広告・課金・通信", "いっさい なし"),
 ]
 
 // MARK: - 描く部品（AppKit は 下が 0。上から はかる 値は `flip` で なおす）
@@ -212,7 +225,12 @@ func drawPopout(_ popout: Popout, from bitmap: NSBitmapImageRep) {
     NSGraphicsContext.restoreGraphicsState()
 }
 
-for (index, shot) in shots.enumerated() {
+for (index, base) in shots.enumerated() {
+    var shot = base
+    if isEdu, let text = eduTexts[base.name] {
+        shot = Shot(file: base.file, name: base.name, tag: text.tag, title: text.title, accent: text.accent,
+                    top: base.top, bottom: base.bottom, popout: base.popout, deviceShift: base.deviceShift)
+    }
     let url = input.appendingPathComponent(shot.file + ".jpg")
     guard let screenshot = NSImage(contentsOf: url),
           let source = NSBitmapImageRep(data: try Data(contentsOf: url)) else {
@@ -234,5 +252,5 @@ for (index, shot) in shots.enumerated() {
     let name = String(format: "65_%d_%@.jpg", index + 1, shot.name)
     let data = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.92])!
     try data.write(to: output.appendingPathComponent(name))
-    print("  Docs/Store/screenshots_captioned/\(name)")
+    print("  \(output.lastPathComponent)/\(name)")
 }
