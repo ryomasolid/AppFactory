@@ -255,8 +255,8 @@ struct BattleView: View {
             }
             RetroChoice(title: "もどる") { submenu = .none }
         case .items:
-            // 持っている 回復の道具を 2列に ならべる。なければ ハスカップを 0こで 出す（ないことが 分かるように）。
-            let owned = hero.consumables.isEmpty ? [(item: Item.herb, count: 0)] : hero.consumables
+            // 戦いで 使える 道具を 2列に ならべる。なければ ハスカップを 0こで 出す（ないことが 分かるように）。
+            let owned = hero.battleItems.isEmpty ? [(item: Item.herb, count: 0)] : hero.battleItems
             let half = (owned.count + 1) / 2
             TwoColumns {
                 ForEach(owned.prefix(half), id: \.item) { itemChoice($0.item, $0.count) }

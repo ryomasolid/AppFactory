@@ -176,7 +176,7 @@ enum World {
                 "坂の 上から みなとと 海が まっすぐ 見える。",
             ]),
         ],
-        chestRewards: [.item(.herb), .gold(20)]
+        chestRewards: [.item(.ikameshi), .gold(20)]
     )
 
     /// 松前。北海道の いちばん南の 町。
@@ -268,7 +268,7 @@ enum World {
                 "津軽海峡の むこうに 本州が 見える。",
             ]),
         ],
-        chestRewards: [.gold(40)]
+        chestRewards: [.item(.walnut)]
     )
 
     /// 大沼。駒ヶ岳の ふもとの 湖の 町。
@@ -351,7 +351,7 @@ enum World {
                 "小さな だんごを はこに ぎっしり つめた おかし。",
             ]),
         ],
-        chestRewards: [.gold(80)]
+        chestRewards: [.item(.dango)]
     )
 
     /// 札幌。北海道で いちばん大きな街。
@@ -456,7 +456,7 @@ enum World {
                 "札幌 名物の みそラーメンの 店が ならぶ。",
             ]),
         ],
-        chestRewards: [.gold(40)]
+        chestRewards: [.item(.misoRamen)]
     )
 
     /// 小樽。石狩湾の みなと町。
@@ -609,7 +609,7 @@ enum World {
                 "かっぱが すむと いわれる 川の ふち。",
             ]),
         ],
-        chestRewards: [.gold(60)]
+        chestRewards: [.item(.onsenTamago)]
     )
 
     /// 羅臼。知床半島の 東がわ、根室海峡に めんした 町。
@@ -693,7 +693,7 @@ enum World {
                 "羅臼の 海には シャチや クジラが くる。",
             ]),
         ],
-        chestRewards: [.gold(150)]
+        chestRewards: [.item(.ikuraDon)]
     )
 
     /// 中標津。知床への 空の入口の 酪農の町。牧場主が 羅臼の番屋へ 牛乳を たのむ。
@@ -752,7 +752,7 @@ enum World {
                 "牛の かずが 人より おおい 町。",
             ]),
         ],
-        chestRewards: [.gold(120)]
+        chestRewards: [.item(.milk)]
     )
 
     /// ウトロ。知床半島の 西がわ、オホーツク海に めんした 町。
@@ -890,7 +890,7 @@ enum World {
         warps: [
             Point(x: 9, y: 13): Warp(to: .hakodateArea, at: Point(x: 40, y: 11)),
         ],
-        chestRewards: [.gold(120), .item(.herb)],
+        chestRewards: [.gold(120), .item(.hanabi)],
         bossKind: .komaLord,
         encounters: [
             .caveFloor: [.lavaSlime, .pumiceGolem, .sulfurSmoke],
@@ -923,7 +923,7 @@ enum World {
         warps: [
             Point(x: 9, y: 13): Warp(to: .sapporoArea, at: Point(x: 9, y: 29)),
         ],
-        chestRewards: [.gold(150), .item(.herb)],
+        chestRewards: [.gold(150), .item(.hakka)],
         bossKind: .tengu,
         encounters: [
             .caveFloor: [.flyingSquirrel, .maitake, .salamander],
@@ -954,7 +954,7 @@ enum World {
             Point(x: 7, y: 11): Warp(to: .sapporoArea, at: Point(x: 29, y: 28)),
             Point(x: 3, y: 9): Warp(to: .moiwa2, at: Point(x: 6, y: 9)),
         ],
-        chestRewards: [.item(.herb)],
+        chestRewards: [.item(.hanabi)],
         encounters: [
             .caveFloor: [.bearCub, .fishOwl, .woodpecker],
         ],
@@ -981,7 +981,7 @@ enum World {
         warps: [
             Point(x: 5, y: 9): Warp(to: .moiwa1, at: Point(x: 4, y: 9)),
         ],
-        chestRewards: [.gold(150)],
+        chestRewards: [.item(.walnut)],
         bossKind: .bearLord,
         encounters: [
             .caveFloor: [.bearCub, .fishOwl, .woodpecker],
@@ -1014,7 +1014,7 @@ enum World {
         warps: [
             Point(x: 9, y: 13): Warp(to: .shiretokoArea, at: Point(x: 57, y: 3)),
         ],
-        chestRewards: [.gold(250), .item(.herb)],
+        chestRewards: [.gold(250), .item(.hanabi)],
         bossKind: .todoLord,
         encounters: [
             .caveFloor: [.hikarigoke, .icicleOgre, .iceBat],
@@ -1139,7 +1139,7 @@ enum World {
             // 函館空港 → 丘珠空港（札幌）。
             Point(x: 55, y: 27): Warp(to: .sapporoArea, at: Point(x: 42, y: 15), needs: .ticketToSapporo),
         ],
-        chestRewards: [.gold(100), .gold(60), .item(.herb), .item(.leatherArmor), .gold(30)],
+        chestRewards: [.gold(100), .item(.bearBell), .item(.ikameshi), .item(.leatherArmor), .item(.soybean)],
         // 目印ごとの区域。旅の順に ひとつずつ強くなり、出る敵は 場所ごとに ぜんぶ ちがう。
         // 函館 → 函館山 → 松前 → 大沼 の順に たずねる。
         encounterAreas: [
@@ -1217,7 +1217,7 @@ enum World {
             // 新千歳空港 → 中標津空港（知床）。
             Point(x: 54, y: 32): Warp(to: .shiretokoArea, at: Point(x: 10, y: 30), needs: .ticketToShiretoko),
         ],
-        chestRewards: [.gold(120), .item(.herb), .gold(200), .item(.herb)],
+        chestRewards: [.gold(120), .item(.melon), .gold(200), .item(.misoRamen)],
         // 札幌の まわりは やさしく、小樽・天狗山・定山渓の ほうは 手ごわい。
         encounterAreas: [
             EncounterArea(name: "札幌のまわり",
@@ -1290,7 +1290,7 @@ enum World {
             // 中標津空港 → 新千歳空港（もどり）。
             Point(x: 10, y: 29): Warp(to: .sapporoArea, at: Point(x: 54, y: 33), needs: .ticketToShiretoko),
         ],
-        chestRewards: [.gold(250), .item(.herb), .item(.herb), .gold(300)],
+        chestRewards: [.gold(250), .item(.melon), .item(.ikuraDon), .gold(300)],
         // 中標津の まわりは やさしく、ウトロ・羅臼・知床岬の ほうは 手ごわい。
         encounterAreas: [
             EncounterArea(name: "中標津のまわり", around: [Point(x: 10, y: 30), Point(x: 16, y: 32), Point(x: 24, y: 31)],
@@ -1395,7 +1395,7 @@ enum World {
             ["りょうし「親方なら みなとの 西の はしに いるぞ。",
              "　イカのぬしを 見たって 大さわぎさ。」"],
         ],
-        chestRewards: [.item(.herb)]
+        chestRewards: [.item(.ikameshi)]
     )
 
     /// 元町の 家。
@@ -1414,7 +1414,7 @@ enum World {
             ["おばあさん「さっき 坂の 下で 男の子が ないていたよ。",
              "　朝市の おかあさんの 子かねえ。」"],
         ],
-        chestRewards: [.gold(30)]
+        chestRewards: [.item(.hanabi)]
     )
 
     /// 松前の 武家屋敷。
@@ -1509,7 +1509,7 @@ enum World {
             ["だんごや「駒ヶ岳の ぬしは 火を ふく うまの ばけもの。",
              "　大沼の ことを よく しってると たたかいで やくに たつらしいよ。」"],
         ],
-        chestRewards: [.gold(50)]
+        chestRewards: [.item(.dango)]
     )
 
     /// 大沼の 山小屋。
@@ -1528,7 +1528,7 @@ enum World {
             ["やまおとこ「駒ヶ岳の ほらあなは おくが ふかい。",
              "　ハスカップを たっぷり もっていけ。 はこの ぶんは やるよ。」"],
         ],
-        chestRewards: [.item(.herb), .gold(20)]
+        chestRewards: [.item(.herb), .item(.bearBell)]
     )
 
 
@@ -1554,7 +1554,7 @@ enum World {
              "　たいそう 気にかけて おられる。」"],
         ],
         residents: ["1": .governor],
-        chestRewards: [.gold(50)]
+        chestRewards: [.item(.soybean)]
     )
 
     /// 札幌の 時計台。
@@ -1592,7 +1592,7 @@ enum World {
             ["むすめ「新千歳空港は 札幌の 南東よ。",
              "　ヒグマのぬしを たおせば 知床へ とべる きっぷが もらえるわ。」"],
         ],
-        chestRewards: [.gold(80)]
+        chestRewards: [.item(.bearBell)]
     )
 
     /// すすきのの 家。
@@ -1611,7 +1611,7 @@ enum World {
             ["おじさん「ラーメンの おやじは 出前の 手が",
              "　たりないって ぼやいてたよ。」"],
         ],
-        chestRewards: [.gold(30)]
+        chestRewards: [.item(.misoRamen)]
     )
 
     /// 小樽の ガラス工房。
@@ -1668,7 +1668,7 @@ enum World {
             ["にんぷ「ネコなら さっき 倉庫の 東の かげに いたぞ。",
              "　ニシンの においでも したのかな。」"],
         ],
-        chestRewards: [.gold(60)]
+        chestRewards: [.item(.hanabi)]
     )
 
     /// 定山渓の 湯宿。
@@ -1687,7 +1687,7 @@ enum World {
             ["おかみ「藻岩山の ほらあなは 2かいだて。",
              "　ぬしは いちばん 奥に いるそうだよ。」"],
         ],
-        chestRewards: [.item(.herb)]
+        chestRewards: [.item(.onsenTamago)]
     )
 
     /// 中標津の 牧場の家。
@@ -1706,7 +1706,7 @@ enum World {
             ["むすこ「開陽台に のぼると 地球が まるく 見えるんだ。",
              "　とうさんの 牛乳は 羅臼でも 大人気さ。」"],
         ],
-        chestRewards: [.item(.herb)]
+        chestRewards: [.item(.milk)]
     )
 
     /// 中標津の 家。
@@ -1725,7 +1725,7 @@ enum World {
             ["おばあさん「知床の まものは つよいよ。",
              "　宿屋で しっかり やすんで おいき。」"],
         ],
-        chestRewards: [.gold(150)]
+        chestRewards: [.item(.soybean)]
     )
 
     /// ウトロの 自然センター。
@@ -1744,7 +1744,7 @@ enum World {
             ["しょくいん「知床岬の ほらあなの トドのぬしは とても 大きいの。",
              "　ウトロの ことを よく しってると たたかいで やくに たつそうよ。」"],
         ],
-        chestRewards: [.item(.herb)]
+        chestRewards: [.item(.bearBell)]
     )
 
     /// ウトロの 漁師の家。
@@ -1782,7 +1782,7 @@ enum World {
             ["わかい りょうし「羅臼の こんぶは 夏に ほすんだ。",
              "　おやじは 牛乳に 目が ないんだよ。」"],
         ],
-        chestRewards: [.item(.herb)]
+        chestRewards: [.item(.ikuraDon)]
     )
 
     /// 羅臼の エカシの家。
@@ -1801,7 +1801,7 @@ enum World {
             ["むすめ「父は コタンコロカムイの はねの 話を",
              "　だれかに たくせる ひを まっていたの。」"],
         ],
-        chestRewards: [.gold(200)]
+        chestRewards: [.item(.hakka)]
     )
 
     /// 羅臼の 家。
@@ -1820,6 +1820,6 @@ enum World {
             ["おとこ「羅臼岳の ほらあなは 2かいだて。",
              "　守護神の ふぶきは つよい。 HPに よゆうを もて。」"],
         ],
-        chestRewards: [.item(.herb)]
+        chestRewards: [.item(.onsenTamago)]
     )
 }

@@ -55,8 +55,9 @@ struct GroupBattleTests {
         #expect(battle.living.count < 3, "1ターンで 1体も 倒せていない")
     }
 
-    /// そのエリアに入りたてのレベルなら、3体でも回復なしで勝てる。
-    @Test func threeEnemiesAreBeatableWithoutHealing() {
+    /// そのエリアに入りたてのレベルなら、3体でも 回復しながら 戦えば 勝てる。
+    /// （回復なしで 勝てる強さだと サクサク 進みすぎたので、回復を 使う前提に した）
+    @Test func threeEnemiesAreBeatableWithHealing() {
         // エリアと、そこに着くころのレベル・装備。
         let cases: [(String, EnemyKind, Int, Item, Item)] = [
             ("函館のまわり", .kelpSlime, 1, .woodStick, .clothes),
@@ -74,12 +75,22 @@ struct GroupBattleTests {
                 _ = hero.gainExp(LevelTable.row(level).exp)
                 hero.receive(weapon)
                 hero.receive(armor)
+                hero.inventory[.herb] = 3
                 hero.restoreFully()
 
                 var battle = Battle(hero: hero, enemies: EnemyGroup.numbered([kind, kind, kind]))
                 var end: BattleEnd?
                 for _ in 0..<60 where end == nil {
-                    end = battle.take(.attack, rng: &rng).end
+                    let me = battle.hero
+                    var command = BattleCommand.attack
+                    if me.hp < me.maxHP * 2 / 5 {
+                        if let heal = [Spell.highHeal, .heal].first(where: { me.spells.contains($0) && me.mp >= $0.mpCost }) {
+                            command = .spell(heal)
+                        } else if me.herbCount > 0 {
+                            command = .item(.herb)
+                        }
+                    }
+                    end = battle.take(command, rng: &rng).end
                 }
                 if end != .won(exp: kind.stats.exp * 3, gold: kind.stats.gold * 3) { losses += 1 }
             }

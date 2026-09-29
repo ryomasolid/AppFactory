@@ -156,39 +156,79 @@ struct EncounterTests {
         (13, .steelSword, .chainMail), (14, .steelSword, .chainMail),
     ]
 
-    /// 同じ敵 `count` 体と こうげきだけで戦い、20戦のうち 勝った数を返す。
-    private func wins(level: Int, weapon: Item, armor: Item, against kind: EnemyKind, count: Int) -> Int {
+    /// 同じ敵 `count` 体と 20戦して、勝った数と 勝ったときに のこった HP の割合（平均）を返す。
+    /// `healing` なら HP が 4割を 切ったら 回復の呪文・ハスカップ（3つ）で なおす。ほかは こうげき だけ。
+    private func fights(level: Int, weapon: Item, armor: Item, against kind: EnemyKind, count: Int,
+                        healing: Bool = false) -> (wins: Int, hpLeft: Double) {
         var wins = 0
+        var hpLeft = 0.0
         for seed in UInt64(1)...20 {
             var rng = SeededRandomSource(seed: seed)
             var hero = Hero()
             _ = hero.gainExp(LevelTable.row(level).exp)
             hero.receive(weapon)
             hero.receive(armor)
+            hero.inventory[.herb] = healing ? 3 : 0
             hero.restoreFully()
             var battle = Battle(hero: hero, enemies: EnemyGroup.numbered(Array(repeating: kind, count: count)))
             var end: BattleEnd?
+            var lastHP = 0
             for _ in 0..<60 where end == nil {
-                end = battle.take(.attack, rng: &rng).end
+                let me = battle.hero
+                var command = BattleCommand.attack
+                if healing, me.hp < me.maxHP * 2 / 5 {
+                    if let heal = [Spell.highHeal, .heal].first(where: { me.spells.contains($0) && me.mp >= $0.mpCost }) {
+                        command = .spell(heal)
+                    } else if me.herbCount > 0 {
+                        command = .item(.herb)
+                    }
+                }
+                let result = battle.take(command, rng: &rng)
+                end = result.end
+                // 勝つと レベルが 上がって 全快することが あるので、「かった！」の 行の HP を 見る。
+                if let won = result.lines.first(where: { $0.text == "たたかいに かった！" }) { lastHP = won.hero?.hp ?? 0 }
             }
-            if end == .won(exp: kind.stats.exp * count, gold: kind.stats.gold * count) { wins += 1 }
+            if end == .won(exp: kind.stats.exp * count, gold: kind.stats.gold * count) {
+                wins += 1
+                hpLeft += Double(lastHP) / Double(battle.hero.maxHP)
+            }
         }
-        return wins
+        return (wins, wins > 0 ? hpLeft / Double(wins) : 0)
     }
 
-    /// 場所ごとに、着いたころの レベル・装備なら 同じ敵 3体に 回復なしで勝てる。
+    private func wins(level: Int, weapon: Item, armor: Item, against kind: EnemyKind, count: Int,
+                      healing: Bool = false) -> Int {
+        fights(level: level, weapon: weapon, armor: armor, against: kind, count: count, healing: healing).wins
+    }
+
+    /// 場所ごとに、着いたころの レベル・装備なら 同じ敵 3体に 回復しながら 勝てる。
+    /// ただし 楽ではない：ひと振りでは 倒せず、回復なしだと HP が 半分より 多く へる。
+    /// （着いたころに ほぼ ひと振りで 倒せて、サクサク 進みすぎた のを 直したときの 見張り）
     @Test func everyPlaceIsBeatableOnArrival() {
         #expect(arrivals.count == route.count)
-        for ((place, kinds), arrival) in zip(route, arrivals) {
+        var strongest = FixedRandomSource(pick: .max)
+        for (index, ((place, kinds), arrival)) in zip(route, arrivals).enumerated() {
+            var hero = Hero()
+            _ = hero.gainExp(LevelTable.row(arrival.level).exp)
+            hero.receive(arrival.weapon)
             for kind in kinds {
-                let won = wins(level: arrival.level, weapon: arrival.weapon, armor: arrival.armor, against: kind, count: 3)
-                #expect(won == 20, "\(place) LV\(arrival.level) で \(kind.stats.name)×3 に \(20 - won)/20 回 負ける")
+                let hit = Battle.damage(attack: hero.attack, defense: kind.stats.defense, rng: &strongest)
+                #expect(hit < kind.stats.maxHP, "\(place) の \(kind.stats.name) を LV\(arrival.level) で ひと振りで倒せる")
+
+                let healed = wins(level: arrival.level, weapon: arrival.weapon, armor: arrival.armor,
+                                  against: kind, count: 3, healing: true)
+                #expect(healed >= 19, "\(place) LV\(arrival.level) で \(kind.stats.name)×3 に 回復しても \(20 - healed)/20 回 負ける")
+
+                let bare = fights(level: arrival.level, weapon: arrival.weapon, armor: arrival.armor, against: kind, count: 3)
+                #expect(bare.wins >= 12, "\(place) LV\(arrival.level) で \(kind.stats.name)×3 に 回復なしだと \(20 - bare.wins)/20 回 負ける")
+                // 最初の 函館のまわりは 手ほどきなので、HP が のこっても よい。
+                #expect(index == 0 || bare.hpLeft <= 0.5, "\(place) LV\(arrival.level) で \(kind.stats.name)×3 に 回復なしでも HP が \(Int(bare.hpLeft * 100))% のこる")
             }
         }
     }
 
     /// 2レベル足りないまま先へ行くと、楽には勝てない。
-    /// 1体なら勝てるが、ひと振りでは倒せず、3体に囲まれると たいてい負ける。
+    /// 1体なら（回復しながら）勝てるが、ひと振りでは倒せず、3体に囲まれると たいてい負ける。
     /// （札幌の敵を LV2 で楽に倒せていたのを直したときの見張り。函館の3か所は となりどうしなので見ない）
     @Test func underleveledHeroCannotBreezeThrough() {
         var strongest = FixedRandomSource(pick: .max)
@@ -204,7 +244,7 @@ struct EncounterTests {
                 #expect(hit < kind.stats.maxHP, "\(place) の \(kind.stats.name) を LV\(level) で ひと振りで倒せる")
                 let won = wins(level: level, weapon: weapon, armor: armor, against: kind, count: 3)
                 #expect(won <= 10, "\(place) の \(kind.stats.name)×3 に LV\(level) で \(won)/20 回 勝ててしまう")
-                let alone = wins(level: level, weapon: weapon, armor: armor, against: kind, count: 1)
+                let alone = wins(level: level, weapon: weapon, armor: armor, against: kind, count: 1, healing: true)
                 #expect(alone >= 15, "\(place) の \(kind.stats.name) 1体に LV\(level) で \(20 - alone)/20 回 負ける")
             }
         }

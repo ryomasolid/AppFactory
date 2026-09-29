@@ -180,7 +180,9 @@ struct GameStateTests {
     @Test func enemyHitIsRecordedForEachDamagingLine() async {
         let game = makeGame()
         _ = game.hero.gainExp(LevelTable.row(5).exp)
-        game.startBattle(.iceGolem)
+        // 6ターンで 倒れない 固い敵にする（倒れると HP の差が ダメージより 小さくなる）。
+        // 回復・しゅびを 上げる わざも ない敵にする（ターンの あいだに HP や 当たりやすさが かわる）。
+        game.startBattle(.snowman)
         #expect(game.battle?.enemyHit == nil)
         var lastID = 0
         for _ in 0..<6 where game.battle?.end == nil {
@@ -268,7 +270,7 @@ struct GameStateTests {
         #expect(game.mapID == .sapporoArea, "ぬしを倒したのに とべない")
         #expect(game.position == warp.at)
         #expect(game.arrivalBanner?.name == Region.sapporo.banner.name, "着いた地方の札が出ていない")
-        #expect(game.musicTrack == .overworld)
+        #expect(game.musicTrack == .overworldSapporo, "札幌の フィールドの曲に かわっていない")
     }
 
     /// 全滅したら いまの地方の はじめの街で目を覚ます（札幌で負けて 函館へ戻されない）。

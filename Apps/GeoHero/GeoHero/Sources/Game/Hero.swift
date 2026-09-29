@@ -99,6 +99,13 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
     case onsenTamago
     case milk
     case ikuraDon
+    // 宝箱で 見つかる めずらしい 道具（店では 売っていない）
+    case hanabi
+    case bearBell
+    case walnut
+    case soybean
+    case hakka
+    case melon
     // 武器
     case woodStick
     case squidSpear
@@ -123,10 +130,30 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         case armor(power: Int)
     }
 
-    /// 回復の道具が なおすもの。
+    /// 道具の ききめ。
     enum Effect: Equatable {
         case hp(ClosedRange<Int>)
         case mp(ClosedRange<Int>)
+        /// 戦いで 敵みんなに ダメージ（守備力を 無視）。
+        case blastAll(ClosedRange<Int>)
+        /// 戦いから かならず にげる（ボスからは にげられない）。
+        case escape
+        /// 食べると 能力が ずっと 上がる。
+        case grow(Growth, Int)
+    }
+
+    /// 名産を 食べて ずっと 上がる 能力。
+    enum Growth: String, Codable, Equatable, CodingKeyRepresentable {
+        case attack, defense, agility, maxHP
+
+        var label: String {
+            switch self {
+            case .attack: "こうげき"
+            case .defense: "しゅび"
+            case .agility: "すばやさ"
+            case .maxHP: "さいだいHP"
+            }
+        }
     }
 
     var id: String { rawValue }
@@ -140,6 +167,12 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         case .onsenTamago: "温泉たまご"
         case .milk: "しぼりたて牛乳"
         case .ikuraDon: "いくら丼"
+        case .hanabi: "函館の花火"
+        case .bearBell: "クマよけの鈴"
+        case .walnut: "オニグルミ"
+        case .soybean: "十勝の大豆"
+        case .hakka: "北見のハッカ"
+        case .melon: "夕張メロン"
         case .woodStick: "ヤチダモの棒"
         case .squidSpear: "イカつりの銛"
         case .copperSword: "五稜郭の槍"
@@ -160,7 +193,8 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
 
     var kind: Kind {
         switch self {
-        case .herb, .ikameshi, .dango, .misoRamen, .onsenTamago, .milk, .ikuraDon: .consumable
+        case .herb, .ikameshi, .dango, .misoRamen, .onsenTamago, .milk, .ikuraDon,
+             .hanabi, .bearBell, .walnut, .soybean, .hakka, .melon: .consumable
         case .woodStick: .weapon(power: 2)
         case .squidSpear: .weapon(power: 5)
         case .copperSword: .weapon(power: 8)
@@ -189,6 +223,12 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         case .onsenTamago: .mp(15...20)
         case .milk: .mp(25...32)
         case .ikuraDon: .hp(130...160)
+        case .hanabi: .blastAll(30...45)
+        case .bearBell: .escape
+        case .walnut: .grow(.attack, 2)
+        case .soybean: .grow(.defense, 2)
+        case .hakka: .grow(.agility, 2)
+        case .melon: .grow(.maxHP, 10)
         default: nil
         }
     }
@@ -202,6 +242,9 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         case .onsenTamago: 60
         case .milk: 90
         case .ikuraDon: 100
+        case .hanabi: 80
+        case .bearBell: 40
+        case .walnut, .soybean, .hakka, .melon: 300
         case .woodStick: 5
         case .squidSpear: 45
         case .copperSword: 100
@@ -228,6 +271,22 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         }
     }
 
+    /// 戦いの「どうぐ」で 使えるか（能力が 上がる 名産は フィールドで ゆっくり 食べる）。
+    var isBattleUsable: Bool {
+        switch effect {
+        case .hp?, .mp?, .blastAll?, .escape?: true
+        case .grow?, nil: false
+        }
+    }
+
+    /// 宝箱でしか 手に入らない 道具（店には 並べない）。
+    var isTreasure: Bool {
+        switch self {
+        case .hanabi, .bearBell, .walnut, .soybean, .hakka, .melon: true
+        default: false
+        }
+    }
+
     /// ハスカップ（いちばん 安い 回復の道具）の回復量。
     static var herbPower: ClosedRange<Int> {
         if case let .hp(range) = Item.herb.effect { return range }
@@ -239,6 +298,9 @@ enum Item: String, Codable, CaseIterable, Identifiable, CodingKeyRepresentable {
         switch (kind, effect) {
         case let (_, .hp(range)?): "つかうと HPが \(range.lowerBound)〜\(range.upperBound) かいふく"
         case let (_, .mp(range)?): "つかうと MPが \(range.lowerBound)〜\(range.upperBound) かいふく"
+        case let (_, .blastAll(range)?): "たたかいで 敵みんなに \(range.lowerBound)〜\(range.upperBound) の ダメージ"
+        case (_, .escape?): "たたかいで かならず にげられる（ボスは むり）"
+        case let (_, .grow(growth, amount)?): "たべると \(growth.label)が ずっと +\(amount)"
         case let (.weapon(power), _): "そうびすると こうげき +\(power)"
         case let (.armor(power), _): "そうびすると しゅび +\(power)"
         default: ""
@@ -264,14 +326,16 @@ struct Hero: Codable, Equatable {
     var armor: Item? = .clothes
     /// 持ちもの。買った・拾った装備も、はずしたあと売れるようにここに残る。
     var inventory: [Item: Int] = [.herb: 2, .woodStick: 1, .clothes: 1]
+    /// 名産を 食べて ずっと 上がった ぶん。
+    var growth: [Item.Growth: Int] = [:]
 
     var base: LevelRow { LevelTable.row(level) }
-    var maxHP: Int { base.maxHP }
+    var maxHP: Int { base.maxHP + growth[.maxHP, default: 0] }
     var maxMP: Int { base.maxMP }
-    var agility: Int { base.agility }
+    var agility: Int { base.agility + growth[.agility, default: 0] }
 
-    var attack: Int { base.attack + (weapon?.power ?? 0) }
-    var defense: Int { base.defense + (armor?.power ?? 0) }
+    var attack: Int { base.attack + (weapon?.power ?? 0) + growth[.attack, default: 0] }
+    var defense: Int { base.defense + (armor?.power ?? 0) + growth[.defense, default: 0] }
 
     /// そうび中のぶき・よろいの名前（はずしていれば「なし」）。
     var weaponName: String { weapon?.name ?? "なし" }
@@ -294,19 +358,22 @@ struct Hero: Codable, Equatable {
 
     var herbCount: Int { inventory[.herb, default: 0] }
 
-    /// 持っている 回復の道具（戦いの「どうぐ」に 並べる）。
+    /// 持っている 消耗品。
     var consumables: [(item: Item, count: Int)] { belongings.filter { $0.item.kind == .consumable } }
+    /// 戦いの「どうぐ」に 並べるもの。
+    var battleItems: [(item: Item, count: Int)] { consumables.filter { $0.item.isBattleUsable } }
 
-    /// その道具を いま使って 意味があるか（HPも MPも まんたんなら つかえない）。
+    /// その道具を フィールドで いま使って 意味があるか（HPも MPも まんたんなら つかえない）。
     func canUse(_ item: Item) -> Bool {
         switch item.effect {
         case .hp?: hp < maxHP
         case .mp?: mp < maxMP
-        case nil: false
+        case .grow?: true
+        case .blastAll?, .escape?, nil: false
         }
     }
 
-    /// 回復の道具の ききめを 受ける。なおった量を返す。
+    /// 回復の道具の ききめを 受ける。なおった量を返す（HP・MP の 回復だけ）。
     mutating func apply(_ effect: Item.Effect, rng: inout some RandomSource) -> (amount: Int, isMP: Bool) {
         switch effect {
         case let .hp(range):
@@ -315,7 +382,18 @@ struct Hero: Codable, Equatable {
             let before = mp
             mp = min(maxMP, mp + rng.next(in: range))
             return (mp - before, true)
+        case let .grow(growth, amount):
+            grow(growth, by: amount)
+            return (amount, false)
+        case .blastAll, .escape:
+            return (0, false)
         }
+    }
+
+    /// 能力を ずっと 上げる。さいだいHP なら その分 HP も ふえる。
+    mutating func grow(_ growth: Item.Growth, by amount: Int) {
+        self.growth[growth, default: 0] += amount
+        if growth == .maxHP { hp += amount }
     }
 
     mutating func restoreFully() {
@@ -451,5 +529,23 @@ struct Hero: Codable, Equatable {
         inventory[item, default: 0] -= 1
         if inventory[item] == 0 { inventory[item] = nil }
         return true
+    }
+}
+
+extension Hero {
+    /// あとから 足した 項目は なくても 読む（前の セーブを そのまま 続けられるように）。
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let fresh = Hero()
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? fresh.name
+        level = try c.decode(Int.self, forKey: .level)
+        exp = try c.decode(Int.self, forKey: .exp)
+        gold = try c.decode(Int.self, forKey: .gold)
+        hp = try c.decode(Int.self, forKey: .hp)
+        mp = try c.decode(Int.self, forKey: .mp)
+        weapon = try c.decodeIfPresent(Item.self, forKey: .weapon)
+        armor = try c.decodeIfPresent(Item.self, forKey: .armor)
+        inventory = try c.decodeIfPresent([Item: Int].self, forKey: .inventory) ?? fresh.inventory
+        growth = try c.decodeIfPresent([Item.Growth: Int].self, forKey: .growth) ?? [:]
     }
 }

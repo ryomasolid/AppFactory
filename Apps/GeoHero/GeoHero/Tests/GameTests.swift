@@ -329,7 +329,7 @@ struct BattleTests {
         // レベル1だとゴブリンに一撃で倒されて結果のページが出ないので、勝てる強さにする。
         _ = hero.gainExp(LevelTable.row(5).exp)
         hero.receive(.steelSword)
-        var battle = Battle(hero: hero, enemy: Enemy(.cod))
+        var battle = Battle(hero: hero, enemy: Enemy(.dango))
         var lines: [BattleLine] = []
         for _ in 0..<10 where battle.end == nil {
             lines += battle.take(.attack, rng: &rng).lines
@@ -342,7 +342,7 @@ struct BattleTests {
         if let damaged = lines.first(where: { $0.cue == .damage }) {
             #expect((damaged.hero?.hp ?? hero.maxHP) < hero.maxHP)
         }
-        let stats = EnemyKind.cod.stats
+        let stats = EnemyKind.dango.stats
         #expect(battle.end == .won(exp: stats.exp, gold: stats.gold))
         #expect(lines.allSatisfy { $0.hero != nil })
     }

@@ -177,10 +177,14 @@ final class GameState {
         // 名前を決めているあいだも タイトルの曲を流し続ける。
         case .title, .naming: .title
         case .field:
-            if mapID.isField { .overworld } else if mapID.isCave { .cave } else { .village }
+            if mapID.isField { .field(region) } else if mapID.isCave { .cave(region) } else { .village(region) }
         case .battle:
             if let battle, !battle.musicStopped {
-                battle.battle.isBoss ? .boss : .battle
+                if battle.battle.enemies.contains(where: \.kind.isFinalBoss) {
+                    .finalBoss
+                } else {
+                    battle.battle.isBoss ? .boss : .battle(region)
+                }
             } else {
                 nil
             }
@@ -546,7 +550,9 @@ final class GameState {
             say(["たからばこを あけた！", "\(amount)ゴールドを てにいれた！"])
         case .item(let item):
             hero.receive(item)
-            say(["たからばこを あけた！", "\(item.name)を てにいれた！", item.kind == .consumable ? "" : "さっそく そうびした。"].filter { !$0.isEmpty })
+            // めずらしい 道具は 何に 使うかも 見せる。
+            let note = item.kind != .consumable ? "さっそく そうびした。" : (item.isTreasure ? "（\(item.effectNote)）" : "")
+            say(["たからばこを あけた！", "\(item.name)を てにいれた！", note].filter { !$0.isEmpty })
         }
     }
 
@@ -623,6 +629,9 @@ final class GameState {
         let (amount, isMP) = hero.apply(effect, rng: &rng)
         playSound(.heal)
         overlay = .none
+        if case let .grow(growth, _) = effect {
+            return say(["\(hero.name)は \(item.name)を たべた！", "\(growth.label)が \(amount) あがった！"])
+        }
         say(["\(hero.name)は \(item.name)を つかった！", "\(isMP ? "MP" : "HP")が \(amount) かいふくした！"])
     }
 

@@ -131,7 +131,7 @@ struct Battle {
         var result = TurnResult()
 
         // 素早さで先手を決める（いちばん速い敵と比べる。勇者側をやや有利に）。
-        let fastest = living.map(\.kind.stats.agility).max() ?? 0
+        let fastest = living.map(\.agility).max() ?? 0
         let heroFirst = rng.next(in: 0...(hero.agility * 2)) >= rng.next(in: 0...fastest)
         let order: [Bool] = heroFirst ? [true, false] : [false, true]
 
@@ -186,12 +186,28 @@ struct Battle {
                 return
             }
             say("\(hero.name)は \(item.name)を つかった！", pause: .beat, into: &result)
-            guard let effect = item.effect else { return }
-            let (amount, isMP) = hero.apply(effect, rng: &rng)
-            if isMP {
-                say("MPが \(amount) かいふくした！", .heal, into: &result)
-            } else {
+            switch item.effect {
+            case let .hp(range)?:
+                let amount = hero.heal(rng.next(in: range))
                 say("HPが \(amount) かいふくした！", .heal, effect: amount > 0 ? .heal(amount) : nil, into: &result)
+            case let .mp(range)?:
+                let (amount, _) = hero.apply(.mp(range), rng: &rng)
+                say("MPが \(amount) かいふくした！", .heal, into: &result)
+            case let .blastAll(range)?:
+                say("はなびが どどーんと あがった！", .fire, effect: .flame(big: true), into: &result)
+                for slot in enemies.indices where !enemies[slot].isDead {
+                    hit(slot, for: rng.next(in: range), into: &result)
+                }
+            case .escape?:
+                say("すずの おとが ひびきわたった！", .run, into: &result)
+                if isBoss {
+                    say("しかし \(enemy.name)は ひるまない！", .miss, into: &result)
+                } else {
+                    say("てきは おどろいて みちを あけた！", into: &result)
+                    end = .fled
+                }
+            case .grow?, nil:
+                say("しかし なにも おこらなかった。", .miss, into: &result)
             }
 
         case .run:
@@ -199,7 +215,7 @@ struct Battle {
                 say("しかし まわりこまれてしまった！", .miss, pause: .beat, into: &result)
                 return
             }
-            let fastest = living.map(\.kind.stats.agility).max() ?? 0
+            let fastest = living.map(\.agility).max() ?? 0
             let escaped = hero.agility >= fastest ? !rng.chance(4) : rng.chance(2)
             say("\(hero.name)は にげだした！", .run, pause: .beat, into: &result)
             if escaped {
@@ -219,7 +235,7 @@ struct Battle {
             say("かいしんの いちげき！", .critical, into: &result)
             damage = Self.criticalDamage(attack: hero.attack, rng: &rng)
         } else {
-            damage = Self.damage(attack: hero.attack, defense: enemies[slot].kind.stats.defense, rng: &rng)
+            damage = Self.damage(attack: hero.attack, defense: enemies[slot].defense, rng: &rng)
         }
         hit(slot, for: damage, isCritical: isCritical, into: &result)
     }
@@ -242,22 +258,89 @@ struct Battle {
         guard let slot = index(of: target) else { return }
         say("せいかい！ ちしきの ひかりで おいうち！", .critical, effect: .flame(big: true), into: &result)
         hit(slot, for: Self.criticalDamage(attack: hero.attack, rng: &rng), isCritical: true, into: &result)
+        // ちしきの ひかりは 敵が 上げた 強さも 消しさる。
+        for index in enemies.indices where !enemies[index].isDead && !enemies[index].boosts.isEmpty {
+            enemies[index].boosts = [:]
+            sayWrapped("\(enemies[index].name)の", "ちからが もとに もどった！", into: &result)
+        }
     }
 
     /// 生きている敵が上から順に動く。
+    /// すばやさを 上げた敵は、段の数だけ 3回に1回ずつ もう一度 動ける。
     private mutating func enemiesAct(rng: inout some RandomSource, into result: inout TurnResult) {
         for slot in enemies.indices where !enemies[slot].isDead {
-            let attacker = enemies[slot]
-            if attacker.kind.isBoss, rng.chance(3) {
-                say("\(attacker.name)は ふぶきを おこした！", .fire, pause: .beat, effect: .breath, into: &result)
-                hit(heroFor: rng.next(in: EnemyKind.breathPower), into: &result)
-            } else {
-                say("\(attacker.name)の こうげき！", pause: .beat, into: &result)
-                let damage = Self.damage(attack: attacker.kind.stats.attack, defense: hero.defense, rng: &rng)
-                hit(heroFor: damage, into: &result)
-            }
+            enemyAct(slot, rng: &rng, into: &result)
             if hero.isDead { return }
+            if !enemies[slot].isDead, enemies[slot].stage(.agility) > 0,
+               rng.next(in: 1...3) <= enemies[slot].stage(.agility) {
+                say("\(enemies[slot].name)は すばやく うごいた！", pause: .beat, into: &result)
+                enemyAct(slot, rng: &rng, into: &result)
+                if hero.isDead { return }
+            }
         }
+    }
+
+    /// 敵 1体の 1回ぶんの 行動。わざを 使えないとき（回復する相手が いない・もう上がりきった）は こうげき。
+    private mutating func enemyAct(_ slot: Int, rng: inout some RandomSource, into result: inout TurnResult) {
+        let attacker = enemies[slot]
+        let usable = attacker.kind.specialMoves.filter { canUse($0, by: slot) }
+        guard !usable.isEmpty, rng.chance(attacker.kind.specialChance) else {
+            say("\(attacker.name)の こうげき！", pause: .beat, into: &result)
+            hit(heroFor: Self.damage(attack: attacker.attack, defense: hero.defense, rng: &rng), into: &result)
+            return
+        }
+        switch usable[rng.next(in: 0...(usable.count - 1))] {
+        case .magic(let text):
+            sayWrapped("\(attacker.name)は", "\(text)！", .fire, pause: .beat, effect: .breath, into: &result)
+            hit(heroFor: Self.magicDamage(attack: attacker.attack, rng: &rng), into: &result)
+        case .smash:
+            say("\(attacker.name)の こうげき！", pause: .beat, into: &result)
+            say("つうこんの いちげき！", .critical, into: &result)
+            let damage = Self.damage(attack: attacker.attack, defense: hero.defense, rng: &rng)
+            hit(heroFor: max(1, damage * 3 / 2), into: &result)
+        case .heal(let text):
+            sayWrapped("\(attacker.name)は", "\(text)！", .spell, pause: .beat, into: &result)
+            enemies[slot].hasHealed = true
+            guard let patient = weakestAlly() else { return }
+            // ボスは 何度でも 使えるぶん、1回の 量を 少なくする。
+            let maxHP = enemies[patient].maxHP
+            let range = attacker.kind.isBoss ? (maxHP / 8)...(maxHP / 6) : (maxHP / 4)...(maxHP / 3)
+            let amount = rng.next(in: max(1, range.lowerBound)...max(1, range.upperBound))
+            let before = enemies[patient].hp
+            enemies[patient].hp = min(enemies[patient].maxHP, before + amount)
+            if patient == slot {
+                say("きずが かいふくした！", .heal, into: &result)
+            } else {
+                sayWrapped("\(enemies[patient].name)の", "きずが かいふくした！", .heal, into: &result)
+            }
+        case .boost(let boost, let text):
+            sayWrapped("\(attacker.name)は", "\(text)！", .spell, pause: .beat, into: &result)
+            enemies[slot].boosts[boost] = min(EnemyBoost.maxStage, enemies[slot].stage(boost) + 1)
+            say("\(boost.label)が あがった！", into: &result)
+        }
+    }
+
+    /// そのわざを いま使って 意味があるか。
+    private func canUse(_ move: EnemyMove, by slot: Int) -> Bool {
+        switch move {
+        case .magic, .smash: true
+        case .heal: weakestAlly() != nil && (enemies[slot].kind.isBoss || !enemies[slot].hasHealed)
+        case .boost(let boost, _): enemies[slot].stage(boost) < EnemyBoost.maxStage
+        }
+    }
+
+    /// 生きている敵のうち、HP が半分を 切って いちばん 弱っている者。
+    private func weakestAlly() -> Int? {
+        enemies.indices
+            .filter { !enemies[$0].isDead && enemies[$0].hp * 2 < enemies[$0].maxHP }
+            .min { enemies[$0].hp * enemies[$1].maxHP < enemies[$1].hp * enemies[$0].maxHP }
+    }
+
+    /// 敵の 呪文・息の ダメージ。守備力を 無視して、こうげき力の 2/5〜3/5。
+    /// よろいで 軽くできないので、ふつうの こうげきより 少し 弱くしてある。
+    static func magicDamage(attack: Int, rng: inout some RandomSource) -> Int {
+        let low = max(1, attack * 2 / 5)
+        return rng.next(in: low...max(low, attack * 3 / 5))
     }
 
     private mutating func hit(_ slot: Int, for damage: Int, isCritical: Bool = false, into result: inout TurnResult) {
@@ -320,6 +403,27 @@ struct Battle {
             return .lost
         }
         return nil
+    }
+
+    /// 戦いの 枠に 1行で 収まる 文字数。これより 長い文は 2行に 分けて出す（枠が 3行なので 折り返すと はみ出す）。
+    static let lineLimit = 18
+
+    /// 「〇〇は」「〜！」を 1行に 収まれば つなげて、長ければ 2行に 分けて出す。音と演出は 1行目に つける。
+    private func sayWrapped(
+        _ head: String,
+        _ tail: String,
+        _ cue: SoundCue? = nil,
+        pause: BattleLinePause = .none,
+        effect: BattleEffect? = nil,
+        into result: inout TurnResult
+    ) {
+        let joined = "\(head) \(tail)"
+        if joined.count <= Self.lineLimit {
+            say(joined, cue, pause: pause, effect: effect, into: &result)
+        } else {
+            say(head, cue, pause: pause, effect: effect, into: &result)
+            say(tail, into: &result)
+        }
     }
 
     private func say(

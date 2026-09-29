@@ -17,8 +17,10 @@ struct BossBalanceTests {
     ]
 
     /// HPが へったら 回復し、それ以外は こうげき（チャンスが 出たら 正解する）。薬草は 5つ。
-    private func wins(_ kind: EnemyKind, level: Int, weapon: Item, armor: Item, region: QuizRegion) -> Int {
+    private func wins(_ kind: EnemyKind, level: Int, weapon: Item, armor: Item,
+                      region: QuizRegion) -> (wins: Int, averageTurns: Int) {
         var wins = 0
+        var turns = 0
         for seed in UInt64(1)...20 {
             var rng = SeededRandomSource(seed: seed)
             var hero = Hero()
@@ -43,16 +45,26 @@ struct BossBalanceTests {
                     command = .attack
                 }
                 end = battle.take(command, target: 0, rng: &rng).end
+                turns += 1
             }
             if case .won = end { wins += 1 }
         }
-        return wins
+        return (wins, turns / 20)
     }
 
+    /// 回復しながら 戦えば たいてい 勝てる。ボスは 強さを 上げてくるので、ときどき 負ける くらいの 手ごたえ。
     @Test func bossesAreBeatableWhenPrepared() {
         for (kind, level, weapon, armor, region) in bosses {
-            let won = wins(kind, level: level, weapon: weapon, armor: armor, region: region)
-            #expect(won >= 18, "\(kind.stats.name) に LV\(level) で \(won)/20 回しか 勝てない")
+            let won = wins(kind, level: level, weapon: weapon, armor: armor, region: region).wins
+            #expect(won >= 15, "\(kind.stats.name) に LV\(level) で \(won)/20 回しか 勝てない")
+        }
+    }
+
+    /// ボスは すぐには 倒れない（数ターンで 終わって 楽すぎた のを 直したときの 見張り）。
+    @Test func bossesTakeAWhile() {
+        for (kind, level, weapon, armor, region) in bosses {
+            let turns = wins(kind, level: level, weapon: weapon, armor: armor, region: region).averageTurns
+            #expect(turns >= 6, "\(kind.stats.name) が 平均 \(turns) ターンで 終わる")
         }
     }
 }

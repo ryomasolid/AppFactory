@@ -68,6 +68,37 @@ struct LayoutTests {
         }
     }
 
+    /// 敵の わざの 文は どれも 1行ずつに 収まる（折り返すと 3行の 枠から はみ出す）。
+    /// 長い文は `Battle.lineLimit` で 2行に 分けるので、分けた あとの 行を 測る。
+    /// 戦いを 回すだけでは 出ない 組み合わせも あるので、全部の敵・全部の わざを 並べる。
+    @Test func enemyMoveLinesFitOnOneLine() {
+        func lineHeight(_ text: String) -> CGFloat {
+            Self.height(
+                of: Text(text).font(Retro.font()).fixedSize(horizontal: false, vertical: true),
+                width: Self.narrowest - 12 - 28
+            )
+        }
+        func shown(_ head: String, _ tail: String) -> [String] {
+            let joined = "\(head) \(tail)"
+            return joined.count <= Battle.lineLimit ? [joined] : [head, tail]
+        }
+        let oneLine = lineHeight("あ")
+        for kind in EnemyKind.allCases {
+            // ボスは 1体で 出るので 番号が 付かない。
+            let name = Enemy(kind, suffix: kind.isBoss ? 0 : 1).name
+            var lines = shown("\(name)の", "きずが かいふくした！") + shown("\(name)の", "ちからが もとに もどった！")
+            for move in kind.specialMoves {
+                switch move {
+                case .magic(let text), .heal(let text), .boost(_, let text): lines += shown("\(name)は", "\(text)！")
+                case .smash: lines.append("\(name)の こうげき！")
+                }
+            }
+            for line in lines {
+                #expect(lineHeight(line) <= oneLine, "折り返す: \(line)")
+            }
+        }
+    }
+
     /// RetroChoice は GameState を環境から読むので、測るだけの版を置く。
     private func row(_ title: String, _ detail: String?) -> some View {
         HStack {

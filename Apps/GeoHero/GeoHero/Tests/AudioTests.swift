@@ -144,3 +144,47 @@ struct GameSoundTests {
         #expect(game.musicTrack == .village)
     }
 }
+
+/// 曲は 地方ごとに かわる（同じ曲ばかりで 飽きないように）。
+@MainActor
+struct RegionMusicTests {
+
+    @Test func eachRegionHasItsOwnTracks() {
+        for pick in [MusicTrack.field, MusicTrack.village, MusicTrack.battle] {
+            let tracks = Region.allCases.map(pick)
+            #expect(Set(tracks).count == Region.allCases.count, "\(tracks) に 同じ曲が ある")
+        }
+        #expect(MusicTrack.cave(.hakodate) != MusicTrack.cave(.shiretoko))
+    }
+
+    /// どの曲も どこかで 流れる（作ったのに 使われない曲を 作らない）。
+    @Test func everyTrackIsUsed() {
+        var used: Set<MusicTrack> = [.title, .ending, .boss, .finalBoss]
+        for region in Region.allCases {
+            used.formUnion([.field(region), .village(region), .cave(region), .battle(region)])
+        }
+        #expect(used == Set(MusicTrack.allCases))
+    }
+
+    /// ラスボスは 専用の曲、ほかの ボスは ボスの曲。
+    @Test func finalBossHasItsOwnTheme() {
+        let game = GameState()
+        game.newGame()
+        game.startBattle(.guardian)
+        #expect(game.musicTrack == .finalBoss)
+        game.battle = nil
+        game.screen = .field
+        game.startBattle(.squidLord)
+        #expect(game.musicTrack == .boss)
+    }
+
+    /// 札幌の 街では 札幌の 曲が 流れる。
+    @Test func townMusicFollowsTheRegion() {
+        let game = GameState()
+        game.newGame()
+        game.mapID = .sapporo
+        #expect(game.musicTrack == .villageSapporo)
+        game.mapID = .rausudake1
+        #expect(game.musicTrack == .caveDeep)
+    }
+}

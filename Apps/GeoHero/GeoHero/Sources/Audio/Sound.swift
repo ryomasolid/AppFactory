@@ -21,8 +21,43 @@ enum SoundCue: String, CaseIterable, Sendable {
     }
 }
 
+/// 曲。フィールド・街・戦いは 地方ごとに 変える（函館エリアは 名前に 地方を 付けない）。
 enum MusicTrack: String, CaseIterable, Sendable {
     case title, village, overworld, cave, battle, boss, ending
+    case overworldSapporo, overworldShiretoko
+    case villageSapporo, villageShiretoko
+    case caveDeep
+    case battleSapporo, battleShiretoko
+    case finalBoss
+
+    static func field(_ region: Region) -> MusicTrack {
+        switch region {
+        case .hakodate: .overworld
+        case .sapporo: .overworldSapporo
+        case .shiretoko: .overworldShiretoko
+        }
+    }
+
+    static func village(_ region: Region) -> MusicTrack {
+        switch region {
+        case .hakodate: .village
+        case .sapporo: .villageSapporo
+        case .shiretoko: .villageShiretoko
+        }
+    }
+
+    /// 函館エリアの ほらあなは ふつうの曲、札幌から先は 奥ふかい曲。
+    static func cave(_ region: Region) -> MusicTrack {
+        region == .hakodate ? .cave : .caveDeep
+    }
+
+    static func battle(_ region: Region) -> MusicTrack {
+        switch region {
+        case .hakodate: .battle
+        case .sapporo: .battleSapporo
+        case .shiretoko: .battleShiretoko
+        }
+    }
 }
 
 enum Waveform: Equatable, Sendable {

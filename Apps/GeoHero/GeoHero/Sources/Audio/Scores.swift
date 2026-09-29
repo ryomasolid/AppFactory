@@ -38,6 +38,58 @@ extension MusicTrack {
                 bass("o2 " + pump("d") + pump("a") + pump("d") + "d8 d8 c+8 c+8 d4 r4 " + pump("b-") + pump("d") + pump("g") + "a8 a8 a8 a8 d4 r4"),
                 drums(String(repeating: "c8 c8 r8 c8 ", count: 16)),
             ])
+        case .overworldSapporo:
+            // 札幌・小樽の 野原。明るい 行進曲。
+            Score(tempo: 132, voices: [
+                lead("o4 f4 a8 >c8< f4 a8 >c8< | >d4 c8< b-8 a4 g4 | a4 >c8 d8 c4< a4 | g8 a8 b-8 >c8< a2 | >d4 d8 e8 f4 d4< | >c4 c8< b-8 a4 f4 | g8 a8 b-8 >c8 d4 e4< | >f2< r4 c4"),
+                bass("o2 " + pump("f") + pump("b-") + pump("f") + pump("c") + pump("b-") + pump("f") + pump("c") + "f4 >c4< f2"),
+                drums(String(repeating: "c8 r8 c8 c8 ", count: 16)),
+            ])
+        case .overworldShiretoko:
+            // 知床の 原野。ゆったり 大きく。
+            Score(tempo: 112, voices: [
+                lead("o4 d4. e8 f4 a4 | g4 f8 e8 d2 | c4. d8 e4 g4 | f4 e8 d8 e2 | a4. b-8 >c4 d4< | >c4< b-8 a8 g2 | f8 g8 a8 b-8 a4 e4 | d2. r4", duty: 0.5, volume: 0.10),
+                bass("o2 d2 a2 | b-2 f2 | c2 g2 | a2 a2 | f2 >c2< | g2 d2 | b-2 a2 | d2 d2"),
+                drums(String(repeating: "c4 r4 r4 c8 c8 ", count: 8)),
+            ])
+        case .villageSapporo:
+            // 札幌・小樽の 街。にぎやかに。
+            Score(tempo: 104, voices: [
+                lead("o4 e8 g8 >c8< g8 a8 g8 e8 c8 | d8 e8 f8 d8 e4 c4 | e8 g8 >c8< g8 a8 >c8 d8 c8< | b4 g4 a4 g4 | f8 a8 >c8< a8 g8 b8 >d8< b8 | >c4< a8 f8 g4 e4 | f8 e8 d8 f8 e8 d8 c8 d8 | c2 r4 g4", duty: 0.5, volume: 0.09),
+                bass("o3 c4 g4 e4 g4 | d4 g4 c4 g4 | c4 g4 e4 g4 | g4 d4 g4 b4 | f4 >c4< g4 >d4< | f4 a4 c4 e4 | d4 f4 g4 b4 | c4 g4 c2"),
+                drums(String(repeating: "c8 r8 r8 c8 ", count: 16)),
+            ])
+        case .villageShiretoko:
+            // 知床の 街。アイヌの 歌を 思わせる 五音の しらべ。
+            Score(tempo: 80, voices: [
+                lead("o4 a4 >c4 d4 c4< | a4 g4 e2 | g4 a4 >c4 d4< | >e2 d4< r4 | >e4 d4 c4< a4 | g4 a4 e2 | d4 e4 g4 a4 | a2. r4", duty: 0.5, volume: 0.09),
+                bass("o2 a2 e2 | a2 e2 | c2 g2 | e2 e2 | a2 >c2< | g2 e2 | d2 e2 | a2 a2"),
+            ])
+        case .caveDeep:
+            // 札幌・知床の ほらあな。奥ふかく 冷たい。
+            Score(tempo: 76, voices: [
+                lead("o4 d4 r4 d+4 r4 | d4 c+8 r8 r2 | f4 r4 e4 r4 | d+4 d8 r8 r2 | a4 r8 g+8 g4 f4 | e4 f4 d+2 | d4 e8 f8 g+4 a4 | d2 r2", duty: 0.125, volume: 0.10),
+                bass("o2 d4 r4 d4 r4 | d4 r4 d4 r4 | c+4 r4 c+4 r4 | c+4 r4 c+4 r4 | d4 r4 d4 r4 | a4 r4 a4 r4 | g+4 r4 g+4 r4 | d4 r4 d4 r4"),
+            ])
+        case .battleSapporo:
+            Score(tempo: 156, voices: [
+                lead("o4 a8 >c8 e8 c8< a8 >c8 e8 a8< | g8 f8 e8 d8 e4 a4 | f8 a8 >c8 f8 e8 d8 c8< b8 | >c4< b4 a4 r4 | a8 >c8 e8 c8 d8 e8 f8 d8< | >e4 d8 c8< b4 g+4 | a8 b8 >c8 d8 e8 f8 g+8 e8< | a4 r4 a4 r4"),
+                bass("o2 " + pump("a") + pump("e") + pump("f") + pump("e") + pump("a") + pump("e") + pump("d") + "a8 >a8< a8 >a8< a4 r4"),
+                drums(String(repeating: "c8 c8 r8 c8 r8 c8 r8 c8 ", count: 8)),
+            ])
+        case .battleShiretoko:
+            Score(tempo: 144, voices: [
+                lead("o4 d8 d8 f8 d8 a8 d8 >c8< d8 | b-8 a8 g8 f8 e4 c+4 | d8 d8 f8 d8 >d8< d8 >c8< a8 | b-4 a4 g4 f4 | e8 f8 g8 a8 b-8 a8 g8 f8 | g8 a8 b-8 >c8 d4 c4< | b-8 a8 g8 f8 e8 g8 c+8 e8 | d4 r4 d4 r4"),
+                bass("o2 " + pump("d") + pump("g") + pump("d") + pump("g") + pump("c") + pump("g") + pump("a") + "d8 >d8< d8 >d8< d4 r4"),
+                drums(String(repeating: "c8 r8 c8 c8 ", count: 16)),
+            ])
+        case .finalBoss:
+            // 知床の 守護神。
+            Score(tempo: 168, voices: [
+                lead("o4 c8 c8 >c8< c8 b8 c8 g8 c8 | a-8 c8 g8 c8 f8 c8 e-8 d8 | c8 c8 >c8< c8 b8 c8 >d8 e-8< | >f4 e-4 d4 c4< | g8 a-8 g8 f8 e-8 f8 g8 >c8< | b8 >c8 d8 e-8 f4 d4< | e-8 f8 g8 a-8 b8 g8 >d8< b8 | >c4< g4 >c4< r4", duty: 0.125, volume: 0.12),
+                bass("o2 " + pump("c") + pump("a-") + pump("c") + pump("f") + pump("c") + pump("g") + pump("g") + "c8 >c8< c8 >c8< c4 r4"),
+                drums(String(repeating: "c8 c8 c8 r8 ", count: 16)),
+            ])
         case .ending:
             Score(tempo: 84, voices: [
                 lead("o4 c4 e4 g4 >c4< | b4 g4 a2 | f4 a4 >c4 d4< | >e2 d4 c4< | a4 >c4< b4 a4 | g4 e4 f4 d4 | e4 f4 g4 b4 | >c2.< r4", duty: 0.5, volume: 0.10),
