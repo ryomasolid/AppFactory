@@ -272,8 +272,12 @@ final class GameState {
     /// （画面が消えると指を離した通知が来ず、古い向きのまま歩き続けてしまうため）。
     private(set) var heldDirection: Direction?
     @ObservationIgnored private var walkLoop: Task<Void, Never>?
+    /// 歩いている途中に ちょんと押して離した向き。次の一歩で 使う。
+    @ObservationIgnored private var tappedDirection: Direction?
 
     /// 押している間は歩き続ける。歩く処理は常に1本だけ動かす。
+    /// ちょんと押してすぐ離しても 一歩は歩く（歩く処理が 動き出す前に「離した」が
+    /// 届くことがあり、端末によっては タップで まったく歩かなかったため）。
     func hold(_ direction: Direction?) {
         guard heldDirection != direction else { return }
         heldDirection = direction
@@ -282,16 +286,25 @@ final class GameState {
             if let direction { moveCursor(direction) }
             return
         }
-        guard direction != nil, walkLoop == nil else { return }
+        guard let direction else { return }
+        guard walkLoop == nil else {
+            tappedDirection = direction
+            return
+        }
+        tappedDirection = nil
         walkLoop = Task { [weak self] in
-            while let self, let current = self.heldDirection, self.screen == .field, !Task.isCancelled {
+            var next: Direction? = direction
+            while let self, let current = next, self.screen == .field, !Task.isCancelled {
                 let before = self.position
                 await self.walk(current)
                 // 壁や会話中で進めなかったときは空回りしないよう少し待つ。
                 if self.position == before {
                     try? await Task.sleep(for: .milliseconds(80))
                 }
+                next = self.heldDirection ?? self.tappedDirection
+                self.tappedDirection = nil
             }
+            self?.tappedDirection = nil
             self?.walkLoop = nil
         }
     }
@@ -861,6 +874,7 @@ final class GameState {
         let group = EnemyGroup.numbered(kinds)
         guard !group.isEmpty else { return }
         heldDirection = nil
+        tappedDirection = nil
         playSound(.encounter)
         var quizzes: [Quiz] = []
         if let region = QuizRegion.at(mapID, position) {

@@ -59,6 +59,16 @@ struct GameStateTests {
         #expect(game.heldDirection == nil)
     }
 
+    /// 歩き出す前に離しても 一歩は歩く（iPhone 18 Pro で タップしても歩かなかった不具合の再発防止）。
+    @Test func quickTapWalksOneStep() async throws {
+        let game = makeGame()
+        game.position = Point(x: 10, y: 9)
+        game.hold(.left)
+        game.hold(nil)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(game.position == Point(x: 9, y: 9))
+    }
+
     /// 右を押したまま戦闘に入っても、戦闘後に勝手に右へ歩き出さない（不具合の再発防止）。
     @Test func battleReleasesHeldDirection() async throws {
         let game = makeGame()
