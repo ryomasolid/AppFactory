@@ -2,10 +2,10 @@ import SwiftData
 import SwiftUI
 import UIKit
 
-/// 設定。通知・書き出し・Pro。
+/// 設定。お知らせのタイミング・届いているかの確認・見直しの回数・書き出し・Pro。
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(StoreManager.self) private var store
+    @Environment(ProUnlock.self) private var pro
     @Environment(\.openURL) private var openURL
     @Query(sort: \Subscription.createdAt) private var subscriptions: [Subscription]
 
@@ -15,55 +15,59 @@ struct SettingsView: View {
     @AppStorage(StorageKey.trialAlerts) private var trialAlerts = true
     @AppStorage(StorageKey.yearlyWeekBefore) private var yearlyWeekBefore = true
 
+    @State private var permission: ReminderCenter.Permission = .unknown
+    @State private var pending = 0
+    @State private var next: ReminderCenter.Upcoming?
     @State private var showPaywall = false
-    @State private var authorizationDenied = false
-    @State private var scheduledCount: Int?
-    @State private var exportFile: ExportFile?
-
-    private struct ExportFile: Identifiable {
-        let url: URL
-        var id: URL { url }
-    }
+    @State private var confirmReset = false
+    @State private var csvURL: URL?
 
     static let privacyPolicyURL = URL(string: "https://ryomasolid.github.io/privacy-subsnote.html")
+
+    /// 見直しの回数がついているサブスクの数。
+    private var ratedCount: Int { subscriptions.filter { $0.usesLastMonth != nil }.count }
 
     var body: some View {
         NavigationStack {
             Form {
-                reminderSection
+                timingSection
                 trialSection
-                statusSection
-                dataSection
+                deliverySection
+                reviewSection
+                exportSection
                 proSection
-                aboutSection
+                appSection
             }
             .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $showPaywall) {
-                PaywallView().environment(store)
+            .sheet(isPresented: $showPaywall) { PaywallView().environment(pro) }
+            .sheet(isPresented: Binding(get: { csvURL != nil }, set: { if !$0 { csvURL = nil } })) {
+                if let csvURL { ActivityView(items: [csvURL]).presentationDetents([.medium, .large]) }
             }
-            .sheet(item: $exportFile) { file in
-                ActivityView(items: [file.url])
-                    .presentationDetents([.medium, .large])
+            .confirmationDialog("見直しの回数をすべて消しますか？", isPresented: $confirmReset, titleVisibility: .visible) {
+                Button("回数を消す", role: .destructive, action: resetUsage)
+            } message: {
+                Text("月が変わったときに、先月の回数をつけ直すためのものです。サブスクの記録は消えません。")
             }
-            .task { await refreshStatus() }
-            .onChange(of: reminderDaysRaw) { Task { await rebuild(requestingAuthorization: false) } }
-            .onChange(of: notifyHour) { Task { await rebuild(requestingAuthorization: false) } }
-            .onChange(of: notifyMinute) { Task { await rebuild(requestingAuthorization: false) } }
-            .onChange(of: trialAlerts) { Task { await rebuild(requestingAuthorization: false) } }
-            .onChange(of: yearlyWeekBefore) { Task { await rebuild(requestingAuthorization: false) } }
+            .task { await loadDelivery() }
+            .onChange(of: settingsKey) { Task { await reschedule(ask: false) } }
         }
-        .tint(Theme.accent)
+        .tint(Palette.ink)
     }
 
-    // MARK: - 通知
+    /// お知らせの設定をひとまとめにした値。どれかが変わったら予約を入れ替える。
+    private var settingsKey: String {
+        "\(reminderDaysRaw)|\(notifyHour):\(notifyMinute)|\(trialAlerts)|\(yearlyWeekBefore)"
+    }
 
-    private var reminderSection: some View {
+    // MARK: - お知らせ
+
+    private var timingSection: some View {
         Section {
             ForEach(ReminderDay.allCases) { day in
-                Toggle(day.label, isOn: dayBinding(day.rawValue))
+                Toggle(day.label, isOn: reminderDay(day.rawValue))
             }
-            DatePicker("時刻", selection: notifyTimeBinding, displayedComponents: .hourAndMinute)
+            DatePicker("時刻", selection: notifyTime, displayedComponents: .hourAndMinute)
         } header: {
             Text("支払日のお知らせ")
         } footer: {
@@ -71,7 +75,7 @@ struct SettingsView: View {
         }
     }
 
-    private func dayBinding(_ day: Int) -> Binding<Bool> {
+    private func reminderDay(_ day: Int) -> Binding<Bool> {
         Binding(
             get: { NotificationSettings.decode(reminderDaysRaw).contains(day) },
             set: { isOn in
@@ -82,13 +86,12 @@ struct SettingsView: View {
         )
     }
 
-    private var notifyTimeBinding: Binding<Date> {
+    private var notifyTime: Binding<Date> {
         Binding(
-            get: { Calendar.current.date(bySettingHour: notifyHour, minute: notifyMinute, second: 0, of: Date()) ?? Date() },
-            set: { date in
-                let components = Calendar.current.dateComponents([.hour, .minute], from: date)
-                notifyHour = components.hour ?? 9
-                notifyMinute = components.minute ?? 0
+            get: { Calendar.current.date(from: DateComponents(hour: notifyHour, minute: notifyMinute)) ?? .now },
+            set: {
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                (notifyHour, notifyMinute) = (parts.hour ?? 9, parts.minute ?? 0)
             }
         )
     }
@@ -104,47 +107,66 @@ struct SettingsView: View {
         }
     }
 
-    private var statusSection: some View {
+    // MARK: - 届いているか
+
+    private var deliverySection: some View {
         Section {
-            LabeledContent(
-                "通知の許可",
-                value: authorizationDenied
-                    ? String(localized: "オフ")
-                    : (scheduledCount == nil ? String(localized: "未確認") : String(localized: "オン"))
-            )
-            if let scheduledCount {
-                LabeledContent("予約済みの通知", value: String(localized: "\(scheduledCount)件"))
-            }
-            if authorizationDenied {
-                Button("設定アプリで通知を許可する") {
+            switch permission {
+            case .blocked:
+                Label("通知がオフになっています", systemImage: "bell.slash.fill")
+                    .foregroundStyle(Palette.deadline)
+                Button("設定アプリを開いて通知をオンにする") {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
-            }
-            Button("通知を作り直す") {
-                Task { await rebuild(requestingAuthorization: true) }
+            case .unknown:
+                Button("通知をオンにする") { Task { await reschedule(ask: true) } }
+            case .allowed:
+                if let next {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("次のお知らせ・\(next.date.formatted(.dateTime.month().day().weekday().hour().minute()))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(next.title).font(.subheadline)
+                    }
+                    .padding(.vertical, 2)
+                } else {
+                    Text("予約中のお知らせはありません").foregroundStyle(.secondary)
+                }
+                LabeledContent("予約中", value: String(localized: "\(pending)件"))
+                Button("お知らせを予約し直す") { Task { await reschedule(ask: false) } }
             }
         } header: {
-            Text("通知が届かないときは")
+            Text("お知らせが届いているか")
         } footer: {
-            Text("通知は近いものから\(NotificationPlanner.budget)件まで予約し、アプリを開いたときとバックグラウンドで作り直します。")
+            Text("近いものから\(NotificationPlanner.budget)件まで予約し、アプリを開いたときとバックグラウンドで先の分を足していきます。")
+        }
+    }
+
+    // MARK: - 見直し
+
+    private var reviewSection: some View {
+        Section {
+            LabeledContent("回数をつけたサブスク", value: String(localized: "\(ratedCount)件"))
+            Button("見直しの回数をすべて消す", role: .destructive) { confirmReset = true }
+                .disabled(ratedCount == 0)
+        } header: {
+            Text("見直し")
+        } footer: {
+            Text("月が変わったら回数を消して、先月の分をつけ直すと、使わなくなったサブスクに気づけます。")
         }
     }
 
     // MARK: - 書き出し
 
-    private var dataSection: some View {
+    private var exportSection: some View {
         Section {
             Button {
-                if ProLimits.canExport(isPro: store.isPro) {
-                    exportCSV()
-                } else {
-                    showPaywall = true
-                }
+                if ProLimits.canExport(isPro: pro.isUnlocked) { writeCSV() } else { showPaywall = true }
             } label: {
                 HStack {
                     Label("CSVで書き出す", systemImage: "tablecells")
                     Spacer()
-                    if !store.isPro { ProBadge() }
+                    if !pro.isUnlocked { ProBadge() }
                 }
             }
             .disabled(subscriptions.isEmpty)
@@ -157,43 +179,39 @@ struct SettingsView: View {
 
     // MARK: - Pro
 
+    @ViewBuilder
     private var proSection: some View {
         Section {
-            Button {
-                showPaywall = true
-            } label: {
-                HStack {
-                    Label(
-                        store.isPro ? "Pro を利用中" : "Pro（登録無制限・内訳・書き出し・広告なし）",
-                        systemImage: store.isPro ? "checkmark.seal.fill" : "crown.fill"
-                    )
-                    Spacer()
-                    if !store.isPro {
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
+            if pro.isUnlocked {
+                Label("Pro（買い切り）を利用中です", systemImage: "checkmark.seal.fill")
+                    .foregroundStyle(Palette.saving)
+            } else {
+                Button { showPaywall = true } label: {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Label("サブスク帳 Pro", systemImage: "book.closed.fill")
+                            .font(.body.weight(.semibold))
+                        Text("登録無制限・内訳・CSV・広告なし（買い切り）")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-            }
-            if !store.isPro {
-                Button("購入を復元") {
-                    Task { await store.restore() }
-                }
+                Button("以前に購入した方（購入を復元）") { Task { await pro.restore() } }
+                    .disabled(pro.isWorking)
             }
         }
     }
 
-    // MARK: - このアプリについて
+    // MARK: - このアプリ
 
-    private var aboutSection: some View {
+    private var appSection: some View {
         Section {
-            Button("お問い合わせ") {
-                if let url = URL(string: "mailto:oga.sesame.tech@gmail.com") { openURL(url) }
+            Link(destination: URL(string: "mailto:oga.sesame.tech@gmail.com?subject=%E3%82%B5%E3%83%96%E3%82%B9%E3%82%AF%E5%B8%B3")!) {
+                Label("ご意見・不具合の連絡（メール）", systemImage: "envelope")
             }
             if let url = Self.privacyPolicyURL {
-                Button("プライバシーポリシー") { openURL(url) }
+                Link(destination: url) { Label("プライバシーポリシー", systemImage: "hand.raised") }
             }
-            LabeledContent("バージョン", value: Self.versionText)
+            LabeledContent("バージョン", value: Bundle.main.versionLabel)
         } header: {
             Text("このアプリについて")
         } footer: {
@@ -201,35 +219,45 @@ struct SettingsView: View {
         }
     }
 
-    private static var versionText: String {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "1.0"
-        let build = info?["CFBundleVersion"] as? String ?? "1"
-        return "\(version) (\(build))"
-    }
-
     // MARK: - 処理
 
-    private func refreshStatus() async {
-        authorizationDenied = await NotificationScheduler.shared.isDenied()
-        scheduledCount = await NotificationScheduler.shared.isAuthorized()
-            ? await NotificationScheduler.shared.pendingCount()
-            : nil
+    private func loadDelivery() async {
+        permission = await ReminderCenter.permission()
+        guard permission == .allowed else { return }
+        pending = await ReminderCenter.pendingCount()
+        next = await ReminderCenter.upcoming()
     }
 
-    private func rebuild(requestingAuthorization: Bool) async {
-        await NotificationRefresh.run(container: modelContext.container, requestingAuthorization: requestingAuthorization)
-        await refreshStatus()
+    private func reschedule(ask: Bool) async {
+        await NotificationRefresh.run(container: modelContext.container, requestingAuthorization: ask)
+        await loadDelivery()
     }
 
-    private func exportCSV() {
+    private func resetUsage() {
+        for subscription in subscriptions {
+            subscription.usesLastMonth = nil
+            subscription.usageCheckedAt = nil
+        }
+        try? modelContext.save()
+    }
+
+    private func writeCSV() {
         let stamp = Date().formatted(.iso8601.year().month().day().dateSeparator(.omitted))
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("SubsNote-\(stamp).csv")
+        let url = URL.temporaryDirectory.appending(path: "SubsNote-\(stamp).csv")
         do {
             try CSVExport.data(rows: subscriptions.map { $0.exportRow() }).write(to: url, options: .atomic)
-            exportFile = ExportFile(url: url)
+            csvURL = url
         } catch {
-            exportFile = nil
+            csvURL = nil
         }
+    }
+}
+
+private extension Bundle {
+    /// 「1.0 (2)」の形のバージョン表記。
+    var versionLabel: String {
+        let short = object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let build = object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return "\(short) (\(build))"
     }
 }

@@ -50,7 +50,7 @@ let project = Project(
                     "CFBundleDisplayName": "サブスク帳",
                     "CFBundleDevelopmentRegion": "ja",
                     "CFBundleShortVersionString": "1.0",
-                    "CFBundleVersion": "1",
+                    "CFBundleVersion": "2",
                     "ITSAppUsesNonExemptEncryption": false,
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~2049734758",
                     // 広告のトラッキング許可（ATT）ダイアログの説明文。

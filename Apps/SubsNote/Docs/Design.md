@@ -20,23 +20,25 @@
 - **端末内で完結**。銀行・カード連携はしない（Rocket Money 型は日本で信用されにくく、審査・保守も重い）。
   アカウントなし、外部送信なし。
 
-## 2. 技術構成（既存アプリからの流用）
+## 2. 技術構成
 
-| 部品 | 流用元 | 備考 |
+> 2026-09-30: 1.0 が 4.3(a) Spam で却下されたため、他アプリと共有していた部品（StoreManager・ConsentManager・BannerAdView・Theme・
+> Paywall・Onboarding・設定・通知の予約）をサブスク帳専用に書き直した。**他アプリからファイルを持ってこない**。
+
+| 部品 | ファイル | 備考 |
 | --- | --- | --- |
-| Tuist `Project.swift` / `Tuist/Package.swift` | WarrantyPocket | iPhone 専用・縦固定・AdMob 依存。カメラ許可は不要なので外す |
-| SwiftData + `@Observable` | 全アプリ | iOS 17 / Swift 6 strict concurrency |
-| `StoreManager`（StoreKit 2 買い切り） | WarrantyPocket | プロダクトID `tech.sesame.subsnote.pro` |
-| `ConsentManager`（UMP → ATT → AdMob） | WarrantyPocket | そのまま |
-| `BannerAdView` / `Theme` | WarrantyPocket | ユニットID・色のみ差し替え |
-| `Launch`（起動引数によるデモ/スクショ） | WarrantyPocket | 引数名を揃える |
-| `NotificationScheduler`（全消し→近い順に60件→組み直し） | WarrantyPocket | 繰り返しの予定を展開する（§5） |
-| BGAppRefreshTask による通知の組み直し | GomiAlarm | 月払いは数か月アプリを開かないと予約が尽きるため必須 |
-| `CSVExport` | WarrantyPocket | 列だけ差し替え |
-| `OnboardingView` / `PaywallView` | WarrantyPocket | 文言と図だけ差し替え |
+| Tuist | `Project.swift` / `Tuist/Package.swift` | iPhone 専用・縦固定・AdMob 依存 |
+| 保存 | SwiftData + `@Observable` | iOS 17 / Swift 6 strict concurrency |
+| Pro（買い切り） | `ProUnlock` | `Transaction.latest(for:)` の1件で判定。前回の判定を UserDefaults に持ち、起動直後のバナーのちらつきを防ぐ |
+| 広告の同意 | `AdStartup` | UMP → `canRequestAds` のときだけ ATT → AdMob。Pro と `-hideAds` では何も出さない |
+| バナー | `FooterAd` | 自分の ViewController を root にし、広告が届くまで高さ0 |
+| 色 | `Palette` | 意味ごとの色（ink / deadline / saving / idle）。カテゴリ色は `SubCategory.tint` |
+| 通知の予約 | `ReminderCenter` + `NotificationRefresh` | 全部入れ替え。体験と支払いを別スレッドにまとめる。設定に「次のお知らせ」を出す |
+| BG の組み直し | `BackgroundRefresh` | 月払いは数か月開かないと予約が尽きるため必須 |
+| 見直し | `UsageReview` / `ReviewView` | §4.5 |
 
 新規に書くのは **支払日の計算（`BillingSchedule`）・金額の換算（`CostSummary`）・サービスのプリセット（`ServicePreset`）・
-カレンダー画面**。
+カレンダー画面・見直し**。
 
 ## 3. データモデル（SwiftData）
 
@@ -113,6 +115,14 @@ Subscription   1件のサブスク（履歴テーブルは v1 では持たない
 解約済みは件数に**数えない**（解約を記録するほど損をする作りにしない。解約の記録は価値の証拠でもある）。
 その代わり、解約済みを「再開」するときに上限を確認する。日本の平均契約数は3〜5件なので、6件目で購入の動機が生まれる。
 
+### 4.5 見直し（`UsageReview`）
+
+- `Subscription.usesLastMonth`（先月使った回数・自己申告・未記入は nil）と `usageCheckedAt` を持つ。
+- 1回あたり = 月あたり ÷ 回数（四捨五入）。0回は「使っていない」、**¥500 以上は「割高」**、それ未満は「元が取れている」。
+- やめる候補（使っていない・割高）の年あたりを合計し、「やめると年 ¥○ 浮きます」を見直しタブの上に出す。
+- 記入から30日たったら行に「つけ直して」と出す。設定から回数を一括で消せる（月替わりのつけ直し用）。
+- 無料版でも使える（解約を後押しするのがアプリの価値なので、ここは塞がない）。
+
 ## 5. 通知設計
 
 - 各サブスクの支払日の **3日前** と **前日**（設定で 7日前／3日前／前日／当日 の組み合わせ・時刻は既定 9:00）に
@@ -159,8 +169,11 @@ Subscription   1件のサブスク（履歴テーブルは v1 では持たない
 - 月表示。支払いのある日に丸アイコン、下に選択日の支払い一覧とその月の合計
 - 前月・翌月へスワイプ
 
-### 6.6 設定
-通知のタイミングと時刻、体験終了の通知、CSV書き出し（Pro）、Pro 購入・復元、プライバシーポリシー、問い合わせ。
+### 6.6 見直し（`ReviewView`）
+先月の回数を ＋／− でつける一覧。やめる候補を上に、月あたりの高い順。行の見出しから詳細へ。
+
+### 6.7 設定
+通知のタイミングと時刻、体験終了の通知、次のお知らせと予約件数、見直しの回数の一括消去、CSV書き出し（Pro）、Pro 購入・復元、プライバシーポリシー、問い合わせ。
 
 ## 7. 書き出し（Pro）
 
@@ -175,7 +188,7 @@ Subscription   1件のサブスク（履歴テーブルは v1 では持たない
 | `-hideAds` | バナーと同意/ATT フローを止める |
 | `-showPaywall` | 起動直後にペイウォール |
 | `-forceOnboarding` / `-onboardingStep <n>` | オンボーディングの強制表示・開始ページ |
-| `-startTab <name>` | `calendar` / `settings` |
+| `-startTab <name>` | `calendar` / `review` / `settings` |
 | `-showPresetPicker` | 追加のプリセット選択画面 |
 | `-showDetail` | デモの動画サービスの詳細画面 |
 | `-showBreakdown` | 内訳画面（Pro の購入状態に関係なく開く） |

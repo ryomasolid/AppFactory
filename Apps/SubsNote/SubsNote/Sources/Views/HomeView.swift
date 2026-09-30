@@ -23,7 +23,7 @@ private enum HomeRoute: Hashable {
 
 /// ホーム。月あたりの合計・無料体験中・次の支払い・解約済み。
 struct HomeView: View {
-    @Environment(StoreManager.self) private var store
+    @Environment(ProUnlock.self) private var pro
     @Query(sort: \Subscription.createdAt) private var subscriptions: [Subscription]
     @AppStorage(StorageKey.homeSort) private var sortRaw = HomeSort.nextBilling.rawValue
 
@@ -133,10 +133,10 @@ struct HomeView: View {
                 }
             }
             .sheet(item: $addRequest) { request in
-                AddSubscriptionSheet(preset: request.preset).environment(store)
+                AddSubscriptionSheet(preset: request.preset).environment(pro)
             }
             .sheet(isPresented: $showPaywall) {
-                PaywallView().environment(store)
+                PaywallView().environment(pro)
             }
             .task(id: subscriptions.count) {
                 // スクショ撮影用: デモ投入後に詳細・内訳を開く。
@@ -200,19 +200,19 @@ struct HomeView: View {
 
     private var breakdownButton: some View {
         Button {
-            if ProLimits.canSeeBreakdown(isPro: store.isPro) {
+            if ProLimits.canSeeBreakdown(isPro: pro.isUnlocked) {
                 path.append(HomeRoute.breakdown)
             } else {
                 showPaywall = true
             }
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: "chart.bar.fill").foregroundStyle(Theme.accent)
+                Image(systemName: "chart.bar.fill").foregroundStyle(Palette.ink)
                 Text("カテゴリ別・支払い方法別の内訳")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                 Spacer(minLength: 4)
-                if !store.isPro { ProBadge() }
+                if !pro.isUnlocked { ProBadge() }
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
@@ -237,7 +237,7 @@ struct HomeView: View {
                     Text("解約済み（\(cancelled.count)件）").font(.body.weight(.semibold))
                     Text("解約して年 \(Formatting.yen(CostSummary.yearlySaved(cancelled.map(\.plan)))) 浮いています")
                         .font(.caption)
-                        .foregroundStyle(Theme.accent)
+                        .foregroundStyle(Palette.ink)
                 }
             }
         }
@@ -249,14 +249,14 @@ struct HomeView: View {
     private var limitFooter: some View {
         // 上限が近づいてから知らせる（最初から「あと○件」を出すと、使う前に制限を意識させてしまう）。
         if !Launch.isDemo,
-           let remaining = ProLimits.remaining(activeCount: live.count, isPro: store.isPro),
+           let remaining = ProLimits.remaining(activeCount: live.count, isPro: pro.isUnlocked),
            remaining <= 2 {
             Text("無料版であと\(remaining)件登録できます（解約済みは数えません）。")
         }
     }
 
     private func startAdding(_ preset: ServicePreset?) {
-        if ProLimits.canAdd(activeCount: live.count, isPro: store.isPro) {
+        if ProLimits.canAdd(activeCount: live.count, isPro: pro.isUnlocked) {
             addRequest = AddRequest(preset: preset)
         } else {
             showPaywall = true
@@ -269,7 +269,7 @@ struct HomeView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 15)
             .foregroundStyle(.white)
-            .background(Theme.accent, in: Capsule())
+            .background(Palette.ink, in: Capsule())
             .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
     }
 
@@ -281,7 +281,7 @@ struct HomeView: View {
             VStack(spacing: 18) {
                 Image(systemName: "list.bullet.rectangle.portrait")
                     .font(.system(size: 56))
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(Palette.ink)
                 Text("まずはよく使うサービスを1つ追加してみましょう")
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)

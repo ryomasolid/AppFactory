@@ -212,7 +212,7 @@ struct SubscriptionEditorView: View {
             .padding(.vertical, 6)
             .foregroundStyle(isSelected ? Color.white : Color.primary)
             .background(
-                isSelected ? AnyShapeStyle(Theme.accent) : AnyShapeStyle(Color(.tertiarySystemFill)),
+                isSelected ? AnyShapeStyle(Palette.ink) : AnyShapeStyle(Color(.tertiarySystemFill)),
                 in: RoundedRectangle(cornerRadius: 10, style: .continuous)
             )
         }
@@ -243,7 +243,7 @@ struct SubscriptionEditorView: View {
                 if let preview = previewText {
                     Text(preview)
                         .fontWeight(.semibold)
-                        .foregroundStyle(Theme.accent)
+                        .foregroundStyle(Palette.ink)
                 }
             }
         }

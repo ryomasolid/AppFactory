@@ -113,13 +113,13 @@ struct BillingCalendarView: View {
                 Text("\(calendar.component(.day, from: day))")
                     .font(.subheadline.weight(isToday || isSelected ? .bold : .regular))
                     .monospacedDigit()
-                    .foregroundStyle(isSelected ? Color.white : isToday ? Theme.accent : .primary)
+                    .foregroundStyle(isSelected ? Color.white : isToday ? Palette.ink : .primary)
                     .frame(width: 30, height: 30)
                     .background {
                         if isSelected {
-                            Circle().fill(Theme.accent)
+                            Circle().fill(Palette.ink)
                         } else if isToday {
-                            Circle().fill(Theme.accent.opacity(0.14))
+                            Circle().fill(Palette.ink.opacity(0.14))
                         }
                     }
                 HStack(spacing: -4) {

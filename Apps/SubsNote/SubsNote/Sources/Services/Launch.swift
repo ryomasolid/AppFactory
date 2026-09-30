@@ -23,7 +23,7 @@ enum Launch {
 
     /// オンボーディングの開始ページ（"1"〜"3"、または "trial" / "notifications"）。
     static var onboardingStep: String? { value(after: "-onboardingStep") }
-    /// 起動時に選択するタブ（"calendar" / "settings"）。
+    /// 起動時に選択するタブ（"calendar" / "review" / "settings"）。
     static var startTab: String? { value(after: "-startTab") }
     /// 「今日」を固定する（yyyy-MM-dd）。スクショの日付・残り日数を毎回同じにする。
     static var fixedToday: Date? { value(after: "-fixedToday").flatMap { parseDay($0) } }
@@ -58,18 +58,20 @@ enum Launch {
         var cancelledDaysAgo: Int?
         var payment: PaymentMethod
         var paymentNote: String = ""
+        /// 先月使った回数（見直し画面のスクショ用）。
+        var uses: Int?
     }
 
     /// いつ撮っても「次の支払い」が近い順に並ぶよう、支払日は今日から逆算する。
     private static let demoSubscriptions: [DemoSubscription] = [
-        DemoSubscription(name: "動画プラス", category: .video, price: 1590, daysUntilNext: 3, payment: .creditCard, paymentNote: "サンプルカード"),
-        DemoSubscription(name: "シネマパス", category: .video, price: 990, trialDaysLeft: 2, payment: .appStore),
-        DemoSubscription(name: "ミュージックワン", category: .music, price: 1080, daysUntilNext: 6, payment: .appStore),
-        DemoSubscription(name: "AIアシスタント Pro", category: .ai, price: 3000, daysUntilNext: 10, payment: .creditCard, paymentNote: "サンプルカード"),
-        DemoSubscription(name: "フィットネスジム", category: .fitness, price: 3278, daysUntilNext: 17, payment: .bank),
-        DemoSubscription(name: "デジタル新聞", category: .reading, price: 1980, daysUntilNext: 21, payment: .creditCard, paymentNote: "サンプルカード"),
-        DemoSubscription(name: "アニメ見放題", category: .video, price: 550, daysUntilNext: 26, payment: .carrier),
-        DemoSubscription(name: "クラウドボックス", category: .cloud, price: 5400, cycle: .year, daysUntilNext: 48, payment: .appStore),
+        DemoSubscription(name: "動画プラス", category: .video, price: 1590, daysUntilNext: 3, payment: .creditCard, paymentNote: "サンプルカード", uses: 14),
+        DemoSubscription(name: "シネマパス", category: .video, price: 990, trialDaysLeft: 2, payment: .appStore, uses: 1),
+        DemoSubscription(name: "ミュージックワン", category: .music, price: 1080, daysUntilNext: 6, payment: .appStore, uses: 25),
+        DemoSubscription(name: "AIアシスタント Pro", category: .ai, price: 3000, daysUntilNext: 10, payment: .creditCard, paymentNote: "サンプルカード", uses: 20),
+        DemoSubscription(name: "フィットネスジム", category: .fitness, price: 3278, daysUntilNext: 17, payment: .bank, uses: 2),
+        DemoSubscription(name: "デジタル新聞", category: .reading, price: 1980, daysUntilNext: 21, payment: .creditCard, paymentNote: "サンプルカード", uses: 0),
+        DemoSubscription(name: "アニメ見放題", category: .video, price: 550, daysUntilNext: 26, payment: .carrier, uses: 8),
+        DemoSubscription(name: "クラウドボックス", category: .cloud, price: 5400, cycle: .year, daysUntilNext: 48, payment: .appStore, uses: 6),
         DemoSubscription(name: "マンガ読み放題", category: .reading, price: 980, cancelledDaysAgo: 40, payment: .appStore),
     ]
 
@@ -91,6 +93,8 @@ enum Launch {
                 cancelNote: demo.payment.cancelGuide,
                 createdAt: Date().addingTimeInterval(TimeInterval(index))
             )
+            subscription.usesLastMonth = demo.uses
+            subscription.usageCheckedAt = demo.uses == nil ? nil : today
             if let daysLeft = demo.trialDaysLeft {
                 let trialEnd = calendar.date(byAdding: .day, value: daysLeft, to: today) ?? today
                 subscription.trialEndDate = trialEnd

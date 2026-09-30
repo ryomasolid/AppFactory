@@ -8,7 +8,7 @@ struct SubscriptionDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Environment(StoreManager.self) private var store
+    @Environment(ProUnlock.self) private var pro
     @Query private var all: [Subscription]
 
     @State private var showEditor = false
@@ -51,8 +51,8 @@ struct SubscriptionDetailView: View {
                         }
                     }
             }
-            .tint(Theme.accent)
-            .environment(store)
+            .tint(Palette.ink)
+            .environment(pro)
         }
         .sheet(isPresented: $showCancelSheet) {
             CancelRecordSheet(name: subscription.name, yearlySaving: CostSummary.yearly(plan).rounded()) { date in
@@ -61,7 +61,7 @@ struct SubscriptionDetailView: View {
             .presentationDetents([.medium])
         }
         .sheet(isPresented: $showPaywall) {
-            PaywallView().environment(store)
+            PaywallView().environment(pro)
         }
         .confirmationDialog(
             Text("「\(subscription.name)」を削除しますか？"), isPresented: $confirmDelete, titleVisibility: .visible
@@ -118,7 +118,7 @@ struct SubscriptionDetailView: View {
                 if let date = subscription.cancelledAt {
                     infoRow("解約した日", Formatting.date(date))
                 }
-                infoRow("解約で浮いた額", String(localized: "年 \(Formatting.yen(CostSummary.yearly(plan).rounded()))"), color: Theme.accent)
+                infoRow("解約で浮いた額", String(localized: "年 \(Formatting.yen(CostSummary.yearly(plan).rounded()))"), color: Palette.ink)
             }
             infoRow("月あたり", Formatting.yen(CostSummary.monthly(plan)))
             infoRow("年あたり", Formatting.yen(CostSummary.yearly(plan).rounded()))
@@ -248,7 +248,7 @@ struct SubscriptionDetailView: View {
     /// 解約済みから戻すときに無料版の上限を確認する（解約済みは上限に数えないため）。
     private func resume() {
         let activeCount = ProLimits.countedSubscriptions(isCancelled: all.map(\.isCancelled))
-        guard ProLimits.canAdd(activeCount: activeCount, isPro: store.isPro) else {
+        guard ProLimits.canAdd(activeCount: activeCount, isPro: pro.isUnlocked) else {
             showPaywall = true
             return
         }
@@ -309,6 +309,6 @@ struct CancelRecordSheet: View {
                 }
             }
         }
-        .tint(Theme.accent)
+        .tint(Palette.ink)
     }
 }

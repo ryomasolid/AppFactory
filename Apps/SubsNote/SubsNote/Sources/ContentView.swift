@@ -1,85 +1,101 @@
 import SwiftData
 import SwiftUI
 
-enum AppTab: String {
+/// 下のタブ。並びは「いま払っているもの → いつ払うか → やめるか → 設定」の順。
+enum AppTab: String, CaseIterable {
     case home
     case calendar
+    case review
     case settings
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .home: "ホーム"
+        case .calendar: "カレンダー"
+        case .review: "見直し"
+        case .settings: "設定"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .home: "list.bullet.rectangle.portrait.fill"
+        case .calendar: "calendar"
+        case .review: "scalemass.fill"
+        case .settings: "gearshape"
+        }
+    }
 }
 
+/// アプリの外枠。タブ・無料版のバナー・初回の案内・起動引数で開く画面をまとめる。
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage(StorageKey.hasSeenOnboarding) private var hasSeenOnboarding = false
 
-    @State private var store = StoreManager()
-    @State private var selection: AppTab = .home
-    @State private var launchSheet: LaunchSheet?
-    @State private var showOnboarding = false
+    @State private var pro = ProUnlock()
+    @State private var tab: AppTab = .home
+    @State private var shortcut: Shortcut?
+    @State private var isOnboarding = false
 
-    /// 起動引数から直接開く画面（スクショ撮影・レイアウト確認用）。
-    private enum LaunchSheet: String, Identifiable {
-        case paywall
-        case presetPicker
-        var id: String { rawValue }
+    /// 起動引数から直接開くシート（スクショ撮影・レイアウト確認用）。
+    private enum Shortcut: String, Identifiable {
+        case paywall, presetPicker
+        var id: Self { self }
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView(selection: $selection) {
-                HomeView()
-                    .tabItem { Label("ホーム", systemImage: "list.bullet.rectangle.portrait.fill") }
-                    .tag(AppTab.home)
-
-                BillingCalendarView()
-                    .tabItem { Label("カレンダー", systemImage: "calendar") }
-                    .tag(AppTab.calendar)
-
-                SettingsView()
-                    .tabItem { Label("設定", systemImage: "gearshape") }
-                    .tag(AppTab.settings)
-            }
-
-            // バナーは全タブ共通で最下部に1つだけ置く。画面ごとに置くと重複や二重表示を招く。
-            if !store.isPro, !Launch.hideAds {
-                BannerAdView()
-            }
-        }
-        .environment(store)
-        .tint(Theme.accent)
-        .onAppear {
-            if Launch.isDemo {
-                Launch.seedIfNeeded(modelContext)
-                // デモ投入時はオンボーディング済み扱いにする（スクショ撮影のため）。
-                hasSeenOnboarding = true
-            }
-            if let tab = Launch.startTab.flatMap(AppTab.init(rawValue:)) { selection = tab }
-            if Launch.showPresetPicker { launchSheet = .presetPicker }
-            if Launch.showPaywall { launchSheet = .paywall }
-            showOnboarding = !hasSeenOnboarding || Launch.forceOnboarding
-            // 広告の同意（UMP）→ ATT → AdMob 初期化。広告非表示（スクショ撮影）時は走らせない。
-            // オンボーディング中にダイアログが重ならないよう、初回は完了後に回す。
-            if !showOnboarding { ConsentManager.shared.start() }
-        }
-        .sheet(item: $launchSheet) { sheet in
-            // シートの中身には環境が自動で伝わらないので、StoreManager を明示的に渡す。
-            Group {
-                switch sheet {
-                case .paywall:
-                    PaywallView()
-                case .presetPicker:
-                    AddSubscriptionSheet(preset: nil)
+            TabView(selection: $tab) {
+                ForEach(AppTab.allCases, id: \.self) { item in
+                    screen(for: item)
+                        .tabItem { Label(item.title, systemImage: item.symbol) }
+                        .tag(item)
                 }
             }
-            .environment(store)
+            // バナーはタブバーの下に1つだけ（画面ごとに置くと切り替えのたびに読み込み直す）。
+            if !pro.isUnlocked, !Launch.hideAds { FooterAd() }
         }
-        .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView {
-                hasSeenOnboarding = true
-                showOnboarding = false
-                ConsentManager.shared.start()
+        .environment(pro)
+        .tint(Palette.ink)
+        .onAppear(perform: applyLaunchOptions)
+        .sheet(item: $shortcut) { item in
+            // シートには @Observable の環境が伝わらないので、ProUnlock を明示的に渡す。
+            Group {
+                if item == .paywall { PaywallView() } else { AddSubscriptionSheet(preset: nil) }
             }
-            .environment(store)
+            .environment(pro)
         }
+        .fullScreenCover(isPresented: $isOnboarding) {
+            OnboardingView(onDone: finishOnboarding).environment(pro)
+        }
+    }
+
+    @ViewBuilder
+    private func screen(for item: AppTab) -> some View {
+        switch item {
+        case .home: HomeView()
+        case .calendar: BillingCalendarView()
+        case .review: ReviewView()
+        case .settings: SettingsView()
+        }
+    }
+
+    private func applyLaunchOptions() {
+        if Launch.isDemo {
+            Launch.seedIfNeeded(modelContext)
+            hasSeenOnboarding = true  // デモ（スクショ撮影）は案内を飛ばす
+        }
+        if let start = Launch.startTab.flatMap(AppTab.init(rawValue:)) { tab = start }
+        shortcut = Launch.showPaywall ? .paywall : (Launch.showPresetPicker ? .presetPicker : nil)
+        isOnboarding = !hasSeenOnboarding || Launch.forceOnboarding
+        // 同意・ATT のダイアログは案内のあとに出す（通知の許可と重ねない）。
+        if !isOnboarding { AdStartup.runOnce() }
+    }
+
+    private func finishOnboarding() {
+        hasSeenOnboarding = true
+        isOnboarding = false
+        AdStartup.runOnce()
     }
 }
 

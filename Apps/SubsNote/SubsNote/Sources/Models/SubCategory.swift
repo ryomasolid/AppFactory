@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 /// サブスクのカテゴリ。内訳の切り口と、丸アイコンの色に使う。
 enum SubCategory: String, CaseIterable, Identifiable, Sendable {
@@ -42,17 +42,18 @@ enum SubCategory: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var colorHex: String {
+    /// アイコンの丸と内訳のバーの色。
+    var tint: Color {
         switch self {
-        case .video: "#E03131"
-        case .music: "#D6336C"
-        case .game: "#7048E8"
-        case .reading: "#1971C2"
-        case .cloud: "#1098AD"
-        case .ai: "#AE3EC9"
-        case .fitness: "#37B24D"
-        case .telecom: "#F08C00"
-        case .life: "#868E96"
+        case .video: Palette.rgb(0xE03131)
+        case .music: Palette.rgb(0xD6336C)
+        case .game: Palette.rgb(0x7048E8)
+        case .reading: Palette.rgb(0x1971C2)
+        case .cloud: Palette.rgb(0x1098AD)
+        case .ai: Palette.rgb(0xAE3EC9)
+        case .fitness: Palette.rgb(0x37B24D)
+        case .telecom: Palette.rgb(0xF08C00)
+        case .life: Palette.rgb(0x868E96)
         }
     }
 }

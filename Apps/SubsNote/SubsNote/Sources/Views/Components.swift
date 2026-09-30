@@ -43,7 +43,7 @@ struct ServiceIcon: View {
             .font(.system(size: size * 0.44, weight: .bold, design: .rounded))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(Color(hex: category.colorHex), in: Circle())
+            .background(category.tint, in: Circle())
             .accessibilityHidden(true)
     }
 }
@@ -53,8 +53,8 @@ struct ServiceIcon: View {
 extension BillingState {
     var color: Color {
         switch self {
-        case .trial: Color(hex: "#E8590C")
-        case .active: Theme.accent
+        case .trial: Palette.deadline
+        case .active: Palette.ink
         case .cancelled: Color(.systemGray)
         }
     }
@@ -63,7 +63,7 @@ extension BillingState {
 enum DueStyle {
     /// 支払日・体験終了までの日数の色。3日以内は目立たせる。
     static func color(daysLeft: Int) -> Color {
-        daysLeft <= 3 ? Color(hex: "#E8590C") : .secondary
+        daysLeft <= 3 ? Palette.deadline : .secondary
     }
 }
 
@@ -100,7 +100,7 @@ struct PrimaryButtonLabel: View {
         .font(.headline)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
-        .background(Theme.accent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Palette.ink, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .foregroundStyle(.white)
     }
 }
@@ -109,7 +109,7 @@ struct ProBadge: View {
     var body: some View {
         Label("Pro", systemImage: "crown.fill")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(Theme.accent)
+            .foregroundStyle(Palette.ink)
     }
 }
 
@@ -124,7 +124,7 @@ struct NotificationSample: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.white)
                 .frame(width: 30, height: 30)
-                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 7))
+                .background(Palette.ink, in: RoundedRectangle(cornerRadius: 7))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.subheadline.weight(.semibold))
                 Text(message)
@@ -136,7 +136,7 @@ struct NotificationSample: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 

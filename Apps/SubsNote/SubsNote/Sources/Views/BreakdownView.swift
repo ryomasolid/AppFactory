@@ -17,7 +17,7 @@ struct BreakdownView: View {
                 ForEach(byCategory, id: \.key) { entry in
                     BarRow(
                         title: entry.key.label, count: entry.count, amount: entry.monthly, total: total,
-                        color: Color(hex: entry.key.colorHex)
+                        color: entry.key.tint
                     )
                 }
             } header: {
@@ -26,7 +26,7 @@ struct BreakdownView: View {
 
             Section {
                 ForEach(byPayment, id: \.key) { entry in
-                    BarRow(title: entry.key.label, count: entry.count, amount: entry.monthly, total: total, color: Theme.accent)
+                    BarRow(title: entry.key.label, count: entry.count, amount: entry.monthly, total: total, color: Palette.ink)
                 }
             } header: {
                 Text("支払い方法別（月あたり）")

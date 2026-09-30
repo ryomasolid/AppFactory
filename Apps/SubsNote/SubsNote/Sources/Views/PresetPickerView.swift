@@ -19,7 +19,7 @@ struct AddSubscriptionSheet: View {
                 PresetPickerView { dismiss() }
             }
         }
-        .tint(Theme.accent)
+        .tint(Palette.ink)
     }
 }
 
@@ -43,7 +43,7 @@ struct PresetPickerView: View {
                         trimmedQuery.isEmpty ? String(localized: "リストにないサービスを追加") : String(localized: "「\(trimmedQuery)」を追加"),
                         systemImage: "square.and.pencil"
                     )
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(Palette.ink)
                 }
             }
 

@@ -29,6 +29,10 @@ final class Subscription {
     var isCancelled: Bool = false
     var cancelledAt: Date?
     var createdAt: Date = Date()
+    /// 先月使った回数（見直し画面で本人がつける）。未記入は nil。
+    var usesLastMonth: Int?
+    /// 回数をつけた日。30日たったらつけ直しを促す。
+    var usageCheckedAt: Date?
 
     init(
         id: UUID = UUID(),
@@ -100,6 +104,10 @@ extension Subscription {
     }
 
     var monthlyAmount: Int { CostSummary.monthly(plan) }
+
+    var usageVerdict: UsageReview.Verdict {
+        UsageReview.verdict(monthly: monthlyAmount, uses: usesLastMonth)
+    }
 
     /// 解約の手順。未入力なら支払い方法ごとの一般的な手順。
     var cancelGuide: String {
