@@ -100,4 +100,7 @@ NEW！体重グラフ・SNSシェアカード・交換時期のプッシュ通�
   AdMob 側のアプリ審査（2〜3日）が終わるまで広告配信は制限される。
 - 2026-10-01: サポートURL を `https://ryomasolid.github.io/support-hamuhamu.html`（新規作成、メール窓口＋よくある質問）、
   マーケティングURL を `https://ryomasolid.github.io/`（app-ads.txt のある場所）に変更。「審査待ち」のままでも編集・保存できた。
-  プライバシーポリシーは旧版から使っている `https://ryomasolid.github.io/hamuhamu-diary/privacy.html` のまま。
+- 2026-10-01: プライバシーポリシーを 2.0 の内容（AdMob・UMP/ATT・ローカル通知・写真ピッカー・書き出し）で書き直し、
+  `https://ryomasolid.github.io/privacy-hamuhamu.html` に置いて ASC のプライバシーポリシーURL を変更（「次のバージョンでリリース」扱い）。
+  旧URL（ryomasolid/hamuhamu-diary リポジトリの `docs/privacy.html`。旧版は「広告SDKなし」と書いていた）は新URLへ転送するページに置き換えた。
+  App のプライバシー（栄養ラベル）は AdMob 分（ID・使用状況データ・広告データ／トラッキングあり）が申告済みで変更なし。
