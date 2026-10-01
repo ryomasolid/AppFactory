@@ -53,7 +53,7 @@ let project = Project(
                     "CFBundleDevelopmentRegion": "ja",
                     // ストアの公開版が 1.3（React Native 版）なので、Swift 版は 2.0 から。
                     "CFBundleShortVersionString": "2.0",
-                    "CFBundleVersion": "1",
+                    "CFBundleVersion": "2",
                     "ITSAppUsesNonExemptEncryption": false,
                     // AdMob のアプリID（自分のアカウント pub-6105029932689433 に登録したもの）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~9733110624",
