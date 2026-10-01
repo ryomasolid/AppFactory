@@ -34,10 +34,12 @@ public struct ContentView: View {
         .onAppear {
             // スクリーンショット撮影モードでは、オンボーディング・同意ダイアログを出さない。
             let screenshot = ProcessInfo.processInfo.arguments.contains("-screenshotPaywall")
-            showOnboarding = !hasSeenOnboarding && !screenshot
+            let needsOnboarding = !hasSeenOnboarding && !screenshot
+            showOnboarding = needsOnboarding
             authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
             // 広告の同意（UMP）→ ATT → AdMob 初期化を実行。
-            if !screenshot {
+            // オンボーディングの全画面表示と重なると ATT が出ないことがあるので、閉じてから始める。
+            if !screenshot, !needsOnboarding {
                 ConsentManager.shared.start()
             }
         }
@@ -45,6 +47,7 @@ public struct ContentView: View {
             OnboardingView {
                 hasSeenOnboarding = true
                 showOnboarding = false
+                ConsentManager.shared.start()
             }
         }
         .onChange(of: scenePhase) { _, phase in

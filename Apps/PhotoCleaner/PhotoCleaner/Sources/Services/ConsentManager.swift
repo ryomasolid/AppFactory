@@ -29,7 +29,16 @@ final class ConsentManager {
     }
 
     private func requestATTThenStartAds() {
-        ATTrackingManager.requestTrackingAuthorization { _ in
+        Task { @MainActor in
+            // ATT はアプリが前面（active）のときにしか出ず、それ以外で呼ぶと何も表示せずに返る。
+            // 起動直後や他の画面の表示と重ならないよう、active になってから少し待って呼ぶ。
+            for _ in 0..<50 where UIApplication.shared.applicationState != .active {
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+            try? await Task.sleep(for: .milliseconds(600))
+            if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
+                _ = await ATTrackingManager.requestTrackingAuthorization()
+            }
             Self.startAds()
         }
     }
