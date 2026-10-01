@@ -98,4 +98,6 @@ NEW！体重グラフ・SNSシェアカード・交換時期のプッシュ通�
 - 2026-10-01: 2.0 (1) は広告IDが移管前の旧 AdMob のままだったので審査から取り下げ。自分の AdMob
   （pub-6105029932689433）に「はむはむ日記」を登録して IDを差し替えた 2.0 (2) を **17:07 に審査提出（審査待ち）**。
   AdMob 側のアプリ審査（2〜3日）が終わるまで広告配信は制限される。
-- サポートURL / マーケティングURL はまだ旧アカウント（github.com/ryomasolid）のまま。
+- 2026-10-01: サポートURL を `https://ryomasolid.github.io/support-hamuhamu.html`（新規作成、メール窓口＋よくある質問）、
+  マーケティングURL を `https://ryomasolid.github.io/`（app-ads.txt のある場所）に変更。「審査待ち」のままでも編集・保存できた。
+  プライバシーポリシーは旧版から使っている `https://ryomasolid.github.io/hamuhamu-diary/privacy.html` のまま。
