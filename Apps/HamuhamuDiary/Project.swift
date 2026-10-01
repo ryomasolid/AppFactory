@@ -55,9 +55,8 @@ let project = Project(
                     "CFBundleShortVersionString": "2.0",
                     "CFBundleVersion": "1",
                     "ITSAppUsesNonExemptEncryption": false,
-                    // AdMob のアプリID。TODO: 自分の AdMob アカウントでアプリを登録したら差し替える
-                    // （現在は移管前の旧アカウントのもの。`BannerAdView` のユニットIDも同様）。
-                    "GADApplicationIdentifier": "ca-app-pub-3362493734697220~7622911129",
+                    // AdMob のアプリID（自分のアカウント pub-6105029932689433 に登録したもの）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~9733110624",
                     // 広告のトラッキング許可（ATT）ダイアログの説明文。
                     "NSUserTrackingUsageDescription": "あなたに関連性の高い広告を表示するために使用します。許可しなくてもアプリの機能はご利用いただけます。",
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),

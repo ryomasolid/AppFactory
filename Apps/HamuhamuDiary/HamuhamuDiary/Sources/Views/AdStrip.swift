@@ -13,8 +13,7 @@ struct AdStrip: View {
     #if DEBUG
     private let unitID = "ca-app-pub-3940256099942544/2934735716"  // Google のテスト用ユニット
     #else
-    // TODO: 自分の AdMob でアプリを登録したら差し替える（今は移管前の旧アカウントのユニット）。
-    private let unitID = "ca-app-pub-3362493734697220/2539095081"
+    private let unitID = "ca-app-pub-6105029932689433/4525015975"
     #endif
 
     var body: some View {

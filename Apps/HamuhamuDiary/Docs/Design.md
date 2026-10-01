@@ -35,7 +35,7 @@
 
 > SubsNote が「他アプリと同じ部品」で 4.3(a) Spam 却下になったため、広告まわりは他アプリのコピーにしない。
 > `AdPermission` は UMP → ATT → AdMob を状態（idle/asking/ready/off）として持ち、`AdStrip` は ready になって
-> 広告が届いてから高さを持つ。**TODO: バナーのユニットIDと GADApplicationIdentifier は、まだ移管前の旧 AdMob のもの。**
+> 広告が届いてから高さを持つ。広告IDは自分の AdMob（pub-6105029932689433）に 2026-10-01 に登録したもの（アプリ「はむはむ日記」・ユニット「Footer Banner」）。
 
 ## 3. 旧版からの引き継ぎ（`LegacyStore` / `DiaryData.bootstrapIfNeeded`）
 
