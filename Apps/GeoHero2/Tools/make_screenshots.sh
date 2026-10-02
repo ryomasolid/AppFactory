@@ -48,7 +48,7 @@ rm -f "$OUT"/65_*.jpg
 echo "撮影中:"
 shot 1_title  4
 shot 2_field  4 -startMap aomoriField -startX 24 -startY 18 -startLevel 5
-shot 3_town   4 -startMap sendai -startX 14 -startY 13 -startLevel 15
+shot 3_town   4 -startMap sendai -startX 15 -startY 7 -startLevel 15
 shot 4_quiz   4 -startMap aomori -startBattle neputaGhost,ninnikun,hachinoheIka -startLevel 4 -battleSubmenu quiz
 shot 5_boss   5 -startBattle namahageKing -startLevel 11
 shot 6_book   4 -startOverlay book -seenAll YES -startLevel 8
