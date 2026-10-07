@@ -45,17 +45,13 @@ struct Shot {
     let deviceShift: CGFloat
 }
 
-/// 並べる順と 見出し。App Store の インストール画面には 最初の3枚が出る。
+/// 並べる順と 見出し。App Store の 検索結果と インストール画面には 最初の3枚が出る。
 let shots: [Shot] = [
-    Shot(file: "65_1_title", name: "title", tag: "ドット絵 RPG", title: "北海道を", accent: "冒険しよう",
-         top: rgb(0x1B1F4B), bottom: rgb(0x4A2C7A),
-         popout: Popout(crop: NSRect(x: 250, y: 1030, width: 790, height: 400),
-                        center: NSPoint(x: 700, y: 1860), cardWidth: 820, tilt: -5),
-         deviceShift: -90),
-    Shot(file: "65_4_quiz", name: "quiz", tag: "地理クイズ", title: "ちしきで", accent: "おいうち！",
+    // 検索結果では 小さく 3枚しか 見えないので、1枚目で「地理クイズの RPG」と わかるように 問題文を 大きく 出す。
+    Shot(file: "65_4_quiz", name: "quiz", tag: "地理クイズ RPG", title: "クイズに 答えて", accent: "北海道を 覚える",
          top: rgb(0x2A7DE1), bottom: rgb(0x0E3A7A),
-         popout: Popout(crop: NSRect(x: 150, y: 520, width: 950, height: 380),
-                        center: NSPoint(x: 621, y: 1330), cardWidth: 1080, tilt: -4),
+         popout: Popout(crop: NSRect(x: 19, y: 1615, width: 1205, height: 950),
+                        center: NSPoint(x: 621, y: 2150), cardWidth: 1060, tilt: -3),
          deviceShift: 0),
     Shot(file: "65_2_field", name: "field", tag: "3つの 地方", title: "北海道を", accent: "飛行機で めぐる",
          top: rgb(0x35B566), bottom: rgb(0x0F5C35),
@@ -77,7 +73,15 @@ let shots: [Shot] = [
          popout: Popout(crop: NSRect(x: 19, y: 752, width: 1210, height: 418),
                         center: NSPoint(x: 621, y: 2080), cardWidth: 1100, tilt: -3),
          deviceShift: 0),
+    Shot(file: "65_1_title", name: "title", tag: "ドット絵 RPG", title: "北海道を", accent: "冒険しよう",
+         top: rgb(0x1B1F4B), bottom: rgb(0x4A2C7A),
+         popout: Popout(crop: NSRect(x: 250, y: 1030, width: 790, height: 400),
+                        center: NSPoint(x: 700, y: 1860), cardWidth: 820, tilt: -5),
+         deviceShift: -90),
 ]
+
+/// 先生・保護者 向けは「授業・自由研究に」から 始める（ふつうの 並びとは ちがう）。
+let eduOrder = ["title", "quiz", "field", "town", "boss", "shop"]
 
 /// 先生・保護者 向けの 見出し（ラベル・1行目・2行目）。絵と 並びは 同じ。
 let eduTexts: [String: (tag: String, title: String, accent: String)] = [
@@ -225,7 +229,8 @@ func drawPopout(_ popout: Popout, from bitmap: NSBitmapImageRep) {
     NSGraphicsContext.restoreGraphicsState()
 }
 
-for (index, base) in shots.enumerated() {
+let ordered = isEdu ? eduOrder.compactMap { name in shots.first { $0.name == name } } : shots
+for (index, base) in ordered.enumerated() {
     var shot = base
     if isEdu, let text = eduTexts[base.name] {
         shot = Shot(file: base.file, name: base.name, tag: text.tag, title: text.title, accent: text.accent,
