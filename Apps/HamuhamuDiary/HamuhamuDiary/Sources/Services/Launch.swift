@@ -16,6 +16,8 @@ enum Launch {
     static var showShareCard: Bool { args.contains("-showShareCard") }
     /// 起動時に選択するタブ（"home" / "diary" / "profile" / "settings"）。
     static var startTab: String? { value(after: "-startTab") }
+    /// デモ写真に使う本物の写真のフォルダ（Mac 側のパス。`Store/screenshots/photos`）。無ければ絵文字の画像で代用する。
+    static var demoPhotos: String? { value(after: "-demoPhotos") }
 
     private static func value(after flag: String) -> String? {
         guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -30,6 +32,13 @@ enum Launch {
         "手のひらでお昼寝してくれた😴",
         "はじめて名前を呼んだら出てきた！",
         "", "",
+    ]
+    /// 写真のある日のメモ（`Store/screenshots/photos/memory-N.jpg` の中身に合わせてある）。
+    private static let photoMemos = [
+        0: "いちごをもらってごきげん🍓",
+        4: "ブランケットからひょっこり",
+        9: "おうちでぐっすりお昼寝😴",
+        15: "たまごハウスがお気に入り🥚",
     ]
     private static let foods = ["いつものペレット 4g", "ペレット 4g\nブロッコリー", "シードミックス 5g", "ペレット 4g\nにんじん"]
     private static let cleanings: [[String]] = [["partial"], ["toilet_sand"], [], ["partial", "water_bottle"], [], ["full_wash", "bedding"]]
@@ -47,10 +56,9 @@ enum Launch {
         context.insert(HamsterProfile(
             name: String(localized: "もち"), species: "ジャンガリアンハムスター",
             birthDate: daysAgo(290), welcomeDate: daysAgo(230),
-            photoPath: demoPhoto(named: "demo-avatar", hue: 0.07)
+            photoPath: demoPhoto(named: "demo-avatar", real: "avatar", hue: 0.07)
         ))
 
-        let photoDays: Set<Int> = [0, 4, 9, 15]
         for i in 0..<80 {
             // 少しずつ増えて落ち着く体重カーブ＋小さな揺らぎ。
             let base = 34 + 6 * (1 - exp(-Double(80 - i) / 30))
@@ -60,8 +68,8 @@ enum Launch {
             context.insert(DiaryRecord(
                 key: "demo-\(i)", date: date, weight: i % 3 == 2 ? nil : weight,
                 food: foods[i % foods.count], cleaningKeys: cleanings[i % cleanings.count],
-                memo: memos[i % memos.count],
-                photoPath: photoDays.contains(i) ? demoPhoto(named: "demo-\(i)", hue: 0.05 + Double(i) * 0.01) : nil,
+                memo: photoMemos[i] ?? memos[i % memos.count],
+                photoPath: photoMemos[i] == nil ? nil : demoPhoto(named: "demo-\(i)", real: "memory-\(i)", hue: 0.05 + Double(i) * 0.01),
                 createdAt: created, updatedAt: created
             ))
         }
@@ -73,8 +81,11 @@ enum Launch {
         try? context.save()
     }
 
-    /// 写真の代わりのやわらかいグラデーション画像（本物のハムスター写真は `Store/` の手順で差し替える）。
-    private static func demoPhoto(named name: String, hue: Double) -> String? {
+    /// デモの写真。`-demoPhotos` のフォルダに `<real>.jpg` があればそれを、無ければやわらかいグラデーション画像を使う。
+    private static func demoPhoto(named name: String, real: String, hue: Double) -> String? {
+        if let dir = demoPhotos, let data = try? Data(contentsOf: URL(filePath: dir).appending(path: "\(real).jpg")) {
+            return save(data, named: name)
+        }
         let size = CGSize(width: 1200, height: 900)
         let image = UIGraphicsImageRenderer(size: size).image { ctx in
             let colors = [
@@ -90,6 +101,10 @@ enum Launch {
             text.draw(at: CGPoint(x: (size.width - textSize.width) / 2, y: (size.height - textSize.height) / 2), withAttributes: [.font: font])
         }
         guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
+        return save(data, named: name)
+    }
+
+    private static func save(_ data: Data, named name: String) -> String? {
         let dir = PhotoStore.documents.appending(path: PhotoStore.folder)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try? data.write(to: dir.appending(path: "\(name).jpg"))
