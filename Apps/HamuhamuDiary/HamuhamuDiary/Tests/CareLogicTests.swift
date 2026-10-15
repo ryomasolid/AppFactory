@@ -154,3 +154,59 @@ struct NotificationPlannerTests {
         #expect(withDaily.map(\.id) == ["daily-record"])
     }
 }
+
+struct WeightAlertTests {
+    private func point(_ month: Int, _ day: Int, _ weight: Double) -> WeightPoint {
+        WeightPoint(date: at(2026, month, day, 0), weight: weight)
+    }
+
+    @Test func aTenPercentDropWithinAWeekIsFlagged() {
+        let points = [point(6, 10, 40.0), point(6, 14, 38.5), point(6, 17, 36.0)]
+        let drop = WeightAlert.drop(in: points, now: at(2026, 6, 18, 12), calendar: jst)
+        #expect(drop?.from == point(6, 10, 40.0))
+        #expect(drop?.to == point(6, 17, 36.0))
+    }
+
+    @Test func smallChangesAndOldDropsAreIgnored() {
+        let small = [point(6, 10, 40.0), point(6, 17, 37.0)]
+        #expect(WeightAlert.drop(in: small, now: at(2026, 6, 18, 12), calendar: jst) == nil)
+        // 8日以上前の体重とは比べない。
+        let outsideWindow = [point(6, 1, 40.0), point(6, 17, 35.0)]
+        #expect(WeightAlert.drop(in: outsideWindow, now: at(2026, 6, 18, 12), calendar: jst) == nil)
+        // 最新の記録が2週間より前なら出さない。
+        let stale = [point(5, 10, 40.0), point(5, 15, 35.0)]
+        #expect(WeightAlert.drop(in: stale, now: at(2026, 6, 18, 12), calendar: jst) == nil)
+    }
+}
+
+struct AnniversaryTests {
+    @Test func welcomeDayOneIsTheWelcomeDay() {
+        // 1/1 にお迎え → 100日目は 4/10。
+        let items = Anniversaries.on(at(2026, 4, 10, 0), birthDate: nil, welcomeDate: at(2026, 1, 1, 0), calendar: jst)
+        #expect(items.map(\.kind) == [.welcomeDays(100)])
+        #expect(items.first?.label == "お迎え100日目")
+    }
+
+    @Test func birthdaysAndYearlyWelcomes() {
+        let birth = at(2025, 3, 5, 0)
+        let welcome = at(2025, 5, 20, 0)
+        let items = Anniversaries.between(birthDate: birth, welcomeDate: welcome, from: at(2025, 9, 1, 0), days: 300, calendar: jst)
+        #expect(items.map(\.kind) == [.halfBirthday, .welcomeDays(200), .birthday(years: 1), .welcomeDays(300), .welcomeYears(1)])
+        #expect(items.first?.date == at(2025, 9, 5, 0))
+    }
+
+    @Test func anniversaryNotificationsAreAtNineAndOnlyInTheFuture() {
+        let now = at(2026, 6, 20, 12)
+        let planned = NotificationPlanner.plan(
+            reminders: [], remindersEnabled: false, dailyEnabled: false, dailyHour: 20,
+            anniversaries: [
+                Anniversary(date: at(2026, 6, 20, 0), kind: .halfBirthday),
+                Anniversary(date: at(2026, 6, 25, 0), kind: .birthday(years: 1)),
+            ],
+            hamsterName: "もち", now: now, calendar: jst
+        )
+        #expect(planned.count == 1)
+        #expect(planned.first?.fireDate == at(2026, 6, 25, 9))
+        #expect(planned.first?.title == "🎂 今日はもちの1歳のお誕生日！")
+    }
+}

@@ -106,7 +106,7 @@ struct ProfileView: View {
                     Task {
                         if await NotificationScheduler.shared.requestAuthorizationIfNeeded() {
                             remindersEnabled = true
-                            await NotificationScheduler.shared.rebuild(context: modelContext)
+                            await AppSync.refresh(context: modelContext)
                         } else {
                             notificationDenied = true
                         }
@@ -126,7 +126,7 @@ struct ProfileView: View {
                 ReminderRow(reminder: reminder) {
                     reminder.lastDate = Calendar.current.startOfDay(for: Date())
                     try? modelContext.save()
-                    Task { await NotificationScheduler.shared.rebuild(context: modelContext) }
+                    Task { await AppSync.refresh(context: modelContext) }
                 }
                 .contentShape(Rectangle())
                 .onTapGesture { editingReminder = reminder }
@@ -197,7 +197,7 @@ struct ReminderEditorView: View {
                     Button("完了") {
                         reminder.lastDate = hasDate ? Calendar.current.startOfDay(for: date) : nil
                         try? modelContext.save()
-                        Task { await NotificationScheduler.shared.rebuild(context: modelContext) }
+                        Task { await AppSync.refresh(context: modelContext) }
                         dismiss()
                     }
                 }
@@ -332,6 +332,7 @@ struct ProfileEditorView: View {
         target.welcomeDate = hasWelcome ? calendar.startOfDay(for: welcome) : nil
         target.photoPath = path
         try? modelContext.save()
+        Task { await AppSync.refresh(context: modelContext) }
         dismiss()
     }
 }

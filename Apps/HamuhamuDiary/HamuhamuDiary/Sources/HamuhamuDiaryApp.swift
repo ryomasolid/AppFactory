@@ -29,7 +29,7 @@ struct HamuhamuDiaryApp: App {
             // 起動・復帰のたびに組み直す。許可ダイアログはここでは出さない（設定画面でだけ求める）。
             guard phase == .active else { return }
             let context = modelContainer.mainContext
-            Task { await NotificationScheduler.shared.rebuild(context: context) }
+            Task { await AppSync.refresh(context: context) }
         }
     }
 }

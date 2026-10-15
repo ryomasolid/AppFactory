@@ -23,6 +23,8 @@ struct ContentView: View {
     private enum LaunchSheet: String, Identifiable {
         case recordEntry
         case shareCard
+        /// ウィジェットから。今日の記録があればその編集、無ければ新しい記録。
+        case todayRecord
         var id: String { rawValue }
     }
 
@@ -57,6 +59,11 @@ struct ContentView: View {
             if Launch.showShareCard { launchSheet = .shareCard }
         }
         .task { await adPermission.begin() }
+        .onOpenURL { url in
+            guard url == WidgetSnapshot.recordURL else { return }
+            selection = .home
+            launchSheet = .todayRecord
+        }
         .onChange(of: records.count) { old, new in
             // 記録が増えたときだけ判定する（削除や起動直後の読み込みでは出さない）。
             guard new > old else { return }
@@ -80,6 +87,8 @@ struct ContentView: View {
                 if let record = records.first {
                     ShareCardView(record: record)
                 }
+            case .todayRecord:
+                RecordEditorView(record: records.first { Calendar.current.isDateInToday($0.date) })
             }
         }
     }

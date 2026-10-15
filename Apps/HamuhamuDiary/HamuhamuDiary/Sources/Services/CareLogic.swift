@@ -105,6 +105,38 @@ enum WeightSeries {
     }
 }
 
+/// 体重の急な減り。
+struct WeightDrop: Equatable {
+    /// 比べた相手（直前7日間でいちばん重かった日）。
+    var from: WeightPoint
+    var to: WeightPoint
+    /// 減った割合（0.1 = 1割）。
+    var ratio: Double
+}
+
+/// ハムスターは体調を崩すと体重が落ちやすく、見た目では気づきにくい。急に減ったらホームで知らせる。
+enum WeightAlert {
+    /// 1割減ったら知らせる。
+    static let dropRatio = 0.10
+    /// 最新の体重と比べる期間。
+    static let windowDays = 7
+    /// 最新の記録がこれより古ければ、もう済んだ話として出さない。
+    static let staleDays = 14
+
+    /// 最新の体重が、その前7日間でいちばん重かった日より1割以上軽ければ返す。
+    static func drop(in points: [WeightPoint], now: Date = Date(), calendar: Calendar = .current) -> WeightDrop? {
+        guard let latest = points.last,
+              let stale = calendar.date(byAdding: .day, value: -staleDays, to: calendar.startOfDay(for: now)),
+              latest.date >= stale,
+              let from = calendar.date(byAdding: .day, value: -windowDays, to: latest.date),
+              let peak = points.dropLast().filter({ $0.date >= from }).max(by: { $0.weight < $1.weight })
+        else { return nil }
+        let ratio = (peak.weight - latest.weight) / peak.weight
+        // 40g → 36g のようなちょうど1割を、浮動小数の誤差で取りこぼさない。
+        return ratio >= dropRatio - 1e-9 ? WeightDrop(from: peak, to: latest, ratio: ratio) : nil
+    }
+}
+
 /// App Store のレビュー依頼を出すか。
 ///
 /// 記録が 3件・15件・50件 に届いた「アプリに慣れて気に入っていそうな」ときにだけ出す。

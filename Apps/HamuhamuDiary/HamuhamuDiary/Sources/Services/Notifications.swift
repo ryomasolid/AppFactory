@@ -26,8 +26,22 @@ enum NotificationSettings {
     /// アプリを開かなくても届くよう、先の分まで1日1件ずつ予約しておく日数（iOS の予約上限 64 件に収まる数）。
     static let inactiveScheduleDays = 30
 
+    /// 誕生日・お迎え記念日のお知らせ。こちらも最初からオン。
+    static let anniversaryEnabledKey = "hd.anniversaryEnabled"
+    /// 記念日のお知らせを何日先まで予約しておくか。
+    static let anniversaryScheduleDays = 60
+
     static func inactiveEnabled(_ defaults: UserDefaults) -> Bool {
         defaults.object(forKey: inactiveEnabledKey) as? Bool ?? true
+    }
+
+    static func anniversaryEnabled(_ defaults: UserDefaults) -> Bool {
+        defaults.object(forKey: anniversaryEnabledKey) as? Bool ?? true
+    }
+
+    /// 最初からオンの通知（設定で自分でオンにしなくても届くもの）が1つでも有効か。
+    static func automaticEnabled(_ defaults: UserDefaults) -> Bool {
+        inactiveEnabled(defaults) || anniversaryEnabled(defaults)
     }
     /// 交換日のお知らせは朝に出す（お世話の前に気づけるように）。
     static let reminderHour = 9
@@ -50,6 +64,7 @@ enum NotificationPlanner {
         dailyHour: Int,
         inactiveEnabled: Bool = false,
         lastRecordDate: Date? = nil,
+        anniversaries: [Anniversary] = [],
         hamsterName: String?,
         now: Date = Date(),
         calendar: Calendar = .current
@@ -84,6 +99,19 @@ enum NotificationPlanner {
                     dailyHour: nil
                 ))
             }
+        }
+
+        // 記念日の朝に。`anniversaries` は呼び出し側で有効なときだけ渡す。
+        for (index, anniversary) in anniversaries.enumerated() {
+            guard let fire = calendar.date(bySettingHour: NotificationSettings.reminderHour, minute: 0, second: 0, of: anniversary.date),
+                  fire > now else { continue }
+            result.append(PlannedNotification(
+                id: "anniversary-\(index)",
+                title: String(localized: "\(anniversary.emoji) 今日は\(name)の\(anniversary.label)！"),
+                body: String(localized: "写真を残して、シェアカードでお祝いしよう"),
+                fireDate: fire,
+                dailyHour: nil
+            ))
         }
 
         if remindersEnabled {
@@ -134,7 +162,13 @@ final class NotificationScheduler {
         let reminders = ((try? context.fetch(FetchDescriptor<SupplyReminder>())) ?? []).map {
             ReminderInput(key: $0.key, name: $0.name, emoji: $0.emoji, cycleDays: $0.cycleDays, lastDate: $0.lastDate)
         }
-        let name = (try? context.fetch(FetchDescriptor<HamsterProfile>()))?.first?.name
+        let profile = (try? context.fetch(FetchDescriptor<HamsterProfile>()))?.first
+        let anniversaries = NotificationSettings.anniversaryEnabled(defaults) && profile != nil
+            ? Anniversaries.between(
+                birthDate: profile?.birthDate, welcomeDate: profile?.welcomeDate,
+                from: now, days: NotificationSettings.anniversaryScheduleDays
+            )
+            : []
         let hour = defaults.object(forKey: NotificationSettings.dailyHourKey) as? Int ?? 20
         var latest = FetchDescriptor<DiaryRecord>(sortBy: [SortDescriptor(\.date, order: .reverse)])
         latest.fetchLimit = 1
@@ -146,7 +180,8 @@ final class NotificationScheduler {
             dailyHour: hour,
             inactiveEnabled: NotificationSettings.inactiveEnabled(defaults),
             lastRecordDate: lastRecordDate,
-            hamsterName: name,
+            anniversaries: anniversaries,
+            hamsterName: profile?.name,
             now: now
         )
 
@@ -159,14 +194,6 @@ final class NotificationScheduler {
         for notification in planned {
             try? await center.add(request(for: notification))
         }
-    }
-
-    /// 記録を保存・削除したあとに呼ぶ。記録がとぎれたときのお知らせのために、まだ聞いていなければここで通知の許可を求める。
-    func recordsChanged(context: ModelContext, defaults: UserDefaults = .standard) async {
-        if NotificationSettings.inactiveEnabled(defaults), await authorizationStatus() == .notDetermined {
-            _ = try? await center.requestAuthorization(options: [.alert, .sound])
-        }
-        await rebuild(context: context, defaults: defaults)
     }
 
     private func request(for planned: PlannedNotification) -> UNNotificationRequest {

@@ -83,6 +83,19 @@ struct RecordShareCard: View {
                         .background(.white.opacity(0.9), in: Capsule())
                         .padding(10)
                 }
+                .overlay(alignment: .topTrailing) {
+                    // 記念日の記録なら、お祝いのリボンを付ける。
+                    let anniversaries = Anniversaries.on(record.date, birthDate: profile?.birthDate, welcomeDate: profile?.welcomeDate)
+                    if let first = anniversaries.first {
+                        Text("\(first.emoji) \(Anniversaries.label(anniversaries))")
+                            .font(.caption.weight(.heavy))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(orange, in: Capsule())
+                            .padding(10)
+                    }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             HStack(alignment: .firstTextBaseline, spacing: 8) {

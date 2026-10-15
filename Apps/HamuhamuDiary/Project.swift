@@ -20,6 +20,16 @@ let skAdNetworkIDs: [String] = [
     "3rd42ekr43.skadnetwork",
 ]
 
+// アプリとウィジェットでそろえる（ずれていると App Store Connect に弾かれる）。
+// ストアの公開版が 1.3（React Native 版）だったので、Swift 版は 2.0 から。
+let marketingVersion = "2.0"
+let buildNumber = "2"
+
+/// ウィジェットへ要約を渡す共有フォルダ（`WidgetSnapshot`）。
+let appGroupEntitlements: Entitlements = .dictionary([
+    "com.apple.security.application-groups": .array(["group.com.ryomasolid.hamuhamudiary"]),
+])
+
 let project = Project(
     name: "HamuhamuDiary",
     settings: .settings(
@@ -51,9 +61,12 @@ let project = Project(
                     ],
                     "CFBundleDisplayName": "はむ日記",
                     "CFBundleDevelopmentRegion": "ja",
-                    // ストアの公開版が 1.3（React Native 版）なので、Swift 版は 2.0 から。
-                    "CFBundleShortVersionString": "2.0",
-                    "CFBundleVersion": "2",
+                    "CFBundleShortVersionString": .string(marketingVersion),
+                    "CFBundleVersion": .string(buildNumber),
+                    // ウィジェットを押したときに今日の記録を開く（hamuhamudiary://record）。
+                    "CFBundleURLTypes": .array([
+                        .dictionary(["CFBundleURLSchemes": .array(["hamuhamudiary"])]),
+                    ]),
                     "ITSAppUsesNonExemptEncryption": false,
                     // AdMob のアプリID（自分のアカウント pub-6105029932689433 に登録したもの）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~9733110624",
@@ -68,11 +81,37 @@ let project = Project(
             buildableFolders: [
                 "HamuhamuDiary/Sources",
                 "HamuhamuDiary/Resources",
+                "HamuhamuDiary/Shared",
             ],
+            entitlements: appGroupEntitlements,
             dependencies: [
                 // UserMessagingPlatform は GoogleMobileAds 経由で利用できる（transitive）。
                 .external(name: "GoogleMobileAds"),
+                .target(name: "HamuhamuWidget"),
             ]
+        ),
+        .target(
+            name: "HamuhamuWidget",
+            destinations: [.iPhone],
+            product: .appExtension,
+            bundleId: "com.ryomasolid.hamuhamudiary.widget",
+            deploymentTargets: .iOS("17.0"),
+            infoPlist: .extendingDefault(
+                with: [
+                    "CFBundleDisplayName": "はむ日記",
+                    "CFBundleDevelopmentRegion": "ja",
+                    "CFBundleShortVersionString": .string(marketingVersion),
+                    "CFBundleVersion": .string(buildNumber),
+                    "NSExtension": .dictionary([
+                        "NSExtensionPointIdentifier": "com.apple.widgetkit-extension",
+                    ]),
+                ]
+            ),
+            buildableFolders: [
+                "HamuhamuDiary/Widget",
+                "HamuhamuDiary/Shared",
+            ],
+            entitlements: appGroupEntitlements
         ),
         .target(
             name: "HamuhamuDiaryTests",

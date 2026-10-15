@@ -38,8 +38,10 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
+                    anniversaryCard
                     recordButton
                     if profile == nil { setupCard }
+                    weightAlertCard
                     statusCard
                     attentionCard
                     memoryCard
@@ -119,6 +121,53 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity)
         .card()
+    }
+
+    // MARK: - 記念日
+
+    @ViewBuilder
+    private var anniversaryCard: some View {
+        let today = profile.map { Anniversaries.on(Date(), birthDate: $0.birthDate, welcomeDate: $0.welcomeDate) } ?? []
+        if let profile, let first = today.first {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("\(first.emoji) 今日は\(profile.name)の\(Anniversaries.label(today))！")
+                    .font(.headline)
+                Text(todayRecord?.photoPath == nil ? "今日の写真を残して、お祝いのシェアカードを作ろう" : "お祝いのシェアカードを作ってシェアしよう")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button {
+                    if let todayRecord { sharing = todayRecord } else { editing = .new }
+                } label: {
+                    Label(todayRecord == nil ? "記録してお祝いする" : "シェアカードを作る",
+                          systemImage: todayRecord == nil ? "camera" : "square.and.arrow.up")
+                        .font(.subheadline.weight(.bold))
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .card()
+        }
+    }
+
+    // MARK: - 体重の急な減り
+
+    @ViewBuilder
+    private var weightAlertCard: some View {
+        if let drop = WeightAlert.drop(in: WeightSeries.points(records.map { ($0.date, $0.weight, $0.createdAt) })) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.title3)
+                    .foregroundStyle(Theme.due)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("体重が減っています").font(.headline)
+                    Text("\(Formatting.day(drop.from.date))の\(Formatting.weight(drop.from.weight))gから\(Formatting.weight(drop.to.weight))gへ、\(Int((drop.ratio * 100).rounded()))%減りました。ごはんの食べ具合や様子を見てあげてください。減り続けるときは動物病院に相談しましょう。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .card()
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.due.opacity(0.35), lineWidth: 1.5))
+        }
     }
 
     // MARK: - 最新の状態
@@ -222,7 +271,7 @@ struct HomeView: View {
                         Button("交換した") {
                             reminder.lastDate = Calendar.current.startOfDay(for: Date())
                             try? modelContext.save()
-                            Task { await NotificationScheduler.shared.rebuild(context: modelContext) }
+                            Task { await AppSync.refresh(context: modelContext) }
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)

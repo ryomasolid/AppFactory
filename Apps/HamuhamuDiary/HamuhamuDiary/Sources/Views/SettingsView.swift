@@ -9,7 +9,8 @@ struct SettingsView: View {
     @AppStorage(NotificationSettings.dailyEnabledKey) private var dailyEnabled = false
     @AppStorage(NotificationSettings.dailyHourKey) private var dailyHour = 20
     @AppStorage(NotificationSettings.inactiveEnabledKey) private var inactiveEnabled = true
-    /// 通知が許可されているか。記録がとぎれたときのお知らせは最初からオンなので、許可が無ければオフに見せる。
+    @AppStorage(NotificationSettings.anniversaryEnabledKey) private var anniversaryEnabled = true
+    /// 通知が許可されているか。記録がとぎれたとき・記念日のお知らせは最初からオンなので、許可が無ければオフに見せる。
     @State private var notificationsAllowed = true
 
     @State private var notificationDenied = false
@@ -53,6 +54,12 @@ struct SettingsView: View {
                     ))) {
                         Label("記録がとぎれたらお知らせ", systemImage: "bell.badge")
                     }
+                    Toggle(isOn: notificationBinding(Binding(
+                        get: { anniversaryEnabled && notificationsAllowed },
+                        set: { anniversaryEnabled = $0 }
+                    ))) {
+                        Label("誕生日・お迎え記念日のお知らせ", systemImage: "gift")
+                    }
                     if dailyEnabled || (inactiveEnabled && notificationsAllowed) {
                         Picker("通知する時刻", selection: $dailyHour) {
                             ForEach(NotificationSettings.dailyHourChoices, id: \.self) { Text("\($0):00").tag($0) }
@@ -61,7 +68,7 @@ struct SettingsView: View {
                 } header: {
                     Text("通知")
                 } footer: {
-                    Text("交換時期のお知らせは、交換予定日の朝9時に届きます。記録が\(NotificationSettings.inactiveAfterDays)日とぎれると、記録するまで毎日お知らせします。")
+                    Text("交換時期と記念日のお知らせは、その日の朝9時に届きます。記録が\(NotificationSettings.inactiveAfterDays)日とぎれると、記録するまで毎日お知らせします。")
                 }
 
                 Section {
@@ -98,6 +105,7 @@ struct SettingsView: View {
         .onChange(of: dailyEnabled) { rebuildNotifications() }
         .onChange(of: dailyHour) { rebuildNotifications() }
         .onChange(of: inactiveEnabled) { rebuildNotifications() }
+        .onChange(of: anniversaryEnabled) { rebuildNotifications() }
         .task {
             let status = await NotificationScheduler.shared.authorizationStatus()
             notificationsAllowed = [.authorized, .provisional, .ephemeral].contains(status)
@@ -141,7 +149,7 @@ struct SettingsView: View {
     }
 
     private func rebuildNotifications() {
-        Task { await NotificationScheduler.shared.rebuild(context: modelContext) }
+        Task { await AppSync.refresh(context: modelContext) }
     }
 
     // MARK: - バックアップ

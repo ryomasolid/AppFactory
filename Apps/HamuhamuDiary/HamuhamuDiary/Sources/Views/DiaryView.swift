@@ -55,7 +55,7 @@ struct DiaryView: View {
                     PhotoStore.delete(record.photoPath)
                     modelContext.delete(record)
                     try? modelContext.save()
-                    Task { await NotificationScheduler.shared.rebuild(context: modelContext) }
+                    Task { await AppSync.refresh(context: modelContext) }
                 }
                 deleting = nil
             }
