@@ -57,7 +57,7 @@ struct HomeView: View {
             }
         }
         .sheet(item: $sharing) { ShareCardView(record: $0) }
-        .sheet(isPresented: $showProfileEditor) { ProfileEditorView(profile: nil) }
+        .sheet(isPresented: $showProfileEditor) { ProfileEditorView(profile: profile) }
         .onAppear {
             if memoryKey == nil { memoryKey = records.filter { $0.photoPath != nil }.randomElement()?.key }
         }
@@ -76,11 +76,15 @@ struct HomeView: View {
             }
             Spacer()
             if let profile {
-                PhotoView(path: profile.photoPath)
-                    .frame(width: 52, height: 52)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Theme.card, lineWidth: 3))
-                    .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                Button { showProfileEditor = true } label: {
+                    PhotoView(path: profile.photoPath)
+                        .frame(width: 52, height: 52)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Theme.card, lineWidth: 3))
+                        .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("プロフィールを編集")
             }
         }
         .padding(.top, 4)
