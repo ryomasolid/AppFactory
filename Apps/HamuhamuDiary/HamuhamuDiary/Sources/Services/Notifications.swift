@@ -19,6 +19,16 @@ enum NotificationSettings {
     static let dailyEnabledKey = "hd.dailyEnabled"
     static let dailyHourKey = "hd.dailyHour"
     static let dailyHourChoices = [8, 12, 18, 20, 22]
+    /// 記録がとぎれたときのお知らせ。ほかの通知と違って最初からオン（通知の許可は最初の記録のあとに求める）。
+    static let inactiveEnabledKey = "hd.inactiveEnabled"
+    /// 最後の記録から何日あいたら知らせるか。
+    static let inactiveAfterDays = 3
+    /// アプリを開かなくても届くよう、先の分まで1日1件ずつ予約しておく日数（iOS の予約上限 64 件に収まる数）。
+    static let inactiveScheduleDays = 30
+
+    static func inactiveEnabled(_ defaults: UserDefaults) -> Bool {
+        defaults.object(forKey: inactiveEnabledKey) as? Bool ?? true
+    }
     /// 交換日のお知らせは朝に出す（お世話の前に気づけるように）。
     static let reminderHour = 9
 }
@@ -38,6 +48,8 @@ enum NotificationPlanner {
         remindersEnabled: Bool,
         dailyEnabled: Bool,
         dailyHour: Int,
+        inactiveEnabled: Bool = false,
+        lastRecordDate: Date? = nil,
         hamsterName: String?,
         now: Date = Date(),
         calendar: Calendar = .current
@@ -53,6 +65,25 @@ enum NotificationPlanner {
                 fireDate: nil,
                 dailyHour: dailyHour
             ))
+        }
+
+        // 最後の記録から3日目に1回、そのあとも記録されるまで毎日。記録すると予約し直されて止まる。
+        // 毎日のリマインドがオンなら同じ時刻に毎日届いているので、重ねて出さない。
+        if inactiveEnabled, !dailyEnabled, let lastRecordDate {
+            let lastDay = calendar.startOfDay(for: min(lastRecordDate, now))
+            let first = NotificationSettings.inactiveAfterDays
+            for days in first..<(first + NotificationSettings.inactiveScheduleDays) {
+                guard let day = calendar.date(byAdding: .day, value: days, to: lastDay),
+                      let fire = calendar.date(bySettingHour: dailyHour, minute: 0, second: 0, of: day),
+                      fire > now else { continue }
+                result.append(PlannedNotification(
+                    id: "inactive-\(days)",
+                    title: String(localized: "\(name)の記録がお休み中です 🐹"),
+                    body: String(localized: "最後の記録から\(days)日たちました。今日の様子を残しておきましょう"),
+                    fireDate: fire,
+                    dailyHour: nil
+                ))
+            }
         }
 
         if remindersEnabled {
@@ -105,11 +136,16 @@ final class NotificationScheduler {
         }
         let name = (try? context.fetch(FetchDescriptor<HamsterProfile>()))?.first?.name
         let hour = defaults.object(forKey: NotificationSettings.dailyHourKey) as? Int ?? 20
+        var latest = FetchDescriptor<DiaryRecord>(sortBy: [SortDescriptor(\.date, order: .reverse)])
+        latest.fetchLimit = 1
+        let lastRecordDate = (try? context.fetch(latest))?.first?.date
         let planned = NotificationPlanner.plan(
             reminders: reminders,
             remindersEnabled: defaults.bool(forKey: NotificationSettings.remindersEnabledKey),
             dailyEnabled: defaults.bool(forKey: NotificationSettings.dailyEnabledKey),
             dailyHour: hour,
+            inactiveEnabled: NotificationSettings.inactiveEnabled(defaults),
+            lastRecordDate: lastRecordDate,
             hamsterName: name,
             now: now
         )
@@ -123,6 +159,14 @@ final class NotificationScheduler {
         for notification in planned {
             try? await center.add(request(for: notification))
         }
+    }
+
+    /// 記録を保存・削除したあとに呼ぶ。記録がとぎれたときのお知らせのために、まだ聞いていなければここで通知の許可を求める。
+    func recordsChanged(context: ModelContext, defaults: UserDefaults = .standard) async {
+        if NotificationSettings.inactiveEnabled(defaults), await authorizationStatus() == .notDetermined {
+            _ = try? await center.requestAuthorization(options: [.alert, .sound])
+        }
+        await rebuild(context: context, defaults: defaults)
     }
 
     private func request(for planned: PlannedNotification) -> UNNotificationRequest {

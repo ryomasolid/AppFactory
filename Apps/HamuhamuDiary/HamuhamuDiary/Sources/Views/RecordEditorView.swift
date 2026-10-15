@@ -250,6 +250,7 @@ struct RecordEditorView: View {
             ))
         }
         try? modelContext.save()
+        Task { await NotificationScheduler.shared.recordsChanged(context: modelContext) }
         dismiss()
     }
 
@@ -258,6 +259,7 @@ struct RecordEditorView: View {
         PhotoStore.delete(record.photoPath)
         modelContext.delete(record)
         try? modelContext.save()
+        Task { await NotificationScheduler.shared.rebuild(context: modelContext) }
         dismiss()
     }
 }

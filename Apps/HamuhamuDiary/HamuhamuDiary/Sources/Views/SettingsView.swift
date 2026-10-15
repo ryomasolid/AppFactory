@@ -8,6 +8,9 @@ struct SettingsView: View {
     @AppStorage(NotificationSettings.remindersEnabledKey) private var remindersEnabled = false
     @AppStorage(NotificationSettings.dailyEnabledKey) private var dailyEnabled = false
     @AppStorage(NotificationSettings.dailyHourKey) private var dailyHour = 20
+    @AppStorage(NotificationSettings.inactiveEnabledKey) private var inactiveEnabled = true
+    /// 通知が許可されているか。記録がとぎれたときのお知らせは最初からオンなので、許可が無ければオフに見せる。
+    @State private var notificationsAllowed = true
 
     @State private var notificationDenied = false
     @State private var isExporting = false
@@ -44,7 +47,13 @@ struct SettingsView: View {
                     Toggle(isOn: notificationBinding($dailyEnabled)) {
                         Label("毎日の記録リマインド", systemImage: "bell")
                     }
-                    if dailyEnabled {
+                    Toggle(isOn: notificationBinding(Binding(
+                        get: { inactiveEnabled && notificationsAllowed },
+                        set: { inactiveEnabled = $0 }
+                    ))) {
+                        Label("記録がとぎれたらお知らせ", systemImage: "bell.badge")
+                    }
+                    if dailyEnabled || (inactiveEnabled && notificationsAllowed) {
                         Picker("通知する時刻", selection: $dailyHour) {
                             ForEach(NotificationSettings.dailyHourChoices, id: \.self) { Text("\($0):00").tag($0) }
                         }
@@ -52,7 +61,7 @@ struct SettingsView: View {
                 } header: {
                     Text("通知")
                 } footer: {
-                    Text("交換時期のお知らせは、交換予定日の朝9時に届きます。")
+                    Text("交換時期のお知らせは、交換予定日の朝9時に届きます。記録が\(NotificationSettings.inactiveAfterDays)日とぎれると、記録するまで毎日お知らせします。")
                 }
 
                 Section {
@@ -88,6 +97,11 @@ struct SettingsView: View {
         .onChange(of: remindersEnabled) { rebuildNotifications() }
         .onChange(of: dailyEnabled) { rebuildNotifications() }
         .onChange(of: dailyHour) { rebuildNotifications() }
+        .onChange(of: inactiveEnabled) { rebuildNotifications() }
+        .task {
+            let status = await NotificationScheduler.shared.authorizationStatus()
+            notificationsAllowed = [.authorized, .provisional, .ephemeral].contains(status)
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             if case .success(let url) = result { prepareImport(url) }
         }
@@ -116,6 +130,7 @@ struct SettingsView: View {
                 guard newValue else { value.wrappedValue = false; return }
                 Task {
                     if await NotificationScheduler.shared.requestAuthorizationIfNeeded() {
+                        notificationsAllowed = true
                         value.wrappedValue = true
                     } else {
                         notificationDenied = true

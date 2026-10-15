@@ -118,4 +118,39 @@ struct NotificationPlannerTests {
         #expect(planned.first?.dailyHour == 21)
         #expect(planned.first?.title.contains("もち") == true)
     }
+
+    @Test func inactiveStartsThreeDaysAfterTheLastRecordAndRepeatsDaily() {
+        let planned = NotificationPlanner.plan(
+            reminders: [], remindersEnabled: false, dailyEnabled: false, dailyHour: 20,
+            inactiveEnabled: true, lastRecordDate: at(2026, 6, 19, 0), hamsterName: "もち", now: now, calendar: jst
+        )
+        #expect(planned.count == NotificationSettings.inactiveScheduleDays)
+        #expect(planned.first?.id == "inactive-3")
+        #expect(planned.first?.fireDate == at(2026, 6, 22, 20))
+        #expect(planned.dropFirst().first?.fireDate == at(2026, 6, 23, 20))
+        #expect(planned.allSatisfy { $0.dailyHour == nil })
+    }
+
+    @Test func inactiveSkipsDaysAlreadyPast() {
+        // 最後の記録が 6/10 → 3日目（6/13）〜6/19 は過ぎているので、今日 6/20 の 20時から。
+        let planned = NotificationPlanner.plan(
+            reminders: [], remindersEnabled: false, dailyEnabled: false, dailyHour: 20,
+            inactiveEnabled: true, lastRecordDate: at(2026, 6, 10, 0), hamsterName: nil, now: now, calendar: jst
+        )
+        #expect(planned.first?.id == "inactive-10")
+        #expect(planned.first?.fireDate == at(2026, 6, 20, 20))
+    }
+
+    @Test func inactiveNeedsARecordAndStaysQuietWhenDailyIsOn() {
+        let noRecord = NotificationPlanner.plan(
+            reminders: [], remindersEnabled: false, dailyEnabled: false, dailyHour: 20,
+            inactiveEnabled: true, lastRecordDate: nil, hamsterName: nil, now: now, calendar: jst
+        )
+        #expect(noRecord.isEmpty)
+        let withDaily = NotificationPlanner.plan(
+            reminders: [], remindersEnabled: false, dailyEnabled: true, dailyHour: 20,
+            inactiveEnabled: true, lastRecordDate: at(2026, 6, 10, 0), hamsterName: nil, now: now, calendar: jst
+        )
+        #expect(withDaily.map(\.id) == ["daily-record"])
+    }
 }
