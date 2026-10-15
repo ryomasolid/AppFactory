@@ -4,7 +4,11 @@ import UIKit
 import UserMessagingPlatform
 
 /// 広告の同意フローを管理する。
-/// UMP（GDPR等の同意）→ ATT（トラッキング許可）→ AdMob 初期化、の順で1回だけ実行する。
+/// ATT（トラッキング許可）→ UMP（GDPR等の同意）→ AdMob 初期化、の順で1回だけ実行する。
+///
+/// ATT を先にするのは、UMP の通信（数秒かかることがある）を待つと許可ダイアログが遅れて、
+/// 写真の許可など別の画面と重なり、見落とされたり出なかったりするため（審査 2.1 で指摘された）。
+/// どちらの場合も広告 SDK は ATT に答えたあとに始めるので、答える前にトラッキングのデータは集めない。
 @MainActor
 final class ConsentManager {
     static let shared = ConsentManager()
@@ -14,32 +18,40 @@ final class ConsentManager {
         guard !started else { return }
         started = true
 
-        let parameters = UMPRequestParameters()
-        parameters.tagForUnderAgeOfConsent = false
-
-        UMPConsentInformation.sharedInstance.requestConsentInfoUpdate(with: parameters) { [weak self] error in
-            guard error == nil else {
-                self?.requestATTThenStartAds()
-                return
-            }
-            UMPConsentForm.loadAndPresentIfRequired(from: Self.topViewController()) { [weak self] _ in
-                self?.requestATTThenStartAds()
-            }
+        Task { @MainActor in
+            await Self.requestTrackingWhenActive()
+            Self.updateConsentThenStartAds()
         }
     }
 
-    private func requestATTThenStartAds() {
-        Task { @MainActor in
-            // ATT はアプリが前面（active）のときにしか出ず、それ以外で呼ぶと何も表示せずに返る。
-            // 起動直後や他の画面の表示と重ならないよう、active になってから少し待って呼ぶ。
-            for _ in 0..<50 where UIApplication.shared.applicationState != .active {
+    /// ATT はアプリが前面（active）のときにしか出ず、それ以外で呼ぶと何も表示せずに「未決定」のまま返る。
+    /// 写真の許可ダイアログが出ている間なども inactive になるので、active に戻るまで待ってから呼ぶ。
+    /// それでも出なかった（未決定のまま返った）ときは、もう一度だけ待ち直して呼ぶ。
+    private static func requestTrackingWhenActive() async {
+        for _ in 0..<2 {
+            guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
+            while UIApplication.shared.applicationState != .active {
                 try? await Task.sleep(for: .milliseconds(200))
             }
-            try? await Task.sleep(for: .milliseconds(600))
-            if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
-                _ = await ATTrackingManager.requestTrackingAuthorization()
+            // 「はじめる」で画面が切り替わる途中に重ならないよう、少しだけ待つ。
+            try? await Task.sleep(for: .milliseconds(500))
+            guard UIApplication.shared.applicationState == .active else { continue }
+            _ = await ATTrackingManager.requestTrackingAuthorization()
+        }
+    }
+
+    private static func updateConsentThenStartAds() {
+        let parameters = UMPRequestParameters()
+        parameters.tagForUnderAgeOfConsent = false
+
+        UMPConsentInformation.sharedInstance.requestConsentInfoUpdate(with: parameters) { error in
+            guard error == nil else {
+                startAds()
+                return
             }
-            Self.startAds()
+            UMPConsentForm.loadAndPresentIfRequired(from: topViewController()) { _ in
+                startAds()
+            }
         }
     }
 

@@ -37,7 +37,7 @@ public struct ContentView: View {
             let needsOnboarding = !hasSeenOnboarding && !screenshot
             showOnboarding = needsOnboarding
             authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-            // 広告の同意（UMP）→ ATT → AdMob 初期化を実行。
+            // ATT → 広告の同意（UMP）→ AdMob 初期化を実行。
             // オンボーディングの全画面表示と重なると ATT が出ないことがあるので、閉じてから始める。
             if !screenshot, !needsOnboarding {
                 ConsentManager.shared.start()
