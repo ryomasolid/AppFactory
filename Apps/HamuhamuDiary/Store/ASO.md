@@ -122,3 +122,7 @@ NEW！ホーム画面のウィジェット、体重の見守り、お誕生日�
   `https://ryomasolid.github.io/privacy-hamuhamu.html` に置いて ASC のプライバシーポリシーURL を変更（「次のバージョンでリリース」扱い）。
   旧URL（ryomasolid/hamuhamu-diary リポジトリの `docs/privacy.html`。旧版は「広告SDKなし」と書いていた）は新URLへ転送するページに置き換えた。
   App のプライバシー（栄養ラベル）は AdMob 分（ID・使用状況データ・広告データ／トラッキングあり）が申告済みで変更なし。
+- 2026-10-15: 2.1 (3) をアップロードし、ASC でバージョン 2.1 を作成。プロモーションテキスト・概要・新機能・審査メモ（英語）を入れ、
+  ビルド 3 を紐付けた。スクショは「Dynamic Island搭載iPhone（大型ディスプレイ）」（メディアマネージャー）に本物の写真の5枚を追加。
+  2.0 から引き継いだ古い5枚（絵文字のハムスター）が先頭に残っているので、消してから審査に出す。
+  ウィジェット用の App Group は `xcodebuild archive -allowProvisioningUpdates` の自動署名で登録された。
