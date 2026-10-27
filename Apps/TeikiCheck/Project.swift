@@ -49,8 +49,8 @@ let project = Project(
                     // AdMob の app-ads.txt 検証に App Store のマーケティングURL が必須だが、
                     // 配信済み 1.0 ではメタデータを編集できないため 1.0.1 を出して設定する。
                     // （1.0 は審査リジェクト対応でビルド 2 まで使っている。）
-                    "CFBundleShortVersionString": "1.0.1",
-                    "CFBundleVersion": "3",
+                    "CFBundleShortVersionString": "1.0.2",
+                    "CFBundleVersion": "4",
                     "ITSAppUsesNonExemptEncryption": false,
                     // AdMob アプリID（本番）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~2706062104",

@@ -36,7 +36,7 @@ struct CalculatorView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("定期チェック")
-            .safeAreaInset(edge: .bottom) { bannerArea }
+            .safeAreaInset(edge: .bottom, spacing: 0) { bannerArea }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -211,9 +211,12 @@ struct CalculatorView: View {
 
     // MARK: - バナー広告
 
+    /// iOS 26 のタブバーは中身の上に浮くので、バナーの下（タブバーの裏）も塗りつぶして、
+    /// 広告とタブバーのすきまに中身が透けて見えないようにする（AdMob の「広告に重なるコンテンツ」対策）。
     @ViewBuilder private var bannerArea: some View {
         if !store.isPro, !Launch.hideAds {
             BannerAdView()
+                .background(Color(.systemGroupedBackground).ignoresSafeArea(edges: .bottom))
         }
     }
 
