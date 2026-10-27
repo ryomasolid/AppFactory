@@ -2,6 +2,13 @@ import GoogleMobileAds
 import SwiftUI
 import UIKit
 
+extension View {
+    /// 中身の下（タブバーのすぐ上）に広告の帯を差し込む。中身は帯の上で止まる。
+    func adStrip(_ permission: AdPermission) -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) { AdStrip(permission: permission) }
+    }
+}
+
 /// タブバーの上に置く広告の帯。
 ///
 /// `AdPermission` が `.ready` になるまでは何も置かず、広告が届いてはじめて高さを持つ。
@@ -24,7 +31,11 @@ struct AdStrip: View {
                 }
             }
             .frame(height: bannerHeight)
-            .background(Theme.card)
+            // iOS 26 のタブバーは中身の上に浮くので、帯の下（タブバーの裏）も塗りつぶして
+            // 広告とタブバーのすきまに中身が透けて見えないようにする。
+            .background {
+                if bannerHeight > 0 { Theme.card.ignoresSafeArea(edges: .bottom) }
+            }
         }
     }
 }

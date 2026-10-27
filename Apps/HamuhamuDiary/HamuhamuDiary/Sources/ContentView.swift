@@ -29,27 +29,29 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $selection) {
-                HomeView(onShowDiary: { selection = .diary })
-                    .tabItem { Label("ホーム", systemImage: "house.fill") }
-                    .tag(AppTab.home)
+        // 広告は各タブの中身の一番下（タブバーのすぐ上）に置く。記録の保存などの途中には出さない。
+        // TabView の外（下）に並べると、iOS 26 の浮いたタブバーが削られて切れ、広告のすぐ上に
+        // タブや中身がはみ出す（AdMob で「広告に重なるコンテンツ」と判定された）。
+        TabView(selection: $selection) {
+            HomeView(onShowDiary: { selection = .diary })
+                .adStrip(adPermission)
+                .tabItem { Label("ホーム", systemImage: "house.fill") }
+                .tag(AppTab.home)
 
-                DiaryView()
-                    .tabItem { Label("日記", systemImage: "book.fill") }
-                    .tag(AppTab.diary)
+            DiaryView()
+                .adStrip(adPermission)
+                .tabItem { Label("日記", systemImage: "book.fill") }
+                .tag(AppTab.diary)
 
-                ProfileView()
-                    .tabItem { Label("プロフィール", systemImage: "pawprint.fill") }
-                    .tag(AppTab.profile)
+            ProfileView()
+                .adStrip(adPermission)
+                .tabItem { Label("プロフィール", systemImage: "pawprint.fill") }
+                .tag(AppTab.profile)
 
-                SettingsView()
-                    .tabItem { Label("設定", systemImage: "gearshape.fill") }
-                    .tag(AppTab.settings)
-            }
-
-            // 広告は全タブ共通の1枠だけ。記録の保存などの途中には出さない。
-            AdStrip(permission: adPermission)
+            SettingsView()
+                .adStrip(adPermission)
+                .tabItem { Label("設定", systemImage: "gearshape.fill") }
+                .tag(AppTab.settings)
         }
         .background(Theme.background.ignoresSafeArea())
         .tint(Theme.accent)
