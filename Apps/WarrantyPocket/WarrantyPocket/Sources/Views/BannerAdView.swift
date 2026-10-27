@@ -2,6 +2,20 @@ import GoogleMobileAds
 import SwiftUI
 import UIKit
 
+extension View {
+    /// 中身の下（タブバーのすぐ上）にバナーを差し込む。中身はバナーの上で止まる。
+    /// iOS 26 のタブバーは中身の上に浮くので、バナーの下（タブバーの裏）も塗りつぶして、
+    /// 広告とタブバーのすきまに中身が透けて見えないようにする。
+    func bannerAd(_ isShown: Bool) -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) {
+            if isShown {
+                BannerAdView()
+                    .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))
+            }
+        }
+    }
+}
+
 /// AdMob アダプティブ・アンカー・バナー（画面幅に最適化）。
 /// 開発中（DEBUG）は Google のテストユニット、リリースは本番ユニットを使う。
 struct BannerAdView: View {

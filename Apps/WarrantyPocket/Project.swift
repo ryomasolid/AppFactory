@@ -49,8 +49,8 @@ let project = Project(
                     ],
                     "CFBundleDisplayName": "保証書ポケット",
                     "CFBundleDevelopmentRegion": "ja",
-                    "CFBundleShortVersionString": "1.0",
-                    "CFBundleVersion": "1",
+                    "CFBundleShortVersionString": "1.0.1",
+                    "CFBundleVersion": "2",
                     "ITSAppUsesNonExemptEncryption": false,
                     // AdMob の本番アプリID（保証書ポケット）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~3449310861",

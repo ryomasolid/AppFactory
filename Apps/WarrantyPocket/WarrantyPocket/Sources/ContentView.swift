@@ -23,26 +23,28 @@ struct ContentView: View {
         var id: String { rawValue }
     }
 
+    /// 無料版で、撮影用の -hideAds が無いときだけ広告を出す。
+    private var showsAds: Bool { !store.isPro && !Launch.hideAds }
+
     var body: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $selection) {
-                ItemListView(onShowTimeline: { selection = .timeline })
-                    .tabItem { Label("一覧", systemImage: "square.grid.2x2.fill") }
-                    .tag(AppTab.items)
+        // バナーは各タブの中身の一番下（タブバーのすぐ上）に置く。
+        // TabView の外（下）に並べると、iOS 26 の浮いたタブバーが削られて広告に接し、
+        // AdMob で「広告に重なるコンテンツ」と判定される（はむはむ日記で実際に制限された）。
+        TabView(selection: $selection) {
+            ItemListView(onShowTimeline: { selection = .timeline })
+                .bannerAd(showsAds)
+                .tabItem { Label("一覧", systemImage: "square.grid.2x2.fill") }
+                .tag(AppTab.items)
 
-                ExpiryListView()
-                    .tabItem { Label("期限", systemImage: "calendar.badge.clock") }
-                    .tag(AppTab.timeline)
+            ExpiryListView()
+                .bannerAd(showsAds)
+                .tabItem { Label("期限", systemImage: "calendar.badge.clock") }
+                .tag(AppTab.timeline)
 
-                SettingsView()
-                    .tabItem { Label("設定", systemImage: "gearshape") }
-                    .tag(AppTab.settings)
-            }
-
-            // バナーは全タブ共通で最下部に1つだけ置く。画面ごとに置くと重複や二重表示を招く。
-            if !store.isPro, !Launch.hideAds {
-                BannerAdView()
-            }
+            SettingsView()
+                .bannerAd(showsAds)
+                .tabItem { Label("設定", systemImage: "gearshape") }
+                .tag(AppTab.settings)
         }
         .environment(store)
         .tint(Theme.accent)
