@@ -49,8 +49,8 @@ let project = Project(
                     ],
                     "CFBundleDisplayName": "カーログ",
                     "CFBundleDevelopmentRegion": "ja",
-                    "CFBundleShortVersionString": "1.0",
-                    "CFBundleVersion": "1",
+                    "CFBundleShortVersionString": "1.0.1",
+                    "CFBundleVersion": "2",
                     "ITSAppUsesNonExemptEncryption": false,
                     // AdMob の本番アプリID（カーログ）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~4880977884",

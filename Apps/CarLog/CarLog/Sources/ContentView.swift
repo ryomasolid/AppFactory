@@ -27,34 +27,38 @@ struct ContentView: View {
         var id: String { rawValue }
     }
 
+    /// 無料版で、撮影用の -hideAds が無いときだけ広告を出す。
+    private var showsAds: Bool { !store.isPro && !Launch.hideAds }
+
     var body: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $selection) {
-                HomeView(onShowMaintenance: { selection = .maintenance })
-                    .tabItem { Label("ホーム", systemImage: "gauge.with.dots.needle.67percent") }
-                    .tag(AppTab.home)
+        // バナーは各タブの中身の一番下（タブバーのすぐ上）に置く。
+        // TabView の外（下）に並べると、iOS 26 の浮いたタブバーが削られて広告に接し、
+        // AdMob で「広告に重なるコンテンツ」と判定される（はむはむ日記で実際に制限された）。
+        TabView(selection: $selection) {
+            HomeView(onShowMaintenance: { selection = .maintenance })
+                .bannerAd(showsAds)
+                .tabItem { Label("ホーム", systemImage: "gauge.with.dots.needle.67percent") }
+                .tag(AppTab.home)
 
-                FuelListView()
-                    .tabItem { Label("給油", systemImage: "fuelpump.fill") }
-                    .tag(AppTab.fuel)
+            FuelListView()
+                .bannerAd(showsAds)
+                .tabItem { Label("給油", systemImage: "fuelpump.fill") }
+                .tag(AppTab.fuel)
 
-                ExpenseListView()
-                    .tabItem { Label("費用", systemImage: "yensign.circle") }
-                    .tag(AppTab.cost)
+            ExpenseListView()
+                .bannerAd(showsAds)
+                .tabItem { Label("費用", systemImage: "yensign.circle") }
+                .tag(AppTab.cost)
 
-                MaintenanceListView()
-                    .tabItem { Label("メンテ", systemImage: "wrench.and.screwdriver") }
-                    .tag(AppTab.maintenance)
+            MaintenanceListView()
+                .bannerAd(showsAds)
+                .tabItem { Label("メンテ", systemImage: "wrench.and.screwdriver") }
+                .tag(AppTab.maintenance)
 
-                SettingsView()
-                    .tabItem { Label("設定", systemImage: "gearshape") }
-                    .tag(AppTab.settings)
-            }
-
-            // バナーは全タブ共通で最下部に1つだけ置く。画面ごとに置くと重複や二重表示を招く。
-            if !store.isPro, !Launch.hideAds {
-                BannerAdView()
-            }
+            SettingsView()
+                .bannerAd(showsAds)
+                .tabItem { Label("設定", systemImage: "gearshape") }
+                .tag(AppTab.settings)
         }
         .environment(store)
         .tint(Theme.accent)
