@@ -102,3 +102,5 @@
       （中身は `Store/Support.html` / `Store/PrivacyPolicy.html` に用意済み）
 - [x] スクリーンショット（6.9" `Store/screenshots/`・6.5" `Store/screenshots-65/`）と IAP 審査用（`Store/iap-review/`）
 - [x] App のプライバシー回答メモ（`Store/AppPrivacy.md`）
+- 2026-10-28: iOS 26 で浮いたタブバーがバナー広告に接し、広告の周りに中身が見えていた（はむはむ日記が AdMob で「広告に重なるコンテンツ」として制限されたのと同じ形）のを直した 1.0.1 (2) を作成。
+  新機能「画面下のメニューと広告の表示が重なることがある不具合を修正しました。」・審査メモ（日本語）を入れて **審査提出（審査待ち）**。
