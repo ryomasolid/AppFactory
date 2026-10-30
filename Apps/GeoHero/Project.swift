@@ -19,7 +19,7 @@ let project = Project(
         configurations: [
             // 開発中は Google の テスト用アプリIDで 本番の広告を 出さない。
             .debug(name: .debug, settings: ["GAD_APP_ID": "ca-app-pub-3940256099942544~1458002511"]),
-            .release(name: .release, settings: ["GAD_APP_ID": "ca-app-pub-6105029932689433~REPLACE_ME"]),
+            .release(name: .release, settings: ["GAD_APP_ID": "ca-app-pub-6105029932689433~3935848258"]),
         ]
     ),
     targets: [

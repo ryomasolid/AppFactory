@@ -13,7 +13,7 @@ final class RewardAds: NSObject {
     // Google の テスト用 ユニット。開発中に 本番の広告を 押してしまわないように。
     private static let unitID = "ca-app-pub-3940256099942544/1712485313"
     #else
-    private static let unitID = "ca-app-pub-6105029932689433/REPLACE_ME"
+    private static let unitID = "ca-app-pub-6105029932689433/9372007766"
     #endif
 
     /// 読み込みが済んだか 変わったときに 知らせる（GameState の 選択肢を 出し分ける）。
