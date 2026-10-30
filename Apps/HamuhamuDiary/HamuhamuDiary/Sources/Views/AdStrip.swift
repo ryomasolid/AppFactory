@@ -5,7 +5,22 @@ import UIKit
 extension View {
     /// 中身の下（タブバーのすぐ上）に広告の帯を差し込む。中身は帯の上で止まる。
     func adStrip(_ permission: AdPermission) -> some View {
-        safeAreaInset(edge: .bottom, spacing: 0) { AdStrip(permission: permission) }
+        modifier(AdStripModifier(permission: permission))
+    }
+}
+
+private struct AdStripModifier: ViewModifier {
+    let permission: AdPermission
+    @State private var bannerHeight: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            // NavigationStack の中のスクロールには safeAreaInset の高さが届かず、一番下までスクロールしても
+            // 最後の中身が広告の裏に隠れる。広告の高さ分の余白をスクロールの中身に足しておく。
+            .contentMargins(.bottom, bannerHeight, for: .scrollContent)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                AdStrip(permission: permission, bannerHeight: $bannerHeight)
+            }
     }
 }
 
@@ -15,10 +30,10 @@ extension View {
 /// 届かなかったときは高さ0のまま（クリーム地に灰色の空き枠を残さない）。
 struct AdStrip: View {
     let permission: AdPermission
-    @State private var bannerHeight: CGFloat = 0
+    @Binding var bannerHeight: CGFloat
 
     #if DEBUG
-    private let unitID = "ca-app-pub-3940256099942544/2934735716"  // Google のテスト用ユニット
+    private let unitID = "ca-app-pub-3940256099942544/2435281174"  // Google のテスト用ユニット（アダプティブバナー）
     #else
     private let unitID = "ca-app-pub-6105029932689433/4525015975"
     #endif
@@ -62,6 +77,12 @@ private struct BannerHost: UIViewRepresentable {
         banner.rootViewController = banner.window?.rootViewController ?? Self.fallbackRoot()
         banner.adSize = GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(width)
         banner.load(GADRequest())
+    }
+
+    /// GADBannerView 自身の大きさ（intrinsicContentSize）は頼んだ広告の倍になることがあり、
+    /// そのまま使うと帯からはみ出して広告の右側が切れる。帯の幅と広告の高さに合わせる。
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: GADBannerView, context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? width, height: proposal.height ?? uiView.adSize.size.height)
     }
 
     private static func fallbackRoot() -> UIViewController? {
