@@ -123,6 +123,44 @@
 広告なし・課金なし・通信なし。オフラインで遊べます。
 ```
 
+## 1.3 で 変えるもの（見たい人だけが見る広告）
+
+宿屋と 全滅のあとに **リワード広告**（見たい人だけが 見る広告）を 入れた。バナーや 場面の 切りかえで 勝手に 出る広告は 入れない。
+見なくても 今までどおり 遊べる。小学生も 遊ぶので **子ども向けとして リクエスト**（パーソナライズなし・一般向けの 広告だけ）し、ATT の 許可は 求めない。
+
+- **ビルド**: 1.3 (10)。AdMob の アプリID・広告ユニットID は `Project.swift`（`GAD_APP_ID` の Release）と `Ads/RewardAds.swift`（Release の `unitID`）。
+- **このバージョンの新機能**:
+
+```
+・宿屋で こうこくを みると 宿代なしで とまれるように なりました
+・ぜんめつ したあと、こうこくを みると なくした ゴールドを とりもどせます
+・どちらも 見たい人だけ。見なくても 今までどおり 遊べます
+```
+
+- **説明文**の さいごの 行 `広告なし・課金なし・通信なし。オフラインで遊べます。` を 次に かえる:
+
+```
+課金なし。オフラインでも 最後まで 遊べます。
+（宿屋と 全滅のあとに、見たい人だけが 見る広告があります。見なくても 遊べます）
+```
+
+- **キーワード（日本語）**: 1.2.1 の ものから `広告なし` を `暗記` に かえる。
+- **英語の 説明文**の さいごの 行を `No in-app purchases. Plays fully offline. Optional ads: watch one at an inn or after a defeat for a free stay or to recover gold.` に、英語キーワードの `no ads` を `free` に かえる。
+- **プロモーション用テキスト**（イベントが おわったので 11月から）:
+  `クイズに答えて北海道を覚える、ドット絵のコマンドRPG。函館・札幌・小樽・知床など9つの街を歩いて、名所や名産を見つけよう。オフラインでも最後まで遊べます。`
+- **App のプライバシー**（「データを収集していません」から 変える。AdMob が 集めるもの）:
+  - ID → デバイスID／位置情報 → おおよその場所／使用状況データ → 製品の操作・広告データ／診断 → クラッシュ・パフォーマンス・その他の診断
+  - 目的は どれも「サードパーティ広告」（診断は「分析」も）。ユーザーに ひもづけ: いいえ。**トラッキング: いいえ**
+- **プライバシーポリシー**: `ryomasolid.github.io/privacy-geohero.html` を 書きかえずみ（**1.3 の 提出前に push する**）。
+- **App Review へのメモ**（英語）:
+
+```
+Version 1.3 adds optional rewarded ads (Google AdMob) in two places only: at an inn ("watch an ad to stay for free") and after a defeat ("watch an ad to recover the lost gold"). Ads never appear unless the player chooses to watch one, and the game can be completed without watching any ads.
+Because children also play this game, every ad request is sent with child-directed treatment and the "G" max ad content rating; ads are not personalized and the app does not track users, so it does not request App Tracking Transparency permission.
+The app still has no in-app purchases and no other third-party SDKs. All graphics and music are generated in code.
+To see an ad option: start a new game, walk into the inn in Hakodate and talk to the innkeeper.
+```
+
 ## このバージョンの新機能（1.1）
 
 ```
@@ -194,7 +232,7 @@ rpg,pixel,retro,turn-based,jrpg,offline,no ads,hokkaido,japan,geography,quiz,adv
 | --- | --- |
 | サポートURL | `https://ryomasolid.github.io/support-geohero.html` |
 | プライバシーポリシーURL | `https://ryomasolid.github.io/privacy-geohero.html` |
-| マーケティングURL | `https://ryomasolid.github.io/`（任意。広告を入れていないので app-ads.txt の検証には関係ない） |
+| マーケティングURL | `https://ryomasolid.github.io/`（1.3 で 広告を 入れたので **app-ads.txt の 検証に 必須**。設定ずみ） |
 
 ## 年齢レーティング
 
@@ -208,11 +246,11 @@ rpg,pixel,retro,turn-based,jrpg,offline,no ads,hokkaido,japan,geography,quiz,adv
 
 ## プライバシー
 
-このアプリは**何も集めていない**。通信もしない。
+1.2.1 までは**何も集めていない**（通信もしない）。**1.3 から AdMob の リワード広告が 入るので、答えは 上の「1.3 で 変えるもの」に したがう。**
 
-- データ収集: **なし**（「データを収集していません」を選ぶ）
-- トラッキング: なし
-- サードパーティSDK: なし（広告・解析とも入れていない）
+- データ収集: 1.2.1 まで なし／1.3 から あり（広告のため）
+- トラッキング: なし（子ども向けの リクエスト・ATT なし）
+- サードパーティSDK: 1.3 から Google Mobile Ads（リワード広告だけ）
 - プライバシーポリシーURL: `https://ryomasolid.github.io/privacy-geohero.html`
   （収集なしでも入力欄は必須）
 

@@ -257,6 +257,67 @@ struct GameStateTests {
         #expect(game.mapID == .nakashibetsu)
         #expect(game.hero.gold == 50)
         #expect(game.hero.hp == game.hero.maxHP)
+        // 広告が 用意できていないときは 取りもどしを 聞かない。
+        while game.currentPage != nil { game.advanceMessage() }
+        #expect(game.overlay == .none)
+    }
+
+    /// 全滅のあと、広告を 最後まで見れば なくした ゴールドが もどる。
+    @Test func watchingAnAdAfterLosingRecoversGold() async throws {
+        let game = try await lostWithAdReady(gold: 101, adFinishes: true)
+        #expect(game.hero.gold == 50)
+        #expect(game.overlay == .recoverGold)
+        #expect(game.lostGold == 51)
+        game.recoverGoldWithAd()
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(game.hero.gold == 101)
+        #expect(game.lostGold == 0)
+        #expect(game.isWatchingAd == false)
+    }
+
+    /// 広告を とちゅうで とじたら もどらない。ことわっても 何も おきない。
+    @Test func skippingTheAdKeepsTheLoss() async throws {
+        let game = try await lostWithAdReady(gold: 100, adFinishes: false)
+        game.recoverGoldWithAd()
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(game.hero.gold == 50)
+
+        let other = try await lostWithAdReady(gold: 100, adFinishes: true)
+        other.declineGoldRecovery()
+        #expect(other.hero.gold == 50)
+        #expect(other.overlay == .none)
+    }
+
+    /// 宿屋で 広告を見れば 宿代なしで 泊まれる。
+    @Test func adPaysForTheInn() async throws {
+        let game = makeGame()
+        game.rewardAdReady = true
+        game.watchRewardAd = { true }
+        game.hero.gold = 3
+        game.hero.hp = 1
+        game.overlay = .inn
+        game.stayAtInnWithAd()
+        try await Task.sleep(for: .milliseconds(50))
+        while game.currentPage != nil { game.advanceMessage() }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(game.hero.gold == 3)
+        #expect(game.hero.hp == game.hero.maxHP)
+    }
+
+    private func lostWithAdReady(gold: Int, adFinishes: Bool) async throws -> GameState {
+        let game = makeGame()
+        game.rewardAdReady = true
+        game.watchRewardAd = { adFinishes }
+        game.hero.gold = gold
+        game.mapID = .rausudake2
+        game.startBattle(.guardian)
+        for _ in 0..<30 where game.battle?.end == nil {
+            await game.command(.attack)
+        }
+        try #require(game.battle?.end == .lost)
+        await game.finishBattle()
+        while game.currentPage != nil { game.advanceMessage() }
+        return game
     }
 
     /// 空港は きっぷが ないと とべない。駒ヶ岳のぬしを倒すと きっぷが もらえて 札幌へ とべる。

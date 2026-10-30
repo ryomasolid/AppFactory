@@ -115,9 +115,19 @@ struct FieldOverlay: View {
             RetroWindow {
                 speech("やどや", "ひとばん \(game.innPrice)ゴールドです。")
                 divider()
+                ChoiceList([Choice(title: "はい") { game.stayAtInn() }]
+                    + (game.rewardAdReady ? [Choice(title: "こうこくを みて とまる") { game.stayAtInnWithAd() }] : [])
+                    + [Choice(title: "いいえ", isCancel: true) { game.closeOverlay() }])
+            }
+
+        case .recoverGold:
+            RetroWindow {
+                Text("こうこくを さいごまで みると\nなくした \(game.lostGold)ゴールドを とりもどせます。")
+                    .fixedSize(horizontal: false, vertical: true)
+                divider()
                 ChoiceList([
-                    Choice(title: "はい") { game.stayAtInn() },
-                    Choice(title: "いいえ", isCancel: true) { game.closeOverlay() },
+                    Choice(title: "こうこくを みる") { game.recoverGoldWithAd() },
+                    Choice(title: "このまま つづける", isCancel: true) { game.declineGoldRecovery() },
                 ])
             }
         }

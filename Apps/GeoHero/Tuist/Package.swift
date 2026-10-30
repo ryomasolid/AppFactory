@@ -9,8 +9,13 @@ import PackageDescription
     )
 #endif
 
-// 試作段階なので外部依存なし（広告・課金は公開を決めてから足す）。
+// 1.3 から 見たい人だけが見る広告（リワード広告）のために AdMob を入れる。
 let package = Package(
     name: "GeoHero",
-    dependencies: []
+    dependencies: [
+        .package(
+            url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
+            from: "12.0.0"
+        ),
+    ]
 )

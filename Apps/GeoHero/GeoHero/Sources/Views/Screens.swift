@@ -12,6 +12,7 @@ struct GeoHeroApp: App {
 struct ContentView: View {
     @State private var game = GameState()
     @State private var audio = AudioManager()
+    @State private var ads = RewardAds()
 
     var body: some View {
         ZStack {
@@ -34,13 +35,22 @@ struct ContentView: View {
         .onAppear {
             game.playSound = { [audio] cue in audio.play(cue) }
         }
+        // 広告を流しているあいだは BGM を止める（広告の音と重ねない）。
         .onChange(of: game.soundEnabled, initial: true) { _, enabled in
-            audio.isEnabled = enabled
+            audio.isEnabled = enabled && !game.isWatchingAd
+        }
+        .onChange(of: game.isWatchingAd) { _, watching in
+            audio.isEnabled = game.soundEnabled && !watching
         }
         .onChange(of: game.musicTrack, initial: true) { _, track in
             audio.playMusic(track)
         }
         .task { Launch.apply(to: game) }
+        .task {
+            game.watchRewardAd = { [ads] in await ads.show() }
+            ads.onReadyChange = { [game] ready in game.rewardAdReady = ready }
+            await ads.start()
+        }
         .preferredColorScheme(.dark)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)

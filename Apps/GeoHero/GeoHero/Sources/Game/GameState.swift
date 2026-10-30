@@ -61,7 +61,7 @@ struct ChoiceSlot: Equatable {
 @Observable
 final class GameState {
     enum Screen: Equatable { case title, naming, field, battle, ending }
-    enum Overlay: Equatable { case none, menu, status, items, spells, shop, inn }
+    enum Overlay: Equatable { case none, menu, status, items, spells, shop, inn, recoverGold }
 
     /// 1歩ごとの遭遇率（分母）と、戦闘後に遭遇しない歩数。
     static let encounterDenominator = 14
@@ -146,6 +146,17 @@ final class GameState {
     @ObservationIgnored private var tapContinuation: CheckedContinuation<Void, Never>?
     /// 効果音を鳴らす先。アプリでは AudioManager につなぎ、テストでは記録に使う。
     @ObservationIgnored var playSound: (SoundCue) -> Void = { _ in }
+
+    // MARK: 見たい人だけが見る広告（リワード広告）
+
+    /// 広告を流して、最後まで見たら true を返す。アプリでは `RewardAds` につなぎ、テストでは差しかえる。
+    @ObservationIgnored var watchRewardAd: () async -> Bool = { false }
+    /// 広告の読み込みが済んでいて、すぐ見せられる。済んでいないときは 選択肢そのものを出さない。
+    var rewardAdReady = false
+    /// 広告を流しているあいだ（BGM を止める）。
+    private(set) var isWatchingAd = false
+    /// 全滅で なくした ゴールド。広告を見ると 取りもどせる。
+    private(set) var lostGold = 0
 
     static let soundKey = "geohero.soundEnabled"
     /// 音のオン・オフ（メニューで切り替え、端末に保存する）。
@@ -603,6 +614,47 @@ final class GameState {
         }
     }
 
+    /// 広告を見て、宿代なしで泊まる。最後まで見なかったら泊まらない。
+    func stayAtInnWithAd() {
+        overlay = .none
+        Task {
+            guard await playRewardAd() else {
+                return say(["やどや「また いつでも どうぞ。」"])
+            }
+            say(["やどや「ゆっくり おやすみください。」"]) { [weak self] in
+                Task { await self?.sleepAtInn() }
+            }
+        }
+    }
+
+    /// 全滅で なくした ゴールドを 広告を見て 取りもどす。
+    func recoverGoldWithAd() {
+        overlay = .none
+        let amount = lostGold
+        lostGold = 0
+        Task {
+            guard await playRewardAd() else {
+                return say(["こうこくが とちゅうで おわった……", "ゴールドは もどらなかった。"])
+            }
+            hero.gold += amount
+            playSound(.coin)
+            say(["\(amount)ゴールドを とりもどした！"])
+        }
+    }
+
+    /// 広告は見ずに そのまま 冒険を つづける。
+    func declineGoldRecovery() {
+        lostGold = 0
+        closeOverlay()
+    }
+
+    private func playRewardAd() async -> Bool {
+        isWatchingAd = true
+        let finished = await watchRewardAd()
+        isWatchingAd = false
+        return finished
+    }
+
     /// その品を買うのに あと いくら足りないか。0 なら買える。
     func shortfall(for item: Item) -> Int { max(0, item.price - hero.gold) }
 
@@ -1034,13 +1086,19 @@ final class GameState {
         case .lost:
             // 気を失って村で目を覚ますので、暗転をはさむ。
             await drawCurtain()
-            hero.gold /= 2
+            let lost = hero.gold - hero.gold / 2
+            hero.gold -= lost
             hero.restoreFully()
             (mapID, position) = World.revivePoint(in: region)
             facing = .up
             enterField()
             await openCurtain()
-            say(["\(hero.name)は 村の いりぐちで めを さました。", "もっていた ゴールドが はんぶんに なった……"])
+            say(["\(hero.name)は 村の いりぐちで めを さました。", "もっていた ゴールドが はんぶんに なった……"]) { [weak self] in
+                // 広告で 取りもどせるときだけ 聞く。
+                guard let self, lost > 0, rewardAdReady else { return }
+                lostGold = lost
+                overlay = .recoverGold
+            }
         }
     }
 
