@@ -84,9 +84,12 @@ private struct BannerHost: UIViewRepresentable {
     }
 
     /// GADBannerView 自身の大きさ（intrinsicContentSize）は頼んだ広告の倍になることがあり、
-    /// そのまま使うと帯からはみ出して広告の右側が切れる。帯の幅と広告の高さに合わせる。
+    /// そのまま使うと帯からはみ出して広告の右側が切れる。帯の幅と、その幅で頼む広告の高さに合わせる。
+    /// 帯の高さ（届く前は0）には合わせない。高さ0にすると SDK が (幅, 0) で頼み直して失敗し、帯が二度と開かない。
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: GADBannerView, context: Context) -> CGSize? {
-        CGSize(width: proposal.width ?? width, height: proposal.height ?? uiView.adSize.size.height)
+        let width = proposal.width ?? width
+        guard width > 0 else { return nil }
+        return CGSize(width: width, height: GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(width).size.height)
     }
 
     private static func fallbackRoot() -> UIViewController? {
@@ -95,16 +98,19 @@ private struct BannerHost: UIViewRepresentable {
 
     final class Coordinator: NSObject, GADBannerViewDelegate {
         var requestedWidth: CGFloat = 0
+        /// 一度でも広告が届いたか。届いたあとの自動更新が失敗しても前の広告は出たままなので、帯は畳まない。
+        private var hasAd = false
         let onHeight: (CGFloat) -> Void
 
         init(onHeight: @escaping (CGFloat) -> Void) { self.onHeight = onHeight }
 
         func bannerViewDidReceiveAd(_ bannerView: GADBannerView) {
+            hasAd = true
             onHeight(bannerView.adSize.size.height)
         }
 
         func bannerView(_ bannerView: GADBannerView, didFailToReceiveAdWithError error: any Error) {
-            onHeight(0)
+            if !hasAd { onHeight(0) }
         }
     }
 }
