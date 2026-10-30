@@ -1,6 +1,7 @@
 import AppTrackingTransparency
 import GoogleMobileAds
 import Observation
+import StoreKit
 import UIKit
 import UserMessagingPlatform
 
@@ -22,6 +23,9 @@ final class AdPermission {
     }
 
     private(set) var phase: Phase = Launch.hideAds ? .off : .idle
+    /// TestFlight（サンドボックス）で動いているとき。本番の広告は配信制限などで届かないことがあり、
+    /// 自分の端末で本番の広告を出すのも避けたいので、Google のテスト広告を出す。
+    private(set) var usesTestAds = false
 
     /// 1回だけ進める。2回目以降の呼び出しは何もしない。
     func begin() async {
@@ -41,6 +45,9 @@ final class AdPermission {
         if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
             try? await Task.sleep(for: .milliseconds(600))
             _ = await ATTrackingManager.requestTrackingAuthorization()
+        }
+        if case .verified(let transaction)? = try? await AppTransaction.shared {
+            usesTestAds = transaction.environment == .sandbox
         }
         _ = await GADMobileAds.sharedInstance().start()
         phase = .ready

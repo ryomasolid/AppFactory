@@ -32,11 +32,15 @@ struct AdStrip: View {
     let permission: AdPermission
     @Binding var bannerHeight: CGFloat
 
-    #if DEBUG
-    private let unitID = "ca-app-pub-3940256099942544/2435281174"  // Google のテスト用ユニット（アダプティブバナー）
-    #else
-    private let unitID = "ca-app-pub-6105029932689433/4525015975"
-    #endif
+    private static let testUnitID = "ca-app-pub-3940256099942544/2435281174"  // Google のテスト用ユニット（アダプティブバナー）
+
+    private var unitID: String {
+        #if DEBUG
+        Self.testUnitID
+        #else
+        permission.usesTestAds ? Self.testUnitID : "ca-app-pub-6105029932689433/4525015975"
+        #endif
+    }
 
     var body: some View {
         if permission.phase == .ready {
