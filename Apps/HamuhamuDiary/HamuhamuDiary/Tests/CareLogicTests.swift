@@ -84,6 +84,12 @@ struct ReviewPolicyTests {
         #expect(!ReviewPolicy.shouldRequest(recordCount: 15, lastRequestedCount: 3, lastRequestedAt: recently, now: now))
         #expect(ReviewPolicy.shouldRequest(recordCount: 15, lastRequestedCount: 3, lastRequestedAt: longAgo, now: now))
     }
+
+    @Test func happyMomentOnlyLooksAtTheInterval() {
+        #expect(ReviewPolicy.shouldRequestAtHappyMoment(lastRequestedAt: nil, now: now))
+        #expect(!ReviewPolicy.shouldRequestAtHappyMoment(lastRequestedAt: now.addingTimeInterval(-30 * 86_400), now: now))
+        #expect(ReviewPolicy.shouldRequestAtHappyMoment(lastRequestedAt: now.addingTimeInterval(-60 * 86_400), now: now))
+    }
 }
 
 struct NotificationPlannerTests {

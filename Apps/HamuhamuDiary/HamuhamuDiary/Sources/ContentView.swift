@@ -12,6 +12,7 @@ enum AppTab: String {
 struct ContentView: View {
     @Environment(\.requestReview) private var requestReview
     @Query(sort: \DiaryRecord.date, order: .reverse) private var records: [DiaryRecord]
+    @Query private var profiles: [HamsterProfile]
     @AppStorage(StorageKey.reviewRequestedCount) private var reviewRequestedCount = 0
     @AppStorage(StorageKey.reviewRequestedAt) private var reviewRequestedAt = 0.0
 
@@ -70,10 +71,14 @@ struct ContentView: View {
             // 記録が増えたときだけ判定する（削除や起動直後の読み込みでは出さない）。
             guard new > old else { return }
             let lastAt = reviewRequestedAt > 0 ? Date(timeIntervalSince1970: reviewRequestedAt) : nil
-            guard ReviewPolicy.shouldRequest(
+            let atMilestone = ReviewPolicy.shouldRequest(
                 recordCount: new, lastRequestedCount: reviewRequestedCount, lastRequestedAt: lastAt
-            ) else { return }
-            reviewRequestedCount = new
+            )
+            let isAnniversary = profiles.first.map {
+                !Anniversaries.on(Date(), birthDate: $0.birthDate, welcomeDate: $0.welcomeDate).isEmpty
+            } ?? false
+            guard atMilestone || (isAnniversary && ReviewPolicy.shouldRequestAtHappyMoment(lastRequestedAt: lastAt)) else { return }
+            if atMilestone { reviewRequestedCount = new }
             reviewRequestedAt = Date().timeIntervalSince1970
             // 保存のシートが閉じきってから出す。
             Task {

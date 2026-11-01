@@ -16,13 +16,12 @@ W, H = 1320, 2868
 
 SLIDES = [
     {
-        "file": "01_home",
-        "shot": "home.png",
+        "file": "01_watch",
+        "shot": "weight-alert.png",
         "eyebrow": "ハムスターの飼育記録アプリ",
-        "title": "毎日のお世話を<br><mark>かんたん記録</mark>",
-        "sub": "体重・ごはん・お掃除を<br>ワンタップで残せる",
+        "title": "体重の変化に<br><mark>早く気づく</mark>",
+        "sub": "1週間で1割以上減ると<br>ホームでお知らせ",
         "bg": ("#FFF4E8", "#FFD9BF"),
-        "chips": ["体重", "ごはん", "お掃除", "写真"],
         "icon": True,
     },
     {
@@ -34,15 +33,7 @@ SLIDES = [
         "bg": ("#FFF8EC", "#FFE6A8"),
     },
     {
-        "file": "03_share",
-        "shot": "share.png",
-        "eyebrow": "シェアカード",
-        "title": "うちの子の成長を<br><mark>SNSでシェア</mark>",
-        "sub": "日付・体重入りのかわいい画像を<br>Instagram・X・LINEへ",
-        "bg": ("#FFF1F0", "#FFC9C2"),
-    },
-    {
-        "file": "04_reminder",
+        "file": "03_reminder",
         "shot": "profile.png",
         "eyebrow": "通知でお知らせ",
         "title": "床材・フードの<br><mark>交換時期</mark>を忘れない",
@@ -50,12 +41,21 @@ SLIDES = [
         "bg": ("#F1F8EE", "#CDEBC4"),
     },
     {
-        "file": "05_record",
-        "shot": "record.png",
-        "eyebrow": "登録した献立で時短",
-        "title": "いつものごはんは<br><mark>1タップ入力</mark>",
-        "sub": "献立テンプレート・お掃除項目を<br>自由にカスタマイズ",
+        "file": "04_home",
+        "shot": "home.png",
+        "eyebrow": "毎日の記録",
+        "title": "毎日のお世話を<br><mark>かんたん記録</mark>",
+        "sub": "体重・ごはん・お掃除を<br>ワンタップで残せる",
         "bg": ("#EEF5FF", "#C9DEFF"),
+        "chips": ["体重", "ごはん", "お掃除", "写真"],
+    },
+    {
+        "file": "05_share",
+        "shot": "share.png",
+        "eyebrow": "シェアカード",
+        "title": "うちの子の成長を<br><mark>SNSでシェア</mark>",
+        "sub": "日付・体重入りのかわいい画像を<br>Instagram・X・LINEへ",
+        "bg": ("#FFF1F0", "#FFC9C2"),
     },
 ]
 
@@ -128,7 +128,7 @@ def render(slide: dict) -> None:
             else ""
         ),
         shot=(SRC / slide["shot"]).as_uri(),
-        phone_top=1300 if has_icon else 1060,
+        phone_top=1190 if has_icon else 1060,
     )
     page = OUT / f"{slide['file']}.html"
     page.write_text(html, encoding="utf-8")

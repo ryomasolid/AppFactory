@@ -210,8 +210,13 @@ struct SettingsView: View {
 /// 共有シートを一番上の画面に重ねて出す（ファイルを作ってから出すので ShareLink では間に合わない）。
 @MainActor
 enum ActivitySheet {
-    static func present(_ items: [Any]) {
+    /// `onCompleted` は共有や保存を最後まで済ませたときだけ呼ばれる（キャンセルでは呼ばれない）。
+    static func present(_ items: [Any], onCompleted: (@MainActor () -> Void)? = nil) {
         let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        sheet.completionWithItemsHandler = { _, completed, _, _ in
+            guard completed else { return }
+            Task { @MainActor in onCompleted?() }
+        }
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
               var top = scene.keyWindow?.rootViewController else { return }
         while let presented = top.presentedViewController { top = presented }

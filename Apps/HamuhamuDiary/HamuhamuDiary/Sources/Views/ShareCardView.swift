@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftData
 import SwiftUI
 
@@ -6,6 +7,8 @@ struct ShareCardView: View {
     let record: DiaryRecord
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
+    @AppStorage(StorageKey.reviewRequestedAt) private var reviewRequestedAt = 0.0
     @Query private var profiles: [HamsterProfile]
 
     static let hashtags = "#はむはむ日記 #ハムスター #ハムスターのいる生活"
@@ -53,7 +56,19 @@ struct ShareCardView: View {
         renderer.scale = 3
         var items: [Any] = [Self.hashtags]
         if let image = renderer.uiImage { items.insert(image, at: 0) }
-        ActivitySheet.present(items)
+        ActivitySheet.present(items, onCompleted: askForReviewIfDue)
+    }
+
+    /// シェアしたあとは喜んでいそうなので、間隔があいていればレビューを頼む。
+    private func askForReviewIfDue() {
+        let lastAt = reviewRequestedAt > 0 ? Date(timeIntervalSince1970: reviewRequestedAt) : nil
+        guard ReviewPolicy.shouldRequestAtHappyMoment(lastRequestedAt: lastAt) else { return }
+        reviewRequestedAt = Date().timeIntervalSince1970
+        // 共有シートが閉じきってから出す。
+        Task {
+            try? await Task.sleep(for: .seconds(1.2))
+            requestReview()
+        }
     }
 }
 

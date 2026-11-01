@@ -19,6 +19,9 @@ enum Launch {
     /// デモ写真に使う本物の写真のフォルダ（Mac 側のパス。`Store/screenshots/photos`）。無ければ絵文字の画像で代用する。
     static var demoPhotos: String? { value(after: "-demoPhotos") }
 
+    /// デモの今日の体重を1割ほど減らし、ホームの「体重が減っています」を出す（スクショ撮影用）。
+    static var demoWeightDrop: Bool { args.contains("-demoWeightDrop") }
+
     private static func value(after flag: String) -> String? {
         guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
         return args[i + 1]
@@ -62,7 +65,7 @@ enum Launch {
         for i in 0..<80 {
             // 少しずつ増えて落ち着く体重カーブ＋小さな揺らぎ。
             let base = 34 + 6 * (1 - exp(-Double(80 - i) / 30))
-            let weight = ((base + sin(Double(i) * 0.9) * 0.35) * 10).rounded() / 10
+            let weight = demoWeightDrop && i == 0 ? 35.4 : ((base + sin(Double(i) * 0.9) * 0.35) * 10).rounded() / 10
             let date = daysAgo(i)
             let created = calendar.date(bySettingHour: 20, minute: 30, second: 0, of: date) ?? date
             context.insert(DiaryRecord(

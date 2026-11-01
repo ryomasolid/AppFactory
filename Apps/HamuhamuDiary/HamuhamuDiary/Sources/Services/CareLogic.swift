@@ -140,6 +140,7 @@ enum WeightAlert {
 /// App Store のレビュー依頼を出すか。
 ///
 /// 記録が 3件・15件・50件 に届いた「アプリに慣れて気に入っていそうな」ときにだけ出す。
+/// シェアカードを共有したあとと、記念日に記録したときにも出す（喜んでいそうなとき）。
 /// iOS 側でも年3回までに絞られるが、しつこく見えないようアプリ側でも前回から60日あける。
 enum ReviewPolicy {
     static let milestones = [3, 15, 50]
@@ -151,5 +152,11 @@ enum ReviewPolicy {
         guard reached > reachedBefore else { return false }
         if let lastRequestedAt, now.timeIntervalSince(lastRequestedAt) < minimumInterval { return false }
         return true
+    }
+
+    /// 喜んでいそうなとき（シェアのあと・記念日の記録）に出すか。件数は問わず、前回からの間隔だけを見る。
+    static func shouldRequestAtHappyMoment(lastRequestedAt: Date?, now: Date = Date()) -> Bool {
+        guard let lastRequestedAt else { return true }
+        return now.timeIntervalSince(lastRequestedAt) >= minimumInterval
     }
 }
