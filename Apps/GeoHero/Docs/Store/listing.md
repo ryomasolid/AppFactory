@@ -123,6 +123,38 @@
 広告なし・課金なし・通信なし。オフラインで遊べます。
 ```
 
+## 1.4 で 変えるもの（画面上部の バナー広告）
+
+冒険中（フィールドと 戦闘）だけ、画面の上に **バナー広告** を 出す。タイトル・名前を決める画面・エンディングには 出さない。
+下には 十字キーと コマンドが あって 押しまちがえやすいので 上に 置いた。リワード広告は そのまま。子ども向けの リクエストも ATT なしも 変えない。
+
+- **ビルド**: 1.4 (11)。**広告ユニットID**: `ca-app-pub-6105029932689433/8549325778`（`Ads/TopBannerAd.swift`）。
+- **このバージョンの新機能**:
+
+```
+・冒険中（フィールドと 戦闘）は 画面の上に 広告が 出るように なりました
+・宿屋と ぜんめつの あとの、見たい人だけが 見る広告は 今までどおりです
+```
+
+- **説明文**の さいごの かっこ書きを 次に かえる:
+
+```
+（通信できるときは、冒険中に 画面の上に 広告が 出ます。宿屋と 全滅のあとには、見たい人だけが 見る広告もあります）
+```
+
+- **英語の 説明文**の さいごの 行: `No in-app purchases. Plays fully offline. When online, a banner ad appears at the top of the screen during play. Optional ads: watch one at an inn or after a defeat for a free stay or to recover gold.`
+- **英語の 新機能**: `A banner ad now appears at the top of the screen during play. Optional ads at inns and after a defeat work as before.`
+- **プライバシーポリシー**: `privacy-geohero.html`（別リポ）を 書きかえる。
+- App のプライバシーの 答えと 年齢制限の「広告」は 1.3 の ままで よい（集める データの 種類は 変わらない）。
+- **App Review へのメモ**（英語）:
+
+```
+Version 1.4 adds a Google AdMob banner ad at the top of the screen during field and battle screens. It is placed away from the on-screen controls. It does not appear on the title, naming or ending screens. The optional rewarded ads (at an inn and after a defeat) are unchanged.
+Because children also play this game, every ad request is sent with child-directed treatment and the "G" max ad content rating; ads are not personalized and the app does not track users, so it does not request App Tracking Transparency permission.
+The app still has no in-app purchases and no other third-party SDKs. All graphics and music are generated in code.
+To see the banner: start a new game and walk on the field.
+```
+
 ## 1.3 で 変えるもの（見たい人だけが見る広告）
 
 宿屋と 全滅のあとに **リワード広告**（見たい人だけが 見る広告）を 入れた。バナーや 場面の 切りかえで 勝手に 出る広告は 入れない。

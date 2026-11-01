@@ -3,7 +3,7 @@ import UIKit
 import UserMessagingPlatform
 
 /// 見たい人だけが見る広告（リワード広告）。宿屋と 全滅のあとで 選んだときだけ流す。
-/// バナーや 場面の切りかえで 勝手に出る広告は 入れない。
+/// 広告の SDK の 準備も ここで する（バナーの `TopBannerAd` も これを 待つ）。
 ///
 /// 小学生も遊ぶので、子ども向けとして リクエストする（パーソナライズなし・一般向けの広告だけ）。
 /// トラッキングはしないので ATT の許可も求めない。
@@ -18,6 +18,8 @@ final class RewardAds: NSObject {
 
     /// 読み込みが済んだか 変わったときに 知らせる（GameState の 選択肢を 出し分ける）。
     var onReadyChange: (Bool) -> Void = { _ in }
+    /// SDK の 準備が済み、広告を リクエストしてよくなったときに 知らせる（バナーを 出しはじめる）。
+    var onStarted: () -> Void = {}
 
     private var ad: RewardedAd?
     private var started = false
@@ -39,6 +41,8 @@ final class RewardAds: NSObject {
         configuration.tagForUnderAgeOfConsent = true
         configuration.maxAdContentRating = .general
         await MobileAds.shared.start()
+        // load は 失敗すると ためしなおしつづけて 戻らないので、その前に 知らせる。
+        onStarted()
         await load()
     }
 

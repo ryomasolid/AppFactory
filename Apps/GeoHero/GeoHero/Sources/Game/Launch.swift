@@ -19,6 +19,11 @@ import Foundation
 /// / `-startBattle sakuraSpirit -autoQuiz YES`（「ちしきの チャンス」を 出して 正解する。動画を 撮る用）
 @MainActor
 enum Launch {
+    /// バナー広告を 出さない（`-hideAds YES`）。スクショや 動画を 撮る用。
+    static var hideAds: Bool {
+        UserDefaults.standard.bool(forKey: "hideAds")
+    }
+
     /// 戦闘で開いておくサブメニュー（`-battleSubmenu spells` / `items` / `quiz`）。表示確認用。
     static var battleSubmenu: String? {
         UserDefaults.standard.string(forKey: "battleSubmenu")

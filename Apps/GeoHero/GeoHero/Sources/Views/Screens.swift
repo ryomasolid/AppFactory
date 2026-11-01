@@ -13,22 +13,36 @@ struct ContentView: View {
     @State private var game = GameState()
     @State private var audio = AudioManager()
     @State private var ads = RewardAds()
+    @State private var bannerAllowed = false
+
+    /// バナーは 冒険のあいだだけ。タイトル・名前を決める画面・エンディングには 出さない。
+    private var showsBanner: Bool {
+        guard bannerAllowed, !Launch.hideAds else { return false }
+        return game.screen == .field || game.screen == .battle
+    }
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            switch game.screen {
-            case .title: TitleView()
-            case .naming: NameEntryView()
-            case .field: FieldView()
-            case .battle: BattleView()
-            case .ending: EndingView()
+        // ZStack の上に かぶせず 上下に並べる。ゲームの画面は 帯の下から始まるので、中身が 隠れない。
+        VStack(spacing: 0) {
+            if showsBanner {
+                TopBannerAd()
             }
+            ZStack {
+                Color.black.ignoresSafeArea()
+                switch game.screen {
+                case .title: TitleView()
+                case .naming: NameEntryView()
+                case .field: FieldView()
+                case .battle: BattleView()
+                case .ending: EndingView()
+                }
 
-            // 場面の切り替えと 宿屋の ねむり。濃さは GameState、動きはここ。
-            Curtain(opacity: game.curtain, caption: game.curtainCaption)
-                .animation(.easeInOut(duration: game.fadeSeconds), value: game.curtain)
+                // 場面の切り替えと 宿屋の ねむり。濃さは GameState、動きはここ。
+                Curtain(opacity: game.curtain, caption: game.curtainCaption)
+                    .animation(.easeInOut(duration: game.fadeSeconds), value: game.curtain)
+            }
         }
+        .background(Color.black.ignoresSafeArea())
         .environment(game)
         // App Store の アプリ内イベントから 開いたとき。
         .onOpenURL { url in game.open(url) }
@@ -49,6 +63,7 @@ struct ContentView: View {
         .task {
             game.watchRewardAd = { [ads] in await ads.show() }
             ads.onReadyChange = { [game] ready in game.rewardAdReady = ready }
+            ads.onStarted = { bannerAllowed = true }
             await ads.start()
         }
         .preferredColorScheme(.dark)
