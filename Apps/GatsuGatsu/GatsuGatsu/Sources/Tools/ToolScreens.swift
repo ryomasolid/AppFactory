@@ -266,6 +266,7 @@ struct QueueTool: View {
     @State private var reminderMessage: String?
     private let library = Library.shared
     private static let reminderID = "queue-reminder"
+    private static let reminderDateKey = "reminderDate"
 
     private var minutes: Int { QueueEstimate.minutes(people: Int(people), seats: seats, stay: genre?.avgStayMin ?? 0) }
     private var arrival: Date { .now.addingTimeInterval(Double(minutes) * 60) }
@@ -304,6 +305,8 @@ struct QueueTool: View {
                 .font(.caption).foregroundStyle(.secondary)
             SponsoredCard(slot: "queue", path: ToolKind.queue.webPath)
         }
+        // 画面を開き直しても予約中の通知を見失わず、時刻を過ぎたらボタンの表示に戻す。
+        .task(id: reminderAt) { await followReminder() }
     }
 
     private var result: some View {
@@ -343,6 +346,7 @@ struct QueueTool: View {
         content.title = "そろそろ順番です"
         content.body = "入店予定の5分前になりました。頼むサイズは決まりましたか？"
         content.sound = .default
+        content.userInfo = [Self.reminderDateKey: date.timeIntervalSince1970]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(date.timeIntervalSinceNow, 1), repeats: false)
         do {
             try await center.add(UNNotificationRequest(identifier: Self.reminderID, content: content, trigger: trigger))
@@ -356,6 +360,19 @@ struct QueueTool: View {
     private func cancelReminder() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.reminderID])
         reminderAt = nil
+    }
+
+    private func followReminder() async {
+        let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
+        let stored = pending.first { $0.identifier == Self.reminderID }?.content.userInfo[Self.reminderDateKey] as? TimeInterval
+        let date = stored.map(Date.init(timeIntervalSince1970:))
+        guard date == reminderAt else {
+            reminderAt = date
+            return
+        }
+        guard let date else { return }
+        try? await Task.sleep(for: .seconds(max(date.timeIntervalSinceNow, 0)))
+        if !Task.isCancelled { reminderAt = nil }
     }
 }
 

@@ -42,4 +42,4 @@ This app was written specifically for the Japanese food guide website gatsugatsu
 
 ## 提出の順番
 
-サブスク帳の 4.3 の返事が来るまで、新規アプリは提出しない（アカウント単位の Extended Review 警告があるため）。
+サブスク帳は 2026-11-02 に取り下げたので、その返事は待たない。新規アプリの提出は月1本程度まで（アカウント単位の Extended Review 警告があるため）。

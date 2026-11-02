@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct GatsuGatsuApp: App {
@@ -9,6 +10,10 @@ struct GatsuGatsuApp: App {
     @State private var shelf = Shelf()
     @State private var booted = false
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        UNUserNotificationCenter.current().delegate = ForegroundReminders.shared
+    }
 
     var body: some Scene {
         WindowGroup {
