@@ -9,6 +9,7 @@ struct GameStateTests {
     private func makeGame() -> GameState {
         let game = GameState()
         game.stepDuration = .zero
+        game.repeatDelay = .zero
         game.messageInterval = .zero
         game.beatPause = .zero
         game.fadeDuration = .zero
@@ -67,6 +68,31 @@ struct GameStateTests {
         game.hold(nil)
         try await Task.sleep(for: .milliseconds(200))
         #expect(game.position == Point(x: 9, y: 9))
+    }
+
+    /// 1歩ぶんより すこし長い タップでも、2歩 進まない。
+    @Test func slightlyLongTapStillWalksOneStep() async throws {
+        let game = makeGame()
+        game.repeatDelay = .milliseconds(300)
+        game.position = Point(x: 10, y: 9)
+        game.hold(.left)
+        try await Task.sleep(for: .milliseconds(100))
+        game.hold(nil)
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(game.position == Point(x: 9, y: 9))
+    }
+
+    /// 十字キーの 指が ななめに ずれても 向きが 変わらず、はっきり ずらすと 変わる。
+    @Test func dPadKeepsDirectionUntilClearlyMoved() {
+        #expect(DPadInput.direction(dx: 5, dy: 5, current: nil) == nil)
+        #expect(DPadInput.direction(dx: 40, dy: 10, current: nil) == .right)
+        // ななめ少し上でも 右のまま。
+        #expect(DPadInput.direction(dx: 40, dy: -45, current: .right) == .right)
+        #expect(DPadInput.direction(dx: 20, dy: -60, current: .right) == .up)
+        // 真ん中へ ずれても 歩きやまない。
+        #expect(DPadInput.direction(dx: 3, dy: 3, current: .left) == .left)
+        // 同じ軸の 反対は すぐ変わる。
+        #expect(DPadInput.direction(dx: -40, dy: 0, current: .right) == .left)
     }
 
     /// 右を押したまま戦闘に入っても、戦闘後に勝手に右へ歩き出さない（不具合の再発防止）。
@@ -179,11 +205,11 @@ struct GameStateTests {
         for _ in 0..<10 where game.battle?.end == nil {
             await game.command(.attack)
         }
-        #expect(game.battle?.end == .won(exp: 2, gold: 3))
+        #expect(game.battle?.end == .won(exp: 4, gold: 6))
         await game.finishBattle()
         #expect(game.screen == .field)
-        #expect(game.hero.gold == 23)
-        #expect(game.hero.exp == 2)
+        #expect(game.hero.gold == 26)
+        #expect(game.hero.exp == 4)
     }
 
     /// 攻撃が当たるたびに「何発目か・ダメージ・会心か」が更新され、画面の動きのきっかけになる。
@@ -225,7 +251,7 @@ struct GameStateTests {
         game.advanceBattleMessage()
         await turn.value
         #expect(game.battle?.waitingForTap == false)
-        #expect(game.battle?.end == .won(exp: 2, gold: 3))
+        #expect(game.battle?.end == .won(exp: 4, gold: 6))
     }
 
     /// 敵の攻撃が当たるたびに勇者の被ダメージが記録され、画面を揺らすきっかけになる。

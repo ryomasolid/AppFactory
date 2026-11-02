@@ -38,7 +38,7 @@ let project = Project(
                     "CFBundleDisplayName": "地理の勇者",
                     "CFBundleDevelopmentRegion": "ja",
                     "CFBundleShortVersionString": "1.4",
-                    "CFBundleVersion": "11",
+                    "CFBundleVersion": "12",
                     "GADApplicationIdentifier": "$(GAD_APP_ID)",
                     "SKAdNetworkItems": .array(skAdNetworks.map { .dictionary(["SKAdNetworkIdentifier": .string("\($0).skadnetwork")]) }),
                     "ITSAppUsesNonExemptEncryption": false,

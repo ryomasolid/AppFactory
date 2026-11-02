@@ -103,7 +103,8 @@ struct Battle {
     var nextQuiz: Quiz? { quizzes.first }
     /// こうげきの ときに「ちしきの チャンス」が 出る 確率（分母）。会心の一撃のように ときどき出る。
     /// ボス戦は 見せ場なので 出やすくする。
-    var quizChanceDenominator: Int { isBoss ? 2 : 4 }
+    /// 戦いの 数が 半分に なったので、問題に 出会う 回数が へりすぎないよう ふだんの敵は 1/3 に。
+    var quizChanceDenominator: Int { isBoss ? 2 : 3 }
 
     private func index(of id: Int?) -> Int? {
         if let id, let found = enemies.firstIndex(where: { $0.id == id && !$0.isDead }) { return found }

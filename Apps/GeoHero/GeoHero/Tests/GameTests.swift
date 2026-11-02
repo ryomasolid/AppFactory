@@ -306,9 +306,9 @@ struct BattleTests {
         for _ in 0..<10 where end == nil {
             end = battle.take(.attack, rng: &rng).end
         }
-        #expect(end == .won(exp: 2, gold: 3))
-        #expect(battle.hero.gold == hero.gold + 3)
-        #expect(battle.hero.exp == 2)
+        #expect(end == .won(exp: 4, gold: 6))
+        #expect(battle.hero.gold == hero.gold + 6)
+        #expect(battle.hero.exp == 4)
     }
 
     @Test func weakHeroLosesToBoss() {

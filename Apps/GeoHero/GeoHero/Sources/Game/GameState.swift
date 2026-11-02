@@ -64,8 +64,9 @@ final class GameState {
     enum Overlay: Equatable { case none, menu, status, items, spells, shop, inn, recoverGold }
 
     /// 1歩ごとの遭遇率（分母）と、戦闘後に遭遇しない歩数。
-    static let encounterDenominator = 14
-    static let safeSteps = 4
+    /// ずっと歩くと 2.7秒に 1回 戦いになって「歩くたびに出る」と いわれたので、平均 36歩に のばした。
+    static let encounterDenominator = 24
+    static let safeSteps = 12
 
     var screen: Screen = .title
     var hero = Hero()
@@ -113,6 +114,8 @@ final class GameState {
     private(set) var pages: [[String]] = []
     @ObservationIgnored private var afterMessages: (() -> Void)?
     @ObservationIgnored private var stepsSinceBattle = 0
+    /// いまの 1歩が 押しはじめの 1歩か。
+    @ObservationIgnored private var isNewPressWalk = false
     @ObservationIgnored var rng = AnyRandomSource(SystemRandomSource())
     /// 1歩の時間と戦闘メッセージの間隔。テストではゼロにする。
     /// 画面をおおう黒幕の濃さ（0＝見えない、1＝まっくら）。濃さを変えるのは画面側のアニメーション。
@@ -138,6 +141,8 @@ final class GameState {
     @ObservationIgnored var sleepDuration: Duration = .milliseconds(1600)
 
     @ObservationIgnored var stepDuration: Duration = .milliseconds(150)
+    /// 押しはじめの 1歩のあと、歩きつづける前に 待つ時間。すこし長めの タップで 2歩 進まないように。
+    @ObservationIgnored var repeatDelay: Duration = .milliseconds(90)
     @ObservationIgnored var messageInterval: Duration = .milliseconds(450)
     /// 行動が変わるときの間（読んでから枠を空ける）。
     @ObservationIgnored var beatPause: Duration = .milliseconds(900)
@@ -291,6 +296,7 @@ final class GameState {
     /// 届くことがあり、端末によっては タップで まったく歩かなかったため）。
     func hold(_ direction: Direction?) {
         guard heldDirection != direction else { return }
+        let isNewPress = heldDirection == nil
         heldDirection = direction
         // ウィンドウが出ているあいだは、同じ十字キーで カーソルを動かす。
         if isChoosing {
@@ -298,6 +304,7 @@ final class GameState {
             return
         }
         guard let direction else { return }
+        if isNewPress { isNewPressWalk = true }
         guard walkLoop == nil else {
             tappedDirection = direction
             return
@@ -312,6 +319,10 @@ final class GameState {
                 if self.position == before {
                     try? await Task.sleep(for: .milliseconds(80))
                 }
+                if self.isNewPressWalk, self.heldDirection == current {
+                    try? await Task.sleep(for: self.repeatDelay)
+                }
+                self.isNewPressWalk = false
                 next = self.heldDirection ?? self.tappedDirection
                 self.tappedDirection = nil
             }

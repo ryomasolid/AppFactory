@@ -223,20 +223,74 @@ struct MapLayer: View {
     }
 }
 
+/// 十字キーの どこを 押しているかを 向きに直す。
+enum DPadInput {
+    /// 真ん中の これより内側は 向きを決めない。
+    static let deadZone: CGFloat = 14
+    /// いまの向きと ちがう軸へ 変わるのは、そちらへ これだけ はっきり ずれたときだけ。
+    static let turnRatio: CGFloat = 1.4
+
+    /// 指が ななめに ずれても 向きが ぱたぱた変わらず、真ん中に ずれても 歩きやまないようにする。
+    static func direction(dx: CGFloat, dy: CGFloat, current: Direction?) -> Direction? {
+        guard dx * dx + dy * dy > deadZone * deadZone else { return current }
+        var horizontal = abs(dx) > abs(dy)
+        if let current {
+            let wasHorizontal = current.delta.x != 0
+            let along = wasHorizontal ? abs(dx) : abs(dy)
+            let across = wasHorizontal ? abs(dy) : abs(dx)
+            horizontal = across > along * turnRatio ? !wasHorizontal : wasHorizontal
+        }
+        if horizontal { return dx > 0 ? .right : .left }
+        return dy > 0 ? .down : .up
+    }
+}
+
+/// A/B ボタン。指が ふれた瞬間に 効かせる（離したときに 効くと 反応が おそく感じる）。
+private struct PadButton: View {
+    let label: String
+    let tint: Color
+    let action: () -> Void
+    @State private var isPressed = false
+
+    var body: some View {
+        Text(label)
+            .font(Retro.font(24))
+            .foregroundStyle(.white)
+            .frame(width: 70, height: 70)
+            .background(Circle().fill(tint))
+            .brightness(isPressed ? 0.15 : 0)
+            .scaleEffect(isPressed ? 0.92 : 1)
+            .contentShape(Circle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !isPressed else { return }
+                        isPressed = true
+                        action()
+                    }
+                    .onEnded { _ in isPressed = false }
+            )
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { action() }
+    }
+}
+
 /// 十字キー（指を滑らせて向きを変えられる）と A/B ボタン。押している間は歩き続ける。
 struct ControlPad: View {
     @Environment(GameState.self) private var game
 
     private let padSize: CGFloat = 156
+    /// 十字キーの 絵より 外でも 押せる はば。
+    private let padSlop: CGFloat = 12
 
     var body: some View {
         HStack {
             dPad
             Spacer()
             HStack(alignment: .bottom, spacing: 18) {
-                roundButton("B") { game.pressB() }
+                PadButton(label: "B", tint: .blue.opacity(0.7)) { game.pressB() }
                     .padding(.top, 40)
-                roundButton("A") { game.pressA() }
+                PadButton(label: "A", tint: .red.opacity(0.8)) { game.pressA() }
                     .padding(.bottom, 40)
             }
         }
@@ -261,37 +315,24 @@ struct ControlPad: View {
             }
         }
         .frame(width: padSize, height: padSize)
+        .padding(padSlop)
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
-                    game.hold(direction(at: value.location))
+                    let center = padSize / 2 + padSlop
+                    game.hold(DPadInput.direction(
+                        dx: value.location.x - center,
+                        dy: value.location.y - center,
+                        current: game.heldDirection
+                    ))
                 }
                 .onEnded { _ in
                     game.hold(nil)
                 }
         )
+        .padding(-padSlop)
     }
-
-    private func roundButton(_ label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(Retro.font(24))
-                .foregroundStyle(.white)
-                .frame(width: 70, height: 70)
-                .background(Circle().fill(label == "A" ? Color.red.opacity(0.8) : Color.blue.opacity(0.7)))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func direction(at location: CGPoint) -> Direction? {
-        let dx = location.x - padSize / 2
-        let dy = location.y - padSize / 2
-        guard dx * dx + dy * dy > 14 * 14 else { return nil }
-        if abs(dx) > abs(dy) { return dx > 0 ? .right : .left }
-        return dy > 0 ? .down : .up
-    }
-
 
     private func arrow(_ direction: Direction) -> String {
         switch direction {

@@ -132,6 +132,8 @@
 - **このバージョンの新機能**:
 
 ```
+・モンスターが 出る回数を へらしました（そのぶん 経験値と ゴールドが ふえます）
+・十字キーと A・B ボタンを 操作しやすく しました
 ・冒険中（フィールドと 戦闘）は 画面の上に 広告が 出るように なりました
 ・宿屋と ぜんめつの あとの、見たい人だけが 見る広告は 今までどおりです
 ```
@@ -143,7 +145,7 @@
 ```
 
 - **英語の 説明文**の さいごの 行: `No in-app purchases. Plays fully offline. When online, a banner ad appears at the top of the screen during play. Optional ads: watch one at an inn or after a defeat for a free stay or to recover gold.`
-- **英語の 新機能**: `A banner ad now appears at the top of the screen during play. Optional ads at inns and after a defeat work as before.`
+- **英語の 新機能**: `Fewer random battles, with more EXP and gold from each. Easier D-pad and A/B controls. A banner ad now appears at the top of the screen during play. Optional ads at inns and after a defeat work as before.`
 - **プライバシーポリシー**: `privacy-geohero.html`（別リポ）を 書きかえる。
 - App のプライバシーの 答えと 年齢制限の「広告」は 1.3 の ままで よい（集める データの 種類は 変わらない）。
 - **App Review へのメモ**（英語）:
