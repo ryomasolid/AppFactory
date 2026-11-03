@@ -58,6 +58,16 @@ let project = Project(
             buildableFolders: ["GatsuGatsu/Tests"],
             dependencies: [.target(name: "GatsuGatsu")]
         ),
+        // 審査用の画面収録で、新規インストールからの流れを毎回同じ手順で操作する。
+        .target(
+            name: "GatsuGatsuUITests",
+            destinations: [.iPhone],
+            product: .uiTests,
+            bundleId: "tech.sesame.gatsugatsu.uitests",
+            infoPlist: .default,
+            buildableFolders: ["GatsuGatsu/UITests"],
+            dependencies: [.target(name: "GatsuGatsu")]
+        ),
     ],
     schemes: [
         .scheme(
@@ -65,6 +75,12 @@ let project = Project(
             shared: true,
             buildAction: .buildAction(targets: ["GatsuGatsu"]),
             testAction: .targets(["GatsuGatsuTests"])
+        ),
+        .scheme(
+            name: "GatsuGatsuReviewWalkthrough",
+            shared: true,
+            buildAction: .buildAction(targets: ["GatsuGatsu", "GatsuGatsuUITests"]),
+            testAction: .targets(["GatsuGatsuUITests"], configuration: .release)
         ),
     ]
 )
