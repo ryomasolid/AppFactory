@@ -120,7 +120,7 @@ final class Navigator {
         Binding(get: { self.paths[tab] ?? [] }, set: { self.paths[tab] = $0 })
     }
 
-    /// 撮影と動作確認用の起動引数（-tab log / -push guide:gohan-gram）。
+    /// 撮影と動作確認用の起動引数（-tab log / -push guide:gohan-gram / -push japan:博多 / -homeQuery 名古屋）。
     func applyLaunchArguments() {
         let defaults = UserDefaults.standard
         if let raw = defaults.string(forKey: "tab"), let tab = AppTab(rawValue: raw) { self.tab = tab }
@@ -132,6 +132,7 @@ final class Navigator {
         case "report": .report(parts[1])
         case "station": .station(parts[1])
         case "tool": ToolKind(rawValue: parts[1]).map(Route.tool)
+        case "japan": JapanStations.shared.all.first { $0.name == parts[1] }.map { Route.japanStation($0.id) }
         case "screen": parts[1] == "settings" ? .settings : (parts[1] == "month" ? .monthReport : .search)
         default: nil
         }

@@ -28,6 +28,10 @@ struct HomeScreen: View {
             .padding(16)
         }
         .scrollDismissesKeyboard(.immediately)
+        .onAppear {
+            // 撮影用（-homeQuery 名古屋）。
+            if query.isEmpty, let preset = UserDefaults.standard.string(forKey: "homeQuery") { query = preset }
+        }
         .paperBackground()
         .navigationTitle("ガツガツグルメ")
         .navigationBarTitleDisplayMode(.inline)
