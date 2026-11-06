@@ -16,7 +16,7 @@ struct ReportCard: View {
                     .clipped()
                 VStack(alignment: .leading, spacing: 3) {
                     Text("\(report.station)駅・\(report.genre)").font(.caption2.weight(.bold)).foregroundStyle(.tint)
-                    Text(report.shopName).font(.subheadline.weight(.heavy)).lineLimit(1)
+                    Text(report.shopName).font(.subheadline.weight(.semibold)).lineLimit(1)
                     Text(report.orderedItem).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
                 .padding(10)
@@ -37,8 +37,8 @@ struct GuideRow: View {
         NavigationLink(value: Route.guide(guide.slug)) {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(guide.category).font(.caption2.weight(.black)).foregroundStyle(.tint)
-                    Text(guide.cardTitle).font(.subheadline.weight(.heavy)).multilineTextAlignment(.leading)
+                    Text(guide.category).font(.caption2.weight(.bold)).foregroundStyle(.tint)
+                    Text(guide.cardTitle).font(.subheadline.weight(.semibold)).multilineTextAlignment(.leading)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
@@ -60,9 +60,9 @@ struct StationRow: View {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(station.name).font(.headline.weight(.black))
+                        Text(station.name).font(.headline.weight(.bold))
                         if !station.reportSlugs.isEmpty {
-                            Text("実食\(station.reportSlugs.count)").font(.caption2.weight(.black))
+                            Text("実食\(station.reportSlugs.count)").font(.caption2.weight(.bold))
                                 .foregroundStyle(.white).padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(.tint, in: .capsule)
                         }

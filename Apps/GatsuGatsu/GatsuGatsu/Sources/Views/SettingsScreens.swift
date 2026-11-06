@@ -20,7 +20,7 @@ struct SettingsScreen: View {
 
     private var adFree: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("広告を消す").font(.headline.weight(.black))
+            Text("広告を消す").font(.headline.weight(.bold))
             if ads.isAdFree {
                 Label("\(ads.adFreeUntil.formatted(date: .omitted, time: .shortened)) まで広告を止めています", systemImage: "checkmark.circle.fill")
                     .font(.footnote.weight(.bold)).foregroundStyle(.green)
@@ -96,6 +96,6 @@ struct PrivacyScreen: View {
     }
 
     private func heading(_ text: String) -> some View {
-        Text(text).font(.headline.weight(.black)).padding(.top, 6)
+        Text(text).font(.headline.weight(.bold)).padding(.top, 6)
     }
 }

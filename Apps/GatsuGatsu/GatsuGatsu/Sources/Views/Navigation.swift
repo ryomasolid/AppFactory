@@ -7,16 +7,16 @@ enum AppTab: String, CaseIterable, Hashable {
     var title: String {
         switch self {
         case .home: "ホーム"
-        case .stations: "駅"
-        case .read: "読む"
+        case .stations: "駅で探す"
+        case .read: "記事"
         case .tools: "ツール"
-        case .log: "ガツログ"
+        case .log: "記録"
         }
     }
 
     var icon: String {
         switch self {
-        case .home: "fork.knife"
+        case .home: "house.fill"
         case .stations: "tram.fill"
         case .read: "book.fill"
         case .tools: "plusminus.circle.fill"

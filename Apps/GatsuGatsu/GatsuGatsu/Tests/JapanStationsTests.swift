@@ -83,4 +83,25 @@ struct JapanStationsTests {
         #expect(url?.absoluteString.hasSuffix("/@34.57153,133.23647,15z") == true)
         #expect(url?.absoluteString.contains("%20") == true)
     }
+
+    @Test func 記事のない駅もいつもの駅に保存して開き直せる() {
+        let fuchu = japan.all.filter { $0.name == "府中" }
+        #expect(Set(fuchu.map(\.shelfKey)).count == fuchu.count)
+        for station in fuchu {
+            #expect(japan.station(shelfKey: station.shelfKey)?.id == station.id)
+            let saved = japan.savedStation(station.shelfKey)
+            #expect(saved?.name == "府中")
+            #expect(saved?.route == .japanStation(station.id))
+        }
+    }
+
+    @Test func 記事の駅は駅名のまま保存する() {
+        let saved = japan.savedStation("新宿")
+        #expect(saved?.name == "新宿")
+        #expect(saved?.route == .station("新宿"))
+    }
+
+    @Test func 消えた駅の鍵は無視する() {
+        #expect(japan.savedStation("存在しない駅|謎線") == nil)
+    }
 }

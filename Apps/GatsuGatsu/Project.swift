@@ -39,7 +39,7 @@ let project = Project(
                 "CFBundleDisplayName": "ガツガツグルメ",
                 "CFBundleDevelopmentRegion": "ja",
                 "CFBundleShortVersionString": "1.1",
-                "CFBundleVersion": "3",
+                "CFBundleVersion": "6",
                 "ITSAppUsesNonExemptEncryption": false,
                 "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
                 "GADApplicationIdentifier": "$(GAD_APP_ID)",

@@ -25,7 +25,7 @@ struct ReadScreen: View {
             .padding(16)
         }
         .paperBackground()
-        .navigationTitle("読む")
+        .navigationTitle("記事")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(value: Route.search) { Image(systemName: "magnifyingglass").accessibilityLabel("検索") }
@@ -74,7 +74,7 @@ struct GuideScreen: View {
         if let guide = library.guide(slug) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(guide.category).font(.caption.weight(.black)).foregroundStyle(.tint)
+                    Text(guide.category).font(.caption.weight(.bold)).foregroundStyle(.tint)
                     Text(guide.title).font(.system(size: 24, weight: .black))
                     Text("更新 \(DateText.japanese(guide.updatedAt))").font(.caption).foregroundStyle(.secondary)
                     Text(guide.lead).font(.body.weight(.semibold)).lineSpacing(6)
@@ -119,7 +119,7 @@ struct ReportScreen: View {
                             if let caption = hero.caption { Text(caption).font(.caption).foregroundStyle(.secondary) }
                         }
                     }
-                    Text("運営者の実食記録・\(report.genre)").font(.caption.weight(.black)).foregroundStyle(.tint)
+                    Text("運営者の実食記録・\(report.genre)").font(.caption.weight(.bold)).foregroundStyle(.tint)
                     Text(report.title).font(.system(size: 23, weight: .black))
                     facts(report)
                     Text(report.lead).lineSpacing(6)
@@ -160,7 +160,7 @@ struct ReportScreen: View {
 
     private func row(_ title: String, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(title).font(.caption.weight(.black)).foregroundStyle(.secondary).frame(width: 44, alignment: .leading)
+            Text(title).font(.caption.weight(.bold)).foregroundStyle(.secondary).frame(width: 44, alignment: .leading)
             Text(value).font(.footnote.weight(.semibold))
         }
     }

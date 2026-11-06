@@ -8,23 +8,21 @@ extension Color {
     static let softOrange = Color("SoftOrange")
 }
 
-/// アイコンの漫画っぽさに合わせた、太い縁と影のカード。
+/// 白いカード。縁は細く、影は薄くして、中身（数字と写真）を主役にする。
 struct Sticker: ViewModifier {
     var fill: Color = .card
-    var radius: CGFloat = 14
+    var radius: CGFloat = 16
 
     func body(content: Content) -> some View {
         content
             .background(fill, in: .rect(cornerRadius: radius))
-            .overlay { RoundedRectangle(cornerRadius: radius).stroke(Color.ink, lineWidth: 2) }
-            .background {
-                RoundedRectangle(cornerRadius: radius).fill(Color.ink).offset(x: 3, y: 3)
-            }
+            .overlay { RoundedRectangle(cornerRadius: radius).stroke(Color.ink.opacity(0.08), lineWidth: 1) }
+            .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
     }
 }
 
 extension View {
-    func sticker(fill: Color = .card, radius: CGFloat = 14) -> some View {
+    func sticker(fill: Color = .card, radius: CGFloat = 16) -> some View {
         modifier(Sticker(fill: fill, radius: radius))
     }
 
@@ -38,8 +36,7 @@ struct SectionTitle: View {
     let text: String
     var body: some View {
         HStack(spacing: 8) {
-            Capsule().fill(Color.accentColor).frame(width: 6, height: 22)
-            Text(text).font(.system(size: 20, weight: .black))
+            Text(text).font(.system(size: 19, weight: .bold))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityAddTraits(.isHeader)
@@ -74,7 +71,7 @@ struct Chip: View {
                 .padding(.vertical, 8)
                 .foregroundStyle(selected ? Color.white : Color.primary)
                 .background(selected ? Color.accentColor : Color.card, in: .capsule)
-                .overlay { Capsule().stroke(Color.ink, lineWidth: 1.5) }
+                .overlay { Capsule().stroke(selected ? Color.clear : Color.ink.opacity(0.15), lineWidth: 1) }
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -90,11 +87,11 @@ struct PrimaryButtonLabel: View {
             if let systemImage { Image(systemName: systemImage) }
             Text(text)
         }
-        .font(.headline.weight(.heavy))
+        .font(.headline.weight(.semibold))
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 13)
-        .sticker(fill: .accentColor, radius: 12)
+        .padding(.vertical, 14)
+        .background(Color.accentColor, in: .rect(cornerRadius: 14))
     }
 }
 

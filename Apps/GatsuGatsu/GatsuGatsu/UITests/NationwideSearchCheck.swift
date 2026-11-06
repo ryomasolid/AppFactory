@@ -8,7 +8,7 @@ final class NationwideSearchCheck: XCTestCase {
         app.launch()
         dismissPrompts(app)
 
-        app.tabBars.buttons["駅"].tap()
+        app.tabBars.buttons["駅で探す"].tap()
         snapshot(app, "1-index")
         let field = app.searchFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5))
@@ -22,9 +22,12 @@ final class NationwideSearchCheck: XCTestCase {
         first.tap()
         sleep(2)
         snapshot(app, "3-fuchu-station")
+        app.navigationBars.buttons["いつもの駅にする"].tap()
+        sleep(1)
+        XCTAssertTrue(app.navigationBars.buttons["いつもの駅から外す"].exists)
 
         app.navigationBars.buttons.firstMatch.tap()
-        sleep(25)
+        sleep(2)
         snapshot(app, "4-back")
         field.buttons.firstMatch.tap()  // 入力を消す
         field.tap()
@@ -33,6 +36,16 @@ final class NationwideSearchCheck: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "三鷹駅")).firstMatch.tap()
         sleep(2)
         snapshot(app, "5-mitaka")
+
+        app.tabBars.buttons["ホーム"].tap()
+        sleep(2)
+        let chip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "府中")).firstMatch
+        XCTAssertTrue(chip.waitForExistence(timeout: 5))
+        snapshot(app, "6-home-saved")
+        chip.tap()
+        sleep(2)
+        XCTAssertTrue(app.staticTexts["京王線"].exists)
+        app.navigationBars.buttons["いつもの駅から外す"].tap()
     }
 
     private func dismissPrompts(_ app: XCUIApplication) {

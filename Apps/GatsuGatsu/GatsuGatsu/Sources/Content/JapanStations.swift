@@ -14,6 +14,10 @@ struct JapanStation: Identifiable, Hashable {
         lines.count <= 3 ? lines.joined(separator: "・") : lines.prefix(3).joined(separator: "・") + " ほか"
     }
 
+    /// 「いつもの駅」に保存するときの鍵。並び順の番号はデータを作り直すと変わるので、駅名と路線で持つ。
+    /// 記事の駅は駅名だけで保存しているので、「|」の有無で見分けられる。
+    var shelfKey: String { "\(name)|\(lines.first ?? "")" }
+
     func kilometers(to other: JapanStation) -> Double {
         let lat = (latitude + other.latitude) / 2 * .pi / 180
         let dy = (latitude - other.latitude) * 111.0
@@ -67,6 +71,20 @@ struct JapanStations {
     func station(_ id: Int) -> JapanStation? { all.indices.contains(id) ? all[id] : nil }
 
     func articleName(for station: JapanStation) -> String? { articleByID[station.id] }
+
+    func station(shelfKey key: String) -> JapanStation? {
+        let parts = key.split(separator: "|", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { return nil }
+        return all.first { $0.name == parts[0] && $0.lines.contains(parts[1]) }
+            ?? all.first { $0.name == parts[0] && $0.lines.first == parts[1] }
+    }
+
+    /// 「いつもの駅」の鍵から、表示名と開く画面を決める。記事の駅は駅名、ほかは「駅名|路線」。
+    func savedStation(_ key: String) -> (name: String, route: Route)? {
+        guard key.contains("|") else { return (key, .station(key)) }
+        guard let station = station(shelfKey: key) else { return nil }
+        return (station.name, .japanStation(station.id))
+    }
 
     /// 駅名で探す。名前が同じ駅 → 名前の頭が合う駅 → 名前に含む駅 → 路線名に含む駅 の順。
     func search(_ query: String, limit: Int = 40) -> (hits: [JapanStation], total: Int) {

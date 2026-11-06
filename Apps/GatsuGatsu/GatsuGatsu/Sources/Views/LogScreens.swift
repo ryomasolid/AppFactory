@@ -21,7 +21,7 @@ struct LogScreen: View {
                 week
                 NavigationLink(value: Route.monthReport) {
                     HStack {
-                        Label("今月のまとめ", systemImage: "calendar").font(.subheadline.weight(.black))
+                        Label("今月のまとめ", systemImage: "calendar").font(.subheadline.weight(.bold))
                         Spacer()
                         Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
                     }
@@ -35,7 +35,7 @@ struct LogScreen: View {
             .padding(16)
         }
         .paperBackground()
-        .navigationTitle("ガツログ")
+        .navigationTitle("食事の記録")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { addingBite = true } label: { Image(systemName: "plus") }.accessibilityLabel("記録する")
@@ -47,7 +47,7 @@ struct LogScreen: View {
     private var today: some View {
         let sum = log.stats.summary(of: log.stats.onDay(.now))
         return VStack(alignment: .leading, spacing: 10) {
-            Text("きょう").font(.subheadline.weight(.black))
+            Text("きょう").font(.subheadline.weight(.bold))
             BigNumber(value: sum.kcal.whole, unit: "kcal", size: 46)
             HStack(spacing: 14) {
                 macro("P", sum.protein)
@@ -66,14 +66,14 @@ struct LogScreen: View {
 
     private func macro(_ letter: String, _ grams: Double) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
-            Text(letter).font(.caption.weight(.black)).foregroundStyle(.tint)
+            Text(letter).font(.caption.weight(.bold)).foregroundStyle(.tint)
             Text("\(grams.whole)g").font(.footnote.weight(.bold)).monospacedDigit()
         }
     }
 
     private var week: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("この7日").font(.subheadline.weight(.black))
+            Text("この7日").font(.subheadline.weight(.bold))
             Chart(log.stats.lastWeek()) { total in
                 BarMark(x: .value("日", total.day, unit: .day), y: .value("kcal", total.kcal))
                     .foregroundStyle(Color.accentColor)
@@ -102,9 +102,9 @@ struct LogScreen: View {
         ForEach(grouped, id: \.day) { group in
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text(group.day.formatted(.dateTime.month().day().weekday().locale(Locale(identifier: "ja_JP")))).font(.subheadline.weight(.black))
+                    Text(group.day.formatted(.dateTime.month().day().weekday().locale(Locale(identifier: "ja_JP")))).font(.subheadline.weight(.bold))
                     Spacer()
-                    Text("\(log.stats.summary(of: group.bites).kcal.whole)kcal").font(.subheadline.weight(.black)).monospacedDigit()
+                    Text("\(log.stats.summary(of: group.bites).kcal.whole)kcal").font(.subheadline.weight(.bold)).monospacedDigit()
                 }
                 ForEach(group.bites) { bite in
                     HStack {
@@ -261,7 +261,7 @@ struct MonthReportScreen: View {
     private var locked: some View {
         VStack(spacing: 14) {
             Image(systemName: "lock.fill").font(.largeTitle).foregroundStyle(.tint)
-            Text("短い動画広告を1本見ると、24時間ひらけます").font(.headline.weight(.black)).multilineTextAlignment(.center)
+            Text("短い動画広告を1本見ると、24時間ひらけます").font(.headline.weight(.bold)).multilineTextAlignment(.center)
             Text("今月の合計カロリー、茶碗に換算した量、いちばん食べた日、よく行ったお店が分かります。記録やツールは広告を見なくても使えます。")
                 .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             RewardButton(reward: .monthReport, title: "広告を見てひらく")
@@ -274,13 +274,13 @@ struct MonthReportScreen: View {
         let month = log.stats.monthReport()
         return VStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(Date.now.formatted(.dateTime.year().month().locale(Locale(identifier: "ja_JP")))).font(.subheadline.weight(.black))
+                Text(Date.now.formatted(.dateTime.year().month().locale(Locale(identifier: "ja_JP")))).font(.subheadline.weight(.bold))
                 BigNumber(value: month.summary.kcal.whole, unit: "kcal", size: 42)
-                Text("ご飯にすると茶碗 \(month.summary.riceBowls.whole)杯ぶん").font(.subheadline.weight(.heavy))
+                Text("ご飯にすると茶碗 \(month.summary.riceBowls.whole)杯ぶん").font(.subheadline.weight(.semibold))
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .foregroundStyle(Color(red: 0.11, green: 0.1, blue: 0.09))
+            .foregroundStyle(Color.primary)
             .sticker(fill: .mustard)
 
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible())], spacing: 12) {
@@ -297,7 +297,7 @@ struct MonthReportScreen: View {
     private func tile(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.caption.weight(.bold)).foregroundStyle(.secondary)
-            Text(value).font(.headline.weight(.black)).lineLimit(1).minimumScaleFactor(0.6)
+            Text(value).font(.headline.weight(.bold)).lineLimit(1).minimumScaleFactor(0.6)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

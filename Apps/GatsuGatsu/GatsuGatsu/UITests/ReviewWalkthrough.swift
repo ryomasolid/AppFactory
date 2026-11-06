@@ -30,21 +30,21 @@ final class ReviewWalkthrough: XCTestCase {
         pause(4)
 
         // 駅
-        openTab("駅"); pause(2)
+        openTab("駅で探す"); pause(2)
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "新宿")).firstMatch); pause(3)
         app.swipeUp(velocity: .slow); pause(2)
         app.swipeUp(velocity: .slow); pause(2)
         app.swipeUp(velocity: .slow); pause(2)
 
         // 読む › 実食レポート
-        openTab("読む"); pause(2)
+        openTab("記事"); pause(2)
         tap(app.buttons.containing("花木流味噌 日吉店の味噌ラーメン")); pause(3)
         app.swipeUp(velocity: .slow); pause(2)
         app.swipeUp(velocity: .slow); pause(2)
         app.swipeUp(velocity: .slow); pause(2)
 
         // ガツログ › 食事を1件記録
-        openTab("ガツログ"); pause(2)
+        openTab("記録"); pause(2)
         tap(app.staticTexts["食べたものを記録"]); pause(2)
         tap(app.staticTexts["牛丼（並盛）"]); pause(3)
         tap(app.buttons["完了"]); pause(3)

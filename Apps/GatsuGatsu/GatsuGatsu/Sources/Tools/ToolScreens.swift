@@ -10,7 +10,7 @@ struct ToolsScreen: View {
                         HStack(spacing: 12) {
                             Image(systemName: kind.icon).font(.title2).foregroundStyle(.tint).frame(width: 36)
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(kind.title).font(.subheadline.weight(.black))
+                                Text(kind.title).font(.subheadline.weight(.bold))
                                 Text(kind.blurb).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading)
                             }
                             Spacer(minLength: 0)
@@ -66,7 +66,7 @@ private struct GramField: View {
             TextField("0", text: $text)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
-                .font(.title3.weight(.black).monospacedDigit())
+                .font(.title3.weight(.bold).monospacedDigit())
                 .frame(width: 90)
                 .textFieldStyle(.roundedBorder)
             Text("g").font(.subheadline.weight(.bold))
@@ -82,7 +82,7 @@ private struct ResultRow: View {
         HStack(alignment: .firstTextBaseline) {
             Text(title).font(.footnote)
             Spacer()
-            Text(value).font(.headline.weight(.black)).monospacedDigit()
+            Text(value).font(.headline.weight(.bold)).monospacedDigit()
         }
     }
 }
@@ -100,7 +100,7 @@ struct QuantityTool: View {
             let rice = Double(riceText) ?? 0
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("麺のグラム数を換算").font(.headline.weight(.black))
+                Text("麺のグラム数を換算").font(.headline.weight(.bold))
                 GramField(title: "メニューの表記", text: $noodleText)
                 Picker("表記", selection: $isBoiledFigure) {
                     Text("茹で前").tag(false)
@@ -117,7 +117,7 @@ struct QuantityTool: View {
             .sticker()
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("ご飯のグラム数を換算").font(.headline.weight(.black))
+                Text("ご飯のグラム数を換算").font(.headline.weight(.bold))
                 GramField(title: "ご飯の量", text: $riceText)
                 Divider()
                 ResultRow(title: "茶碗にすると", value: "約\(Portions.riceBowls(grams: rice).oneDecimal)杯ぶん")
@@ -224,7 +224,7 @@ struct CalorieTool: View {
             if count > 0 {
                 Button { change(item, chain: chain, by: -1) } label: { Image(systemName: "minus.circle.fill").font(.title2).foregroundStyle(.secondary) }
                     .buttonStyle(.plain).accessibilityLabel("\(item.name)を減らす")
-                Text("\(count)").font(.subheadline.weight(.black)).monospacedDigit()
+                Text("\(count)").font(.subheadline.weight(.bold)).monospacedDigit()
             }
             Button { change(item, chain: chain, by: 1) } label: { Image(systemName: "plus.circle.fill").font(.title2).foregroundStyle(.tint) }
                 .buttonStyle(.plain).accessibilityLabel("\(item.name)を足す")
@@ -275,7 +275,7 @@ struct QueueTool: View {
         ToolPage(kind: .queue) {
             result
             VStack(alignment: .leading, spacing: 10) {
-                Text("お店のジャンル").font(.subheadline.weight(.black))
+                Text("お店のジャンル").font(.subheadline.weight(.bold))
                 ForEach(library.queueGenres) { option in
                     Button { genre = option } label: {
                         HStack {
@@ -292,9 +292,9 @@ struct QueueTool: View {
                     }
                     .buttonStyle(.plain)
                 }
-                Text("並んでいる人数: \(Int(people))人").font(.subheadline.weight(.black)).padding(.top, 4)
+                Text("並んでいる人数: \(Int(people))人").font(.subheadline.weight(.bold)).padding(.top, 4)
                 Slider(value: $people, in: 0...60, step: 1).accessibilityLabel("並んでいる人数")
-                Text("お店の席数: \(seats)席").font(.subheadline.weight(.black))
+                Text("お店の席数: \(seats)席").font(.subheadline.weight(.bold))
                 HStack(spacing: 8) {
                     ForEach(library.seatPresets) { preset in
                         Chip(label: "\(preset.label) \(preset.seats)", selected: seats == preset.seats) { seats = preset.seats }
@@ -311,9 +311,9 @@ struct QueueTool: View {
 
     private var result: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("待ち時間の目安").font(.subheadline.weight(.black))
+            Text("待ち時間の目安").font(.subheadline.weight(.bold))
             BigNumber(value: "\(minutes)", unit: "分", size: 52)
-            Text("入店予定 \(arrival.formatted(date: .omitted, time: .shortened))ごろ").font(.subheadline.weight(.heavy))
+            Text("入店予定 \(arrival.formatted(date: .omitted, time: .shortened))ごろ").font(.subheadline.weight(.semibold))
             Text(QueueEstimate.advice(minutes: minutes)).font(.footnote)
             if let reminderAt {
                 HStack {
@@ -435,7 +435,7 @@ struct BuffetTool: View {
         let price = course?.price ?? 0
         let left = price - eaten
         return VStack(alignment: .leading, spacing: 8) {
-            Text(left <= 0 ? "元を取りました！" : "元取りまであと").font(.subheadline.weight(.black))
+            Text(left <= 0 ? "元を取りました！" : "元取りまであと").font(.subheadline.weight(.bold))
             BigNumber(value: abs(left).formatted(.number.locale(Locale(identifier: "ja_JP"))), unit: left <= 0 ? "円おトク" : "円", size: 44)
             ProgressView(value: price > 0 ? min(Double(eaten) / Double(price), 1) : 0)
             Text("食べた分 \(eaten.yen) ／ コース \(price.yen)").font(.caption)
@@ -459,7 +459,7 @@ struct BuffetTool: View {
             if count > 0 {
                 Button { counts[dish.name] = max(count - 1, 0) } label: { Image(systemName: "minus.circle.fill").font(.title2).foregroundStyle(.secondary) }
                     .buttonStyle(.plain).accessibilityLabel("\(dish.name)を減らす")
-                Text("\(count)").font(.subheadline.weight(.black)).monospacedDigit()
+                Text("\(count)").font(.subheadline.weight(.bold)).monospacedDigit()
             }
             Button { counts[dish.name] = count + 1 } label: { Image(systemName: "plus.circle.fill").font(.title2).foregroundStyle(.tint) }
                 .buttonStyle(.plain).accessibilityLabel("\(dish.name)を足す")
@@ -542,7 +542,7 @@ struct SplitTool: View {
             TextField("0", text: text)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
-                .font(.title3.weight(.black).monospacedDigit())
+                .font(.title3.weight(.bold).monospacedDigit())
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 130)
             Text(suffix).font(.subheadline.weight(.bold))
@@ -551,7 +551,7 @@ struct SplitTool: View {
 
     private func resultCard(_ result: SplitBill.Result) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("お一人あたり").font(.subheadline.weight(.black))
+            Text("お一人あたり").font(.subheadline.weight(.bold))
             ForEach(result.lines) { line in
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(line.name)（\(line.count)人）").font(.footnote.weight(.semibold))

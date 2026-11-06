@@ -32,7 +32,7 @@ private struct BlockView: View {
         case .heading(let text):
             SectionTitle(text: text).padding(.top, 10)
         case .subheading(let text):
-            Text(text).font(.headline.weight(.heavy))
+            Text(text).font(.headline.weight(.semibold))
         case .paragraph(let text):
             Text(text).lineSpacing(6)
         case .bullets(let items):
@@ -49,10 +49,10 @@ private struct BlockView: View {
                 ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                     HStack(alignment: .top, spacing: 10) {
                         Text("\(index + 1)")
-                            .font(.subheadline.weight(.black)).foregroundStyle(.white)
+                            .font(.subheadline.weight(.bold)).foregroundStyle(.white)
                             .frame(width: 26, height: 26).background(.tint, in: .circle)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(step.title).font(.subheadline.weight(.heavy))
+                            Text(step.title).font(.subheadline.weight(.semibold))
                             Text(step.body).lineSpacing(4)
                         }
                     }
@@ -66,7 +66,7 @@ private struct BlockView: View {
             SectionTitle(text: "よくある質問").padding(.top, 10)
             ForEach(items, id: \.q) { item in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Q. \(item.q)").font(.subheadline.weight(.heavy))
+                    Text("Q. \(item.q)").font(.subheadline.weight(.semibold))
                     Text(item.a).lineSpacing(4)
                 }
             }
@@ -87,7 +87,7 @@ private struct BlockView: View {
             if let route = Route(href: href) {
                 NavigationLink(value: route) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Label(label, systemImage: "arrow.right.circle.fill").font(.subheadline.weight(.heavy)).foregroundStyle(.tint)
+                        Label(label, systemImage: "arrow.right.circle.fill").font(.subheadline.weight(.semibold)).foregroundStyle(.tint)
                         if let text { Text(text).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.leading) }
                     }
                     .padding(12)
@@ -112,12 +112,12 @@ private struct DataTable: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if let caption { Text(caption).font(.subheadline.weight(.heavy)) }
+            if let caption { Text(caption).font(.subheadline.weight(.semibold)) }
             ScrollView(.horizontal, showsIndicators: false) {
                 Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
                     GridRow {
                         ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
-                            cell(header).font(.caption.weight(.black)).background(Color.softOrange)
+                            cell(header).font(.caption.weight(.bold)).background(Color.softOrange)
                         }
                     }
                     ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
@@ -155,7 +155,7 @@ private struct BarsBlock: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.subheadline.weight(.heavy))
+            Text(title).font(.subheadline.weight(.semibold))
             ForEach(items, id: \.label) { item in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.label).font(.caption)
@@ -166,7 +166,7 @@ private struct BarsBlock: View {
                         }
                         .frame(height: 16)
                         Text("\(item.value.formatted(.number.locale(Locale(identifier: "ja_JP"))))\(unit)")
-                            .font(.caption.weight(.heavy)).monospacedDigit().frame(width: 84, alignment: .trailing)
+                            .font(.caption.weight(.semibold)).monospacedDigit().frame(width: 84, alignment: .trailing)
                     }
                 }
             }
@@ -189,8 +189,8 @@ private struct FirstHandLink: View {
                     PhotoView(name: hero.src, alt: hero.alt).frame(width: 84, height: 84).clipShape(.rect(cornerRadius: 8))
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("運営者の実食記録").font(.caption2.weight(.black)).foregroundStyle(.tint)
-                    Text("\(report.shopName)（\(report.station)）").font(.subheadline.weight(.heavy))
+                    Text("運営者の実食記録").font(.caption2.weight(.bold)).foregroundStyle(.tint)
+                    Text("\(report.shopName)（\(report.station)）").font(.subheadline.weight(.semibold))
                     Text(text).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.leading)
                 }
             }
@@ -207,7 +207,7 @@ struct SourcesList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("出典・確認日").font(.caption.weight(.black))
+            Text("出典・確認日").font(.caption.weight(.bold))
             ForEach(items, id: \.label) { item in
                 let line = item.label + (item.checkedAt.map { "（\($0) 確認）" } ?? "")
                 if let raw = item.url, let url = URL(string: raw) {
