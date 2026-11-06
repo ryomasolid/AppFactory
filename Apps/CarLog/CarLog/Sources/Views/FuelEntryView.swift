@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftData
 import SwiftUI
 
@@ -11,6 +12,7 @@ struct FuelEntryView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.requestReview) private var requestReview
 
     @State private var date: Date
     @State private var odometerText: String
@@ -183,7 +185,17 @@ struct FuelEntryView: View {
             new.vehicle = vehicle
             modelContext.insert(new)
         }
+        let asksForReview = record == nil && ReviewMoment.shouldAsk(fuelRecordCount: vehicle.fuelRecords.count)
         finish()
+        if asksForReview {
+            ReviewMoment.markAsked()
+            // シートが閉じきってから出す。
+            let ask = requestReview
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(700))
+                ask()
+            }
+        }
     }
 
     private func delete() {

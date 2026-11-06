@@ -1,4 +1,5 @@
 import PhotosUI
+import StoreKit
 import SwiftData
 import SwiftUI
 
@@ -9,6 +10,7 @@ struct ItemEditorView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
 
     /// 編集中の写真。既存の添付（attachment）か、まだ保存していない画像。
     private struct EditorImage: Identifiable {
@@ -507,7 +509,15 @@ struct ItemEditorView: View {
 
         let context = modelContext
         Task { await NotificationScheduler.shared.rebuild(context: context) }
+        let asksForRating = item == nil && StoreRating.wantsToAsk(after: modelContext)
         onSaved(target)
         dismiss()
+        if asksForRating {
+            let ask = requestReview
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(900))
+                ask()
+            }
+        }
     }
 }

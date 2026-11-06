@@ -34,7 +34,7 @@ struct FloorPlanListView: View {
                     }
                 }
             }
-            .navigationTitle("PestMap")
+            .navigationTitle("害虫対策マップ")
             .navigationDestination(for: FloorPlan.self) { plan in
                 FloorPlanEditorView(plan: plan)
             }

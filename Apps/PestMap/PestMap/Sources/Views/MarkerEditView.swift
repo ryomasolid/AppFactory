@@ -1,4 +1,5 @@
 import PhotosUI
+import StoreKit
 import SwiftData
 import SwiftUI
 import UIKit
@@ -8,6 +9,7 @@ import UIKit
 struct MarkerEditView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
     @Bindable var marker: PestMarker
     let planName: String
 
@@ -176,7 +178,7 @@ struct MarkerEditView: View {
                 marker.notificationID = id
                 dismiss()
             case .notAuthorized:
-                alertMessage = String(localized: "通知が許可されていません。設定アプリ →「PestMap」→「通知」で許可してください。")
+                alertMessage = String(localized: "通知が許可されていません。設定アプリ →「害虫対策マップ」→「通知」で許可してください。")
             case .invalidDate:
                 alertMessage = String(localized: "過去の日時には設定できません。未来の日時を選んでください。")
             case .failed:
@@ -207,7 +209,16 @@ struct MarkerEditView: View {
             cancelReminder()
             hasReminder = false
         }
+        try? context.save()
+        let asks = ReviewTiming.isRightAfterDone(in: context)
         dismiss()
+        if asks {
+            let ask = requestReview
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(800))
+                ask()
+            }
+        }
     }
 
     private func schedule(at date: Date) async -> NotificationService.ScheduleOutcome {

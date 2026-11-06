@@ -1,9 +1,11 @@
+import StoreKit
 import SwiftData
 import SwiftUI
 
 struct CalculatorView: View {
     @Environment(StoreManager.self) private var store
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.requestReview) private var requestReview
 
     @State private var input = TeikiInput()
     @State private var editingTrip: ExtraTrip?
@@ -240,6 +242,16 @@ struct CalculatorView: View {
         let route = SavedRoute(name: name.isEmpty ? "無題の区間" : name, input: input)
         modelContext.insert(route)
         try? modelContext.save()
+
+        let ask = RatingAsk()
+        if ask.isDue {
+            ask.remember()
+            // 保存の確認ダイアログが閉じてから出す。
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1))
+                requestReview()
+            }
+        }
     }
 }
 

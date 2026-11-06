@@ -5,10 +5,16 @@
       "comment" : "Bundle display name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PestMap"
+          }
+        },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "PestMap"
+            "state" : "translated",
+            "value" : "害虫対策マップ"
           }
         }
       }
@@ -17,10 +23,16 @@
       "comment" : "Bundle name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PestMap"
+          }
+        },
         "ja" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "PestMap"
+            "state" : "translated",
+            "value" : "害虫対策マップ"
           }
         }
       }

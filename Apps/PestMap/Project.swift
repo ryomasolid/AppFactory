@@ -42,12 +42,12 @@ let project = Project(
                         "UIColorName": "",
                         "UIImageName": "",
                     ],
-                    "CFBundleDisplayName": "PestMap",
+                    "CFBundleDisplayName": "害虫対策マップ",
                     "CFBundleDevelopmentRegion": "ja",
                     // AdMob の app-ads.txt 検証に App Store のマーケティングURL が必須だが、
                     // 配信済み 1.0 ではメタデータを編集できないため 1.0.1 を出して設定する。
-                    "CFBundleShortVersionString": "1.0.1",
-                    "CFBundleVersion": "2",
+                    "CFBundleShortVersionString": "1.0.2",
+                    "CFBundleVersion": "3",
                     "ITSAppUsesNonExemptEncryption": false,
                     // 間取り図を撮影して取り込むためにカメラを使う。
                     "NSCameraUsageDescription": "間取り図を撮影して取り込むためにカメラを使用します。",

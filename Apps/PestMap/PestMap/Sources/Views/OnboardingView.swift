@@ -10,7 +10,7 @@ struct OnboardingView: View {
             Image(systemName: "map")
                 .font(.system(size: 64))
                 .foregroundStyle(.tint)
-            Text("PestMap")
+            Text("害虫対策マップ")
                 .font(.largeTitle.bold())
 
             VStack(alignment: .leading, spacing: 20) {
