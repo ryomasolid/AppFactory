@@ -75,6 +75,8 @@ enum Route: Hashable {
     case guide(String)
     case report(String)
     case station(String)
+    /// 記事のない駅（全国の駅一覧の id）。
+    case japanStation(Int)
     case stationIndex
     case tool(ToolKind)
     case search
@@ -103,7 +105,7 @@ enum Route: Hashable {
     var countsAsContent: Bool {
         switch self {
         case .guide, .report, .station, .tool: true
-        case .stationIndex, .search, .settings, .privacy, .monthReport: false
+        case .japanStation, .stationIndex, .search, .settings, .privacy, .monthReport: false
         }
     }
 }
@@ -174,6 +176,7 @@ struct RouteScreen: View {
         case .guide(let slug): GuideScreen(slug: slug)
         case .report(let slug): ReportScreen(slug: slug)
         case .station(let name): StationScreen(name: name)
+        case .japanStation(let id): JapanStationScreen(id: id)
         case .stationIndex: StationIndexScreen()
         case .tool(.quantity): QuantityTool()
         case .tool(.calorie): CalorieTool()

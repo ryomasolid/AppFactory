@@ -77,6 +77,11 @@ struct PrivacyScreen: View {
                 }
                 heading("リンク先")
                 Text("地図の検索や出典のリンクは、Google マップや各社のサイトなど外部のサービスを開きます。")
+                heading("駅のデータ")
+                Text("全国の駅の名前・路線・位置は、「\(JapanStations.shared.source)」（CC BY 4.0）をもとに、アプリ用に加工して作成しています。")
+                if let url = URL(string: "https://nlftp.mlit.go.jp/ksj/") {
+                    Link("国土数値情報ダウンロードサイト", destination: url).font(.subheadline.weight(.bold))
+                }
                 heading("運営者")
                 Text("ガツガツグルメ（運営責任者: ごま）\nお問い合わせ: ryomasolid@yahoo.co.jp")
             }
