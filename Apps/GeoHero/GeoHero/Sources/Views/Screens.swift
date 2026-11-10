@@ -366,6 +366,8 @@ struct StatusPanel: View {
 
 struct MessageBox: View {
     let lines: [String]
+    /// 話している人。本文とは べつの 小さな 枠に 出す（せりふの 行に 名前を まぜると 読みにくい）。
+    var speaker: String?
     var showsCursor = true
     /// 決まった高さの枠にする。戦闘では 行が増えても枠を動かしたくないので渡す。
     /// nil なら 中身のぶんだけの高さになる（ひろの・街ではこちら）。
@@ -376,7 +378,12 @@ struct MessageBox: View {
             // 余った分は枠の中の空白にする。枠の外に残すと そこが黒いままになる。
             window(fillsFrame: true).frame(height: fixedHeight)
         } else {
-            window(fillsFrame: false).frame(minHeight: 130, alignment: .top)
+            VStack(alignment: .leading, spacing: -8) {
+                if let speaker {
+                    NameTag(name: speaker).zIndex(1)
+                }
+                window(fillsFrame: false).frame(minHeight: 130, alignment: .top)
+            }
         }
     }
 
@@ -395,6 +402,24 @@ struct MessageBox: View {
                 Spacer(minLength: 0)
             }
         }
+    }
+}
+
+/// 話している人の 名前の 枠。会話の 枠の 左上に かさねる。
+struct NameTag: View {
+    let name: String
+
+    var body: some View {
+        Text(name)
+            .font(Retro.font(16))
+            .foregroundStyle(Retro.accent)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(Color.black, in: RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(.white, lineWidth: 3))
+            .padding(.leading, 18)
     }
 }
 

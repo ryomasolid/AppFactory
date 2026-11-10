@@ -139,7 +139,7 @@ final class GameState {
     var hasSave = SaveStore.load() != nil
 
     /// 表示中の会話（1ページ最大3行）。
-    private(set) var pages: [[String]] = []
+    private(set) var pages: [MessagePage] = []
     @ObservationIgnored private var afterMessages: (() -> Void)?
     @ObservationIgnored private var stepsSinceBattle = 0
     @ObservationIgnored var rng = AnyRandomSource(SystemRandomSource())
@@ -198,7 +198,9 @@ final class GameState {
     var map: GameMap { World.map(mapID) }
     /// いまの県。宿屋・道具屋の中では 入ってきた街の県。
     var region: Region { mapID.region ?? lastTown.region ?? .hakodate }
-    var currentPage: [String]? { pages.first }
+    var currentPage: [String]? { pages.first?.lines }
+    /// いま 話している人（名前の 枠に 出す）。地の文なら nil。
+    var currentSpeaker: String? { pages.first?.speaker }
     /// いま使っている街。宿屋・道具屋の中では 入ってきた街を見る。
     var town: TownInfo { mapID.townInfo ?? lastTown.townInfo ?? World.startMap.townInfo! }
     /// 宿代。奥の街ほど 高い。
@@ -719,7 +721,7 @@ final class GameState {
     // MARK: - 会話
 
     func say(_ lines: [String], then: (() -> Void)? = nil) {
-        pages = stride(from: 0, to: lines.count, by: 3).map { Array(lines[$0..<min($0 + 3, lines.count)]) }
+        pages = MessagePaging.pages(from: lines)
         afterMessages = then
         if pages.isEmpty { finishMessages() }
     }

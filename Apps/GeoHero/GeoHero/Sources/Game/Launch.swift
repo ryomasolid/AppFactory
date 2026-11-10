@@ -16,6 +16,7 @@ import Foundation
 /// / `-startOverlay shop -shopBuy YES`（道具屋の「かう」一覧。街ごとの品ぞろえを見る）
 /// / `-openedChests towadako-0,hakkoda1-0`（開けた宝箱）
 /// / `-startMap field -startX 16 -startY 35 -autoStep up`（1秒後に1歩あるく。街に入ったときの地名の札を見る）
+/// / `-startFacing up -autoTalk YES`（1.5秒後に 前の人に 話しかける。会話の 枠の 確認用）
 /// / `-autoWalk right,right,up,up`（1秒後から 順に あるく。App プレビューの 動画を 撮る用）
 /// / `-startBattle sakuraSpirit -autoQuiz YES`（「ちしきの チャンス」を 出して 正解する。動画を 撮る用）
 @MainActor
@@ -129,6 +130,13 @@ enum Launch {
             Task {
                 try? await Task.sleep(for: .seconds(1))
                 await game.walk(step)
+            }
+        }
+        if defaults.bool(forKey: "autoTalk") {
+            // 前の人に 話しかける（会話の 枠の 見た目の 確認用。`-startFacing up -autoTalk YES`）。
+            Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                game.pressA()
             }
         }
         if let path = defaults.string(forKey: "autoWalk") {

@@ -68,7 +68,7 @@ struct FieldView: View {
             }
             .overlay(alignment: .bottom) {
                 if let page = game.currentPage {
-                    MessageBox(lines: page)
+                    MessageBox(lines: page, speaker: game.currentSpeaker)
                         .onTapGesture { game.advanceMessage() }
                 }
             }
