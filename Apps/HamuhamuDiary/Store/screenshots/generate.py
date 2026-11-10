@@ -4,12 +4,16 @@
 src/ にシミュレーターで撮った素のスクショを置き、
   python3 Store/screenshots/generate.py
 を実行すると out/ に書き出す（Google Chrome のヘッドレスモードを使用）。
+  python3 Store/screenshots/generate.py b
+で、プロダクトページの最適化（A/Bテスト）用の B 案を out-b/ に書き出す。
 """
+import sys
 import pathlib
 import subprocess
 
 ROOT = pathlib.Path(__file__).parent
 SRC = ROOT / "src"
+PHOTOS = ROOT / "photos"
 OUT = ROOT / "out"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 W, H = 1320, 2868
@@ -59,6 +63,36 @@ SLIDES = [
     },
 ]
 
+# B 案（2026-11-10）: 検索結果の一覧で開いてもらう率を上げるため、1枚目は本物のハムスターの写真を大きく見せる。
+# 体重の2枚（01・02）は1枚にまとめ、3枚目までに「記録・体重・交換時期」がそろうようにする。
+SLIDES_B = [
+    {
+        "file": "01_hero",
+        "photo": "memory-4.jpg",
+        "eyebrow": "ハムスターの飼育記録アプリ",
+        "title": "うちの子の毎日を<br><mark>かんたん記録</mark>",
+        "bg": ("#FFF4E8", "#FFD9BF"),
+        "icon": True,
+        "chips": ["体重", "ごはん", "お掃除", "写真"],
+    },
+    {
+        "file": "02_weight",
+        "shot": "diary.png",
+        "eyebrow": "体重グラフ・体重の見守り",
+        "title": "体重の変化に<br><mark>早く気づける</mark>",
+        "sub": "グラフで推移をチェック<br>1週間で1割減るとお知らせ",
+        "bg": ("#FFF8EC", "#FFE6A8"),
+    },
+    SLIDES[2],
+    {
+        **SLIDES[3],
+        "title": "ごはん・お掃除も<br><mark>ワンタップ</mark>",
+        "sub": "今日のお世話がすんだか<br>ホームでひと目でわかる",
+        "chips": None,
+    },
+    SLIDES[4],
+]
+
 TEMPLATE = """<!doctype html>
 <html lang="ja"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=block" rel="stylesheet">
@@ -95,6 +129,18 @@ TEMPLATE = """<!doctype html>
     box-shadow: 0 50px 120px rgba(90,40,10,.28), 0 0 0 4px rgba(255,255,255,.35) inset;
   }}
   .phone img {{ display: block; width: 100%; border-radius: 112px; }}
+  .photo {{
+    position: absolute; left: 50%; transform: translateX(-50%) rotate(-1.5deg);
+    top: {phone_top}px; width: 1120px; height: 1560px; padding: 26px; background: #fff;
+    border-radius: 96px; box-shadow: 0 50px 120px rgba(90,40,10,.28);
+  }}
+  .ui {{
+    position: absolute; left: 50%; transform: translateX(-50%); top: 2330px;
+    width: 1000px; height: 392px; overflow: hidden; border-radius: 64px;
+    box-shadow: 0 30px 80px rgba(90,40,10,.30);
+  }}
+  .ui img {{ display: block; width: 1081px; margin: -673px 0 0 -40px; }}
+  .photo img {{ display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; border-radius: 74px; }}
 </style></head>
 <body>
   <div class="blob b1"></div><div class="blob b2"></div>
@@ -105,12 +151,12 @@ TEMPLATE = """<!doctype html>
     <div class="sub">{sub}</div>
     {chips}
   </div>
-  <div class="phone"><img src="{shot}"></div>
+  {visual}
 </body></html>
 """
 
 
-def render(slide: dict) -> None:
+def render(slide: dict, out: pathlib.Path) -> None:
     has_icon = slide.get("icon", False)
     chips = slide.get("chips")
     html = TEMPLATE.format(
@@ -121,16 +167,22 @@ def render(slide: dict) -> None:
         icon=f'<img class="icon" src="{(SRC / "icon.png").as_uri()}">' if has_icon else "",
         eyebrow=slide["eyebrow"],
         title=slide["title"],
-        sub=slide["sub"],
+        sub=slide.get("sub", ""),
         chips=(
             '<div class="chips">' + "".join(f'<span class="chip">{c}</span>' for c in chips) + "</div>"
             if chips
             else ""
         ),
-        shot=(SRC / slide["shot"]).as_uri(),
-        phone_top=1190 if has_icon else 1060,
+        visual=(
+            f'<div class="photo"><img src="{(PHOTOS / slide["photo"]).as_uri()}"></div>'
+            # 写真だけだとアプリの画面が写らないので、ホームの「最新ステータス」を切り出して重ねる
+            f'<div class="ui"><img src="{(SRC / "home.png").as_uri()}"></div>'
+            if slide.get("photo")
+            else f'<div class="phone"><img src="{(SRC / slide["shot"]).as_uri()}"></div>'
+        ),
+        phone_top=(1260 if slide.get("photo") else 1190) if has_icon else 1060,
     )
-    page = OUT / f"{slide['file']}.html"
+    page = out / f"{slide['file']}.html"
     page.write_text(html, encoding="utf-8")
     subprocess.run(
         [
@@ -142,17 +194,19 @@ def render(slide: dict) -> None:
             f"--window-size={W},{H}",
             "--virtual-time-budget=8000",
             "--allow-file-access-from-files",
-            f"--screenshot={OUT / (slide['file'] + '.png')}",
+            f"--screenshot={out / (slide['file'] + '.png')}",
             page.as_uri(),
         ],
         check=True,
         capture_output=True,
     )
     page.unlink()
-    print("wrote", OUT / f"{slide['file']}.png")
+    print("wrote", out / f"{slide['file']}.png")
 
 
 if __name__ == "__main__":
-    OUT.mkdir(exist_ok=True)
-    for s in SLIDES:
-        render(s)
+    b = sys.argv[1:] == ["b"]
+    out = ROOT / "out-b" if b else OUT
+    out.mkdir(exist_ok=True)
+    for s in SLIDES_B if b else SLIDES:
+        render(s, out)
