@@ -209,7 +209,7 @@ enum Launch {
     static func autoCommand(_ name: String?) -> BattleCommand? {
         guard let name else { return nil }
         if name == "attack" { return .attack }
-        if name == "herb" { return .item(.apple) }
+        if name == "herb" { return .item(.herb) }
         return Spell(rawValue: name).map { .spell($0) }
     }
 }

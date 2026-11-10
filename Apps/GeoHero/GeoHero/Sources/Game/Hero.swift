@@ -870,6 +870,13 @@ struct Hero: Codable, Equatable {
         return paid
     }
 
+    /// 身につけている 装備が 持ちものに なければ 足す（古い セーブで 装備だけ 持っていたとき）。
+    mutating func normalizeInventory() {
+        for item in [weapon, armor, charm].compactMap({ $0 }) where !owns(item) {
+            inventory[item, default: 0] += 1
+        }
+    }
+
     /// 道具を1つ使う。使えなければ false。
     mutating func consume(_ item: Item) -> Bool {
         guard item.kind == .consumable, inventory[item, default: 0] > 0 else { return false }

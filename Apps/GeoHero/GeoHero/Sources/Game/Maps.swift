@@ -78,7 +78,7 @@ enum World {
         outside: .darkness,
         warps: [
             // 出口の行き先は 入ってきた街の 扉の前に差し替わる（GameState が見る）。
-            Point(x: 4, y: 5): Warp(to: .aomori, at: Point(x: 3, y: 5)),
+            Point(x: 4, y: 5): Warp(to: .hakodate, at: Point(x: 3, y: 5)),
         ],
         markerFloor: .woodFloor
     )
@@ -98,7 +98,7 @@ enum World {
         ],
         outside: .darkness,
         warps: [
-            Point(x: 4, y: 5): Warp(to: .aomori, at: Point(x: 11, y: 5)),
+            Point(x: 4, y: 5): Warp(to: .hakodate, at: Point(x: 11, y: 5)),
         ],
         markerFloor: .woodFloor
     )
