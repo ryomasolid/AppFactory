@@ -123,6 +123,45 @@
 広告なし・課金なし・通信なし。オフラインで遊べます。
 ```
 
+## 2.0 で 変えるもの（東北6県を 足す・2026-11-10）
+
+「すぐ クリアできて しまう」ので、未提出だった 地理の勇者2（東北編）の 中身を 1 に 入れた（地理の勇者2は 出さない）。
+知床の 守護神を 解きはなつと、函館エリアの 新函館北斗駅から 新幹線で 青森へ。青森→秋田→岩手→宮城→福島→山形、蔵王の 東北の守護神まで。クリア後は 恐山の 裏ボス。
+東北は 北海道を 終えた LV15 から 始まる強さ（LV45 まで）。1.4 の セーブは そのまま つづけられる。
+
+- **ビルド**: 2.0 (13)。
+- **このバージョンの新機能**:
+
+```
+・東北の 6つの県が 冒険に くわわりました！
+　知床の 守護神を 解きはなつと、新函館北斗駅から 新幹線で 青森へ。
+　ねぶた・竿燈・さんさ・七夕・わらじ・花笠の まつりを とりもどそう
+・街は 18、ボスは 19体に ふえました（クリア後には 恐山の 裏ボスも）
+・まもの ずかん・ちしきの てちょう・県ごとの ちしき検定・かざり を 足しました
+・つづけて 正解すると 強くなる「ちしき コンボ」を 足しました
+・これまでの セーブは そのまま つづきから 遊べます
+```
+
+- **英語の 新機能**: `Six Tohoku prefectures join the adventure! After freeing the Shiretoko guardian, ride the shinkansen from Shin-Hakodate-Hokuto to Aomori. 18 towns, 19 bosses, a monster book, a quiz notebook, prefecture quiz exams and charms. Existing saves continue as before.`
+- **説明文**: 冒頭の「北海道を旅して」を「北海道から 東北へ 旅して」、「■ 3つの地方を 飛行機でめぐる」の 節の あとに 次を 足す。
+
+```
+■ 新幹線で 東北6県へ（2.0）
+知床の 守護神を 解きはなつと、新函館北斗駅から 新幹線で 青森へ。
+青森・秋田・岩手・宮城・福島・山形、それぞれの まつりを とりもどす旅。
+県ごとの ちしき検定、まもの ずかん、ちしきの てちょうで やりこみも たっぷり。
+```
+
+- **キーワード**: 東北・青森・秋田・岩手・宮城・福島・山形 を 足す（字数は ASC で 見ながら けずる）。
+- **スクショ**: 東北の 画面は あとで 足す（2.0 の 審査は 北海道の スクショの まま でも 出せる）。
+- **App Review へのメモ**（英語）:
+
+```
+Version 2.0 adds a second half to the adventure: the six Tohoku prefectures, reached by shinkansen after the Hokkaido chapter. Existing saves continue unchanged.
+Ads are unchanged from 1.4 (top banner during play, optional rewarded ads at an inn and after a defeat; child-directed, no tracking, no ATT). No in-app purchases. All graphics and music are generated in code.
+To reach Tohoku quickly is not possible without playing through Hokkaido; the Hokkaido part is the same as 1.4.
+```
+
 ## 1.4 で 変えるもの（画面上部の バナー広告）
 
 冒険中（フィールドと 戦闘）だけ、画面の上に **バナー広告** を 出す。タイトル・名前を決める画面・エンディングには 出さない。
