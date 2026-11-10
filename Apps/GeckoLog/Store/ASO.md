@@ -78,3 +78,9 @@ To see sample data quickly: add a gecko from the + button on the Cage tab, then 
 ## 年齢区分
 
 4+
+
+## App Store Connect の状況
+
+- 2026-11-06: ASC に登録（Apple ID 6831492029）。掲載情報・審査メモ・スクショ5枚・4+・データ収集なし・無料。
+- 2026-11-10: 1.0 (1) をアップロードし、TestFlight の内部グループ「開発者」に配信。実機で確認して OK。
+- 2026-11-10 16:35: 1.0 (1) を紐付けて審査提出（審査待ち・承認後に自動で公開）。
