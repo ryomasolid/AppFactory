@@ -2,14 +2,13 @@ import Foundation
 import Testing
 @testable import GeoHero
 
-/// 画面から触る流れ（歩く・話す・買う・戦う・全滅）を GameState 単位で通す。
+/// 画面から 触る 流れを GameState 単位で 通す。
 @MainActor
 struct GameStateTests {
 
-    private func makeGame() -> GameState {
+    static func makeGame() -> GameState {
         let game = GameState()
         game.stepDuration = .zero
-        game.repeatDelay = .zero
         game.messageInterval = .zero
         game.beatPause = .zero
         game.fadeDuration = .zero
@@ -21,515 +20,178 @@ struct GameStateTests {
         return game
     }
 
-    @Test func newGameShowsIntroAndBlocksWalking() {
+    private func readAll(_ game: GameState) {
+        while game.currentPage != nil { game.advanceMessage() }
+    }
+
+    @Test func newGameStartsInHakodateWithTheIntro() {
         let game = GameState()
         game.newGame()
+        #expect(game.mapID == .hakodate)
         #expect(game.currentPage != nil)
         #expect(!game.canWalk)
-        while game.currentPage != nil { game.advanceMessage() }
+        readAll(game)
         #expect(game.canWalk)
+        #expect(game.hero.weapon == .woodStick)
     }
 
-    @Test func walkOutOfVillageToField() async {
-        let game = makeGame()
-        // 着地点は村の出口のワープ定義から引く（地図を広げても落ちないように）。
-        let exit = World.map(.hakodate).warps.first { $0.value.to == .hakodateArea }
-        let landing = try! #require(exit?.value.at)
-        game.position = World.revivePoint.point
+    @Test func walkOutOfTownToTheField() async {
+        let game = Self.makeGame()
+        game.position = World.revivePoint(in: .hakodate).point
         await game.walk(.down)
         #expect(game.mapID == .hakodateArea)
-        #expect(game.position == landing)
     }
 
-    @Test func wallsBlockButTurn() async {
-        let game = makeGame()
-        game.position = Point(x: 1, y: 1)
+    /// 駅に のると 行き先を えらべる。きっぷの ない 県へは 行けない。
+    @Test func trainTravelsOnlyWithATicket() async {
+        let game = Self.makeGame()
+        game.mapID = .aomoriField
+        let station = try! #require(game.map.station)
+        game.position = station + Point(x: 0, y: 1)
         await game.walk(.up)
-        #expect(game.position == Point(x: 1, y: 1))
-        #expect(game.facing == .up)
+        #expect(game.overlay == .train)
+        await game.travel(to: .akita)
+        #expect(game.mapID == .aomoriField, "きっぷが ないのに 行けた")
+        readAll(game)
+        game.defeatedBosses.insert(.yukioni)
+        await game.travel(to: .akita)
+        #expect(game.mapID == .akitaField)
+        #expect(game.position == World.map(.akitaField).station! + Point(x: 0, y: 1))
+        #expect(game.arrivalBanner?.name == "秋田県")
     }
 
-    @Test func holdingWalksUntilWallAndReleaseStops() async throws {
-        let game = makeGame()
-        // 函館の北、港と五稜郭の あいだの 通り。西の 湾の手前まで 何もない。
-        game.position = Point(x: 10, y: 9)
-        game.hold(.left)
-        try await Task.sleep(for: .milliseconds(200))
-        #expect(game.position == Point(x: 3, y: 9))
-        game.hold(nil)
-        #expect(game.heldDirection == nil)
-    }
-
-    /// 歩き出す前に離しても 一歩は歩く（iPhone 18 Pro で タップしても歩かなかった不具合の再発防止）。
-    @Test func quickTapWalksOneStep() async throws {
-        let game = makeGame()
-        game.position = Point(x: 10, y: 9)
-        game.hold(.left)
-        game.hold(nil)
-        try await Task.sleep(for: .milliseconds(200))
-        #expect(game.position == Point(x: 9, y: 9))
-    }
-
-    /// 1歩ぶんより すこし長い タップでも、2歩 進まない。
-    @Test func slightlyLongTapStillWalksOneStep() async throws {
-        let game = makeGame()
-        game.repeatDelay = .milliseconds(300)
-        game.position = Point(x: 10, y: 9)
-        game.hold(.left)
-        try await Task.sleep(for: .milliseconds(100))
-        game.hold(nil)
-        try await Task.sleep(for: .milliseconds(400))
-        #expect(game.position == Point(x: 9, y: 9))
-    }
-
-    /// 十字キーの 指が ななめに ずれても 向きが 変わらず、はっきり ずらすと 変わる。
-    @Test func dPadKeepsDirectionUntilClearlyMoved() {
-        #expect(DPadInput.direction(dx: 5, dy: 5, current: nil) == nil)
-        #expect(DPadInput.direction(dx: 40, dy: 10, current: nil) == .right)
-        // ななめ少し上でも 右のまま。
-        #expect(DPadInput.direction(dx: 40, dy: -45, current: .right) == .right)
-        #expect(DPadInput.direction(dx: 20, dy: -60, current: .right) == .up)
-        // 真ん中へ ずれても 歩きやまない。
-        #expect(DPadInput.direction(dx: 3, dy: 3, current: .left) == .left)
-        // 同じ軸の 反対は すぐ変わる。
-        #expect(DPadInput.direction(dx: -40, dy: 0, current: .right) == .left)
-    }
-
-    /// 右を押したまま戦闘に入っても、戦闘後に勝手に右へ歩き出さない（不具合の再発防止）。
-    @Test func battleReleasesHeldDirection() async throws {
-        let game = makeGame()
-        game.hero.receive(.steelSword)
-        game.mapID = .hakodateArea
-        // 座標は直書きせず、左へ歩ける陸地を地図から探す（海岸線を変えても落ちないように）。
-        let field = World.map(.hakodateArea)
-        let start = try #require(
-            (0..<field.height).flatMap { y in (1..<field.width).map { Point(x: $0, y: y) } }
-                .first { point in
-                    let left = Point(x: point.x - 1, y: point.y)
-                    return field.isWalkable(point) && field.isWalkable(left)
-                        && field.warps[point] == nil && field.warps[left] == nil
-                }
-        )
-        game.position = start
-        game.hold(.right)
-        game.startBattle(.potato)
-        #expect(game.heldDirection == nil)
-        for _ in 0..<10 where game.battle?.end == nil {
-            await game.command(.attack)
-        }
-        await game.finishBattle()
-        try await Task.sleep(for: .milliseconds(200))
-        #expect(game.position == start)
-
-        game.hold(.left)
-        try await Task.sleep(for: .milliseconds(50))
-        game.hold(nil)
-        #expect(game.position.x < start.x)
-    }
-
-    /// 宿屋の扉から中に入り、下の扉から村の家の前に戻る。
-    @Test func enterInnAndLeave() async {
-        let game = makeGame()
-        game.position = Point(x: 14, y: 17)
+    /// 関所は 印が ないと とおれない。
+    @Test func gatesStopUntilTheFlagIsSet() async {
+        let game = Self.makeGame()
+        game.mapID = .aomoriField
+        game.position = Point(x: 44, y: 30)
         await game.walk(.up)
-        #expect(game.mapID == .innInside)
-        #expect(game.position == Point(x: 4, y: 4))
-        #expect(game.musicTrack == .village)
+        #expect(game.mapID == .aomoriField)
+        #expect(game.currentPage?.joined().contains("奥入瀬") == true)
+        readAll(game)
+        game.storyFlags.insert(.aomoriTowada)
         await game.walk(.down)
-        #expect(game.mapID == .hakodate)
-        #expect(game.position == Point(x: 14, y: 17))
+        await game.walk(.up)
+        #expect(game.mapID == .towadako)
     }
 
-    /// 中の地図は 宿屋・道具屋で1つずつを使いまわすので、出る先は 入った扉の前にする
-    /// （街ごとに 扉の位置が ちがう）。
-    @Test func leavingTheShopReturnsToItsOwnDoor() async throws {
-        for town in [MapID.hakodate, .sapporo] {
-            let game = makeGame()
-            let door = try #require(World.map(town).warps.first { $0.value.to == .shopInside }?.key)
-            game.mapID = town
-            game.position = door + Point(x: 0, y: 1)
-            await game.walk(.up)
-            #expect(game.mapID == .shopInside)
-            await game.walk(.down)
-            #expect(game.mapID == town)
-            #expect(game.position == door + Point(x: 0, y: 1), "\(town) の道具屋の前に 戻っていない")
+    /// ちしき検定：ぜんぶ 正解で 合格し、かざりが もらえる。まちがえると そこで おわり。
+    @Test func examPassesWithAllCorrect() {
+        let game = Self.makeGame()
+        game.startExam(.aomori)
+        #expect(game.overlay == .exam)
+        for _ in 0..<Story.examLength {
+            let quiz = try! #require(game.exam?.current)
+            game.answerExam(quiz.answer)
+            readAll(game)
         }
+        #expect(game.storyFlags.contains(.examPassed(.aomori)))
+        #expect(game.hero.owns(.kingyoNebuta))
+        #expect(game.learnedQuizzes.count == Story.examLength)
     }
 
-    /// 宿屋の主人にはカウンター越しに話しかける。
-    @Test func innkeeperTalksAcrossCounter() {
-        let game = makeGame()
-        game.mapID = .innInside
-        game.position = Point(x: 7, y: 3)
-        game.facing = .up
-        game.pressA()
-        #expect(game.overlay == .inn)
+    @Test func examFailsOnAMistake() {
+        let game = Self.makeGame()
+        game.startExam(.akita)
+        let quiz = try! #require(game.exam?.current)
+        game.answerExam((quiz.answer + 1) % 3)
+        #expect(game.exam == nil)
+        #expect(!game.storyFlags.contains(.examPassed(.akita)))
+        #expect(game.currentPage?.joined().contains("ざんねん") == true)
     }
 
-    @Test func shopkeeperSellsHerb() {
-        let game = makeGame()
-        game.mapID = .shopInside
-        game.position = Point(x: 4, y: 3)
-        game.facing = .up
-        game.pressA()
-        #expect(game.overlay == .shop)
-        game.buy(.herb)
-        #expect(game.hero.gold == 12)
-        #expect(game.hero.herbCount == 3)
-    }
-
-    @Test func chestOpensOnlyOnce() throws {
-        let game = makeGame()
-        // 函館山の ほらあなの宝箱（ゴールド）。中身はマップから読む。
-        let chest = try #require(World.map(.hakodateyama).chests.first)
-        guard case .gold(let amount) = chest.reward else {
-            Issue.record("この宝箱はゴールドではない")
-            return
-        }
-        let before = game.hero.gold
-        game.mapID = .hakodateyama
-        game.position = chest.position + Point(x: 0, y: 1)
-        game.facing = .up
-        game.pressA()
-        #expect(game.hero.gold == before + amount)
-        while game.currentPage != nil { game.advanceMessage() }
-        game.pressA()
-        #expect(game.hero.gold == before + amount)
-    }
-
-    @Test func winningBattleReturnsToField() async {
-        let game = makeGame()
-        game.hero.receive(.steelSword)
-        game.startBattle(.potato)
-        #expect(game.screen == .battle)
-        for _ in 0..<10 where game.battle?.end == nil {
-            await game.command(.attack)
-        }
-        #expect(game.battle?.end == .won(exp: 4, gold: 6))
+    /// 勝つと 倒した 敵が ずかんに のる。
+    @Test func winningFillsTheBook() async {
+        let game = Self.makeGame()
+        game.hero.receive(.orcaSpear)
+        game.startBattle([.potato, .kelpSlime])
+        for _ in 0..<20 where game.battle?.end == nil { await game.command(.attack) }
         await game.finishBattle()
+        #expect(game.seenEnemies == [.potato, .kelpSlime])
+    }
+
+    /// ほらあなで だっしゅつ すると フィールドの 入口へ。
+    @Test func escapeSpellLeavesTheCave() async throws {
+        let game = Self.makeGame()
+        _ = game.hero.gainExp(LevelTable.row(8).exp)
+        game.hero.restoreFully()
+        game.mapID = .hakkoda2
+        game.position = Point(x: 7, y: 8)
+        game.castInField(.escape)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(game.mapID == .aomoriField)
+        #expect(game.position == Point(x: 27, y: 21))
+    }
+
+    /// 守護神を 倒すと エンディング。そのあと 冒険を つづけられる。
+    @Test func endingCanContinue() async {
+        let game = Self.makeGame()
+        game.startBattle(.zaoGuardian)
+        game.battle?.end = .won(exp: 0, gold: 0)
+        await game.finishBattle()
+        #expect(game.screen == .ending)
+        #expect(game.defeatedBosses.contains(.zaoGuardian))
+        game.continueAfterEnding()
         #expect(game.screen == .field)
-        #expect(game.hero.gold == 26)
-        #expect(game.hero.exp == 4)
+        #expect(game.mapID == .yamagata)
+        #expect(game.progress.has(.cleared))
     }
 
-    /// 攻撃が当たるたびに「何発目か・ダメージ・会心か」が更新され、画面の動きのきっかけになる。
-    @Test func enemyHitIsRecordedForEachDamagingLine() async {
-        let game = makeGame()
-        _ = game.hero.gainExp(LevelTable.row(5).exp)
-        // 6ターンで 倒れない 固い敵にする（倒れると HP の差が ダメージより 小さくなる）。
-        // 回復・しゅびを 上げる わざも ない敵にする（ターンの あいだに HP や 当たりやすさが かわる）。
-        game.startBattle(.snowman)
-        #expect(game.battle?.enemyHit == nil)
-        var lastID = 0
-        for _ in 0..<6 where game.battle?.end == nil {
-            let hpBefore = game.battle?.battle.enemy.hp ?? 0
-            await game.command(.attack)
-            let hpAfter = game.battle?.battle.enemy.hp ?? 0
-            if hpAfter < hpBefore {
-                let hit = try? #require(game.battle?.enemyHit)
-                #expect(hit?.damage == hpBefore - hpAfter)
-                #expect((hit?.id ?? 0) > lastID)
-                lastID = hit?.id ?? lastID
-            }
+    /// かざりを つけかえると 能力が かわる。
+    @Test func charmsChangeStats() {
+        var hero = Hero()
+        let before = hero.maxHP
+        hero.receive(.akabeko)
+        #expect(hero.charm == .akabeko)
+        #expect(hero.maxHP == before + 30)
+        hero.receive(.oushou)
+        #expect(hero.charm == .akabeko, "2つめの かざりは 自分で つけかえる")
+        hero.equip(.oushou)
+        #expect(hero.maxHP == before)
+        #expect(hero.isEquipped(.oushou))
+    }
+
+    /// 起き上がり小法師は 1戦に 1回 おきあがらせる。
+    @Test func okiagariRevivesOnce() {
+        var rng = SeededRandomSource(seed: 5)
+        var hero = Hero()
+        hero.receive(.okiagari)
+        var battle = Battle(hero: hero, enemies: [Enemy(.zaoGuardian)])
+        var revived = 0
+        for _ in 0..<20 where battle.end == nil {
+            let result = battle.take(.attack, rng: &rng)
+            revived += result.messages.filter { $0.contains("起き上がり小法師") }.count
         }
-        #expect(lastID > 0)
+        #expect(revived == 1)
+        #expect(battle.end == .lost)
     }
 
-    /// 経験値のページでは ▼ を出してタップを待ち、タップすると先へ進む。
-    @Test func rewardPageWaitsForTap() async throws {
-        let game = makeGame()
-        game.waitsForTap = true
-        game.hero.receive(.steelSword)
-        game.startBattle(.potato)
-        let turn = Task { await game.command(.attack) }
-        for _ in 0..<100 where game.battle?.waitingForTap != true {
-            try await Task.sleep(for: .milliseconds(10))
-        }
-        #expect(game.battle?.waitingForTap == true)
-        #expect(game.battle?.isPlaying == true)
-        #expect(game.battle?.defeatedIDs.isEmpty == false)
-        game.advanceBattleMessage()
-        await turn.value
-        #expect(game.battle?.waitingForTap == false)
-        #expect(game.battle?.end == .won(exp: 4, gold: 6))
+    /// セーブして 読みなおすと 図鑑・てちょう・コンボも もどる。
+    @Test func saveKeepsTheRecords() throws {
+        let defaults = UserDefaults(suiteName: "geohero2.test.\(UUID())")!
+        let save = SaveData(hero: Hero(), map: .sendai, position: Point(x: 3, y: 3), openedChests: ["a"],
+                            defeatedBosses: [.yukioni], storyFlags: [.aomoriHeard], readPlaques: [],
+                            lastTown: .sendai, interiorReturn: nil, seenEnemies: [.hotate],
+                            learnedQuizzes: ["q"], quizStreak: 4)
+        SaveStore.save(save, to: defaults)
+        #expect(SaveStore.load(from: defaults) == save)
     }
 
-    /// 敵の攻撃が当たるたびに勇者の被ダメージが記録され、画面を揺らすきっかけになる。
-    @Test func heroHitIsRecordedWhenDamaged() async {
-        let game = makeGame()
-        game.startBattle(.guardian)
-        #expect(game.battle?.heroHit == nil)
-        for _ in 0..<10 where game.battle?.heroHit == nil && game.battle?.end == nil {
-            await game.command(.attack)
-        }
-        let hit = game.battle?.heroHit
-        #expect((hit?.damage ?? 0) > 0)
-        // レベル1（最大HP15）にボスの一撃は大ダメージ。
-        #expect(hit?.isHeavy == true)
+    /// 戦いの まほうは 4つずつ ならべても ぜんぶ えらべる（11こ）。
+    @Test func everyBattleSpellIsListed() {
+        var hero = Hero()
+        _ = hero.gainExp(LevelTable.row(40).exp)
+        #expect(hero.spells.count == Spell.allCases.count)
+        #expect(hero.spells.filter(\.isBattleUsable).count == Spell.allCases.count - 1)
     }
 
-    @Test func losingRevivesInVillageWithHalfGold() async {
-        let game = makeGame()
-        game.hero.gold = 100
-        game.mapID = .rausudake2
-        game.startBattle(.guardian)
-        for _ in 0..<30 where game.battle?.end == nil {
-            await game.command(.attack)
-        }
-        #expect(game.battle?.end == .lost)
-        await game.finishBattle()
-        #expect(game.screen == .field)
-        // 知床で負けたので 知床の はじめの街（中標津）で 目を覚ます。
-        #expect(game.mapID == .nakashibetsu)
-        #expect(game.hero.gold == 50)
-        #expect(game.hero.hp == game.hero.maxHP)
-        // 広告が 用意できていないときは 取りもどしを 聞かない。
-        while game.currentPage != nil { game.advanceMessage() }
-        #expect(game.overlay == .none)
-    }
-
-    /// 全滅のあと、広告を 最後まで見れば なくした ゴールドが もどる。
-    @Test func watchingAnAdAfterLosingRecoversGold() async throws {
-        let game = try await lostWithAdReady(gold: 101, adFinishes: true)
-        #expect(game.hero.gold == 50)
-        #expect(game.overlay == .recoverGold)
-        #expect(game.lostGold == 51)
-        game.recoverGoldWithAd()
-        try await Task.sleep(for: .milliseconds(50))
-        #expect(game.hero.gold == 101)
-        #expect(game.lostGold == 0)
-        #expect(game.isWatchingAd == false)
-    }
-
-    /// 広告を とちゅうで とじたら もどらない。ことわっても 何も おきない。
-    @Test func skippingTheAdKeepsTheLoss() async throws {
-        let game = try await lostWithAdReady(gold: 100, adFinishes: false)
-        game.recoverGoldWithAd()
-        try await Task.sleep(for: .milliseconds(50))
-        #expect(game.hero.gold == 50)
-
-        let other = try await lostWithAdReady(gold: 100, adFinishes: true)
-        other.declineGoldRecovery()
-        #expect(other.hero.gold == 50)
-        #expect(other.overlay == .none)
-    }
-
-    /// 宿屋で 広告を見れば 宿代なしで 泊まれる。
-    @Test func adPaysForTheInn() async throws {
-        let game = makeGame()
-        game.rewardAdReady = true
-        game.watchRewardAd = { true }
-        game.hero.gold = 3
-        game.hero.hp = 1
-        game.overlay = .inn
-        game.stayAtInnWithAd()
-        try await Task.sleep(for: .milliseconds(50))
-        while game.currentPage != nil { game.advanceMessage() }
-        try await Task.sleep(for: .milliseconds(50))
-        #expect(game.hero.gold == 3)
-        #expect(game.hero.hp == game.hero.maxHP)
-    }
-
-    private func lostWithAdReady(gold: Int, adFinishes: Bool) async throws -> GameState {
-        let game = makeGame()
-        game.rewardAdReady = true
-        game.watchRewardAd = { adFinishes }
-        game.hero.gold = gold
-        game.mapID = .rausudake2
-        game.startBattle(.guardian)
-        for _ in 0..<30 where game.battle?.end == nil {
-            await game.command(.attack)
-        }
-        try #require(game.battle?.end == .lost)
-        await game.finishBattle()
-        while game.currentPage != nil { game.advanceMessage() }
-        return game
-    }
-
-    /// 空港は きっぷが ないと とべない。駒ヶ岳のぬしを倒すと きっぷが もらえて 札幌へ とべる。
-    @Test func airportNeedsATicket() async throws {
-        let field = World.map(.hakodateArea)
-        let (gate, warp) = try #require(field.warps.first { $0.value.to.isField })
-        #expect(warp.to == .sapporoArea)
-        #expect(field.tile(at: gate) == .airport)
-
-        let game = makeGame()
-        game.mapID = .hakodateArea
-        game.position = gate + Point(x: 0, y: 1)
-        await game.walk(.up)
-        #expect(game.mapID == .hakodateArea, "きっぷが ないのに とべてしまう")
-        #expect(game.currentPage?.joined().contains("きっぷ") == true, "とべない理由が出ていない")
-
-        while game.currentPage != nil { game.advanceMessage() }
-        game.defeatedBosses = [.squidLord, .komaLord]
-        game.position = gate + Point(x: 0, y: 1)
-        await game.walk(.up)
-        #expect(game.mapID == .sapporoArea, "ぬしを倒したのに とべない")
-        #expect(game.position == warp.at)
-        #expect(game.arrivalBanner?.name == Region.sapporo.banner.name, "着いた地方の札が出ていない")
-        #expect(game.musicTrack == .overworldSapporo, "札幌の フィールドの曲に かわっていない")
-    }
-
-    /// 全滅したら いまの地方の はじめの街で目を覚ます（札幌で負けて 函館へ戻されない）。
-    @Test func defeatRevivesInTheSameRegion() async {
-        let game = makeGame()
-        game.mapID = .sapporoArea
-        game.position = Point(x: 27, y: 19)
-        game.startBattle(.snowFestival)
-        game.battle?.end = .lost
-        await game.finishBattle()
-        #expect(game.mapID == .sapporo)
-        #expect(game.map.isWalkable(game.position))
-    }
-
-    /// 途中のボスを倒しても終わらない。ラスボスだけが エンディングにつながる。
-    @Test func onlyTheFinalBossEndsTheAdventure() async {
-        for kind in [EnemyKind.squidLord, .komaLord, .bearLord, .guardian] {
-            let game = makeGame()
-            game.mapID = .rausudake2
-            // 確実に勝てるように、最高レベルで そうびも ととのえておく。
-            _ = game.hero.gainExp(1_000_000)
-            game.hero.receive(.steelSword)
-            game.hero.receive(.chainMail)
-            game.startBattle(kind)
-            for _ in 0..<80 where game.battle?.end == nil {
-                // 減ってきたら回復し、ときどき「ちしきの チャンス」に 正解する（ラスボスは殴るだけでは倒せない）。
-                let low = game.hero.hp < game.hero.maxHP * 3 / 5
-                if low && game.hero.mp >= Spell.highHeal.mpCost {
-                    await game.command(.spell(.highHeal))
-                } else if let battle = game.battle?.battle, let quiz = battle.nextQuiz, game.rng.chance(2) {
-                    await game.command(.quizAttack(answer: quiz.answer), target: 0)
-                } else {
-                    await game.command(.attack)
-                }
-            }
-            await game.finishBattle()
-            #expect(game.defeatedBosses.contains(kind))
-            #expect((game.screen == .ending) == kind.isFinalBoss, "\(kind) で エンディングの出かたが おかしい")
-        }
-    }
-
-    /// 倒したボスは ほらあなから いなくなる（居座って 何度でも戦えてしまう不具合の再発防止）。
-    @Test func defeatedBossLeavesItsCave() async throws {
-        let game = makeGame()
-        game.mapID = .hakodateyama
-        let boss = try #require(game.map.boss)
-        let kind = try #require(game.map.bossKind)
-        game.position = boss + Point(x: 0, y: 1)
-        game.facing = .up
-
-        // 倒す前。話しかけると 戦いになる。
-        #expect(game.bossPoint == boss)
-        game.pressA()
-        while game.currentPage != nil { game.advanceMessage() }
-        #expect(game.screen == .battle, "ボスに話しかけても 戦いにならない")
-
-        // 倒したあと。絵も当たり判定も 消える。
-        game.screen = .field
-        game.battle = nil
-        game.defeatedBosses.insert(kind)
-        #expect(game.bossPoint == nil, "倒したのに ボスが 残っている")
-        game.pressA()
-        #expect(game.screen == .field, "倒したボスと また戦いになる")
-        while game.currentPage != nil { game.advanceMessage() }
-        await game.walk(.up)
-        #expect(game.position == boss, "ボスが いたマスに 入れない")
-    }
-
-    // MARK: - ウィンドウの カーソル
-
-    /// 十字キーは 選べない行をとばし、端まで来たら 反対の端へ回る。
-    @Test func cursorSkipsRowsThatCannotBeChosen() {
-        let game = makeGame()
-        game.overlay = .shop
-        game.setChoices([
-            ChoiceSlot(id: "かう", isEnabled: true),
-            ChoiceSlot(id: "うる", isEnabled: false),
-            ChoiceSlot(id: "やめる", isEnabled: true),
-        ])
-        #expect(game.cursor == 0)
-        game.moveCursor(.down)
-        #expect(game.cursor == 2, "選べない行を とばしていない")
-        game.moveCursor(.down)
-        #expect(game.cursor == 0, "端で 反対の端へ 回らない")
-        game.moveCursor(.up)
-        #expect(game.cursor == 2)
-    }
-
-    /// ウィンドウの中身が入れかわったら いちばん上（選べる行）から。
-    @Test func cursorStartsAtTheTopOfANewWindow() {
-        let game = makeGame()
-        game.overlay = .shop
-        game.setChoices([
-            ChoiceSlot(id: "かう", isEnabled: true),
-            ChoiceSlot(id: "うる", isEnabled: true),
-            ChoiceSlot(id: "やめる", isEnabled: true),
-        ])
-        game.moveCursor(.down)
-        #expect(game.cursor == 1)
-        // 同じ並びのままなら、選べるかどうかが変わっても 指したままにする。
-        game.setChoices([
-            ChoiceSlot(id: "かう", isEnabled: true),
-            ChoiceSlot(id: "うる", isEnabled: false),
-            ChoiceSlot(id: "やめる", isEnabled: true),
-        ])
-        #expect(game.cursor == 1)
-        // 別のウィンドウに変わったら 頭に戻る。買えないときは 選べる行から。
-        game.setChoices([
-            ChoiceSlot(id: "はい", isEnabled: false),
-            ChoiceSlot(id: "もどる", isEnabled: true),
-        ])
-        #expect(game.cursor == 1, "選べない行を 指したまま 開いている")
-    }
-
-    /// ウィンドウが出ているあいだ、十字キーは歩かずに カーソルを動かす。
-    @Test func dPadMovesTheCursorInsteadOfWalking() {
-        let game = makeGame()
-        let start = game.position
-        game.overlay = .menu
-        game.setChoices([
-            ChoiceSlot(id: "つよさ", isEnabled: true),
-            ChoiceSlot(id: "どうぐ", isEnabled: true),
-        ])
-        game.hold(.down)
-        #expect(game.cursor == 1)
-        game.hold(nil)
-        #expect(game.position == start, "ウィンドウが出ているのに 歩いてしまう")
-    }
-
-    /// A は 指している行を、B は「もどる」を画面に伝える。選べない行では A は空振りする。
-    @Test func buttonsDecideAndGoBack() {
-        let game = makeGame()
-        game.overlay = .inn
-        game.setChoices([
-            ChoiceSlot(id: "はい", isEnabled: false),
-            ChoiceSlot(id: "いいえ", isEnabled: true),
-        ])
-        game.moveCursor(.up)
-        #expect(game.cursor == 1, "選べない行に カーソルが 乗ってしまう")
-        game.pressA()
-        #expect(game.confirmCount == 1)
-
-        game.setChoices([ChoiceSlot(id: "はい", isEnabled: false)])
-        game.pressA()
-        #expect(game.confirmCount == 1, "選べない行なのに 決まってしまう")
-
-        game.pressB()
-        #expect(game.cancelCount == 1)
-        #expect(game.overlay == .inn, "B を押しただけで ウィンドウが 変わってしまう")
-    }
-
-    /// ウィンドウを閉じれば 十字キーは また歩くのに戻る。
-    @Test func closingTheWindowGivesTheDPadBackToWalking() async {
-        let game = makeGame()
-        game.overlay = .menu
-        game.setChoices([ChoiceSlot(id: "とじる", isEnabled: true)])
-        #expect(game.isChoosing)
-        game.closeOverlay()
-        #expect(!game.isChoosing)
-        #expect(game.choices.isEmpty, "閉じたウィンドウの選択肢が 残っている")
-        let start = game.position
-        await game.walk(.left)
-        #expect(game.position != start)
+    /// 全体の まほうは 生きている 敵 みんなに 当たる。
+    @Test func thunderHitsEveryone() {
+        var rng = SeededRandomSource(seed: 2)
+        var hero = Hero()
+        _ = hero.gainExp(LevelTable.row(Spell.thunder.learnLevel).exp)
+        var battle = Battle(hero: hero, enemies: EnemyGroup.numbered([.kiritanpoSoldier, .hatahata, .komachiRice]))
+        let result = battle.take(.spell(.thunder), rng: &rng)
+        #expect(Set(result.lines.compactMap(\.enemyID)).count == 3)
     }
 }

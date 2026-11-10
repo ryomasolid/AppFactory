@@ -21,41 +21,54 @@ enum SoundCue: String, CaseIterable, Sendable {
     }
 }
 
-/// 曲。フィールド・街・戦いは 地方ごとに 変える（函館エリアは 名前に 地方を 付けない）。
+/// 曲。北海道は 地方ごと（1.4 の 曲）。東北は フィールドは 県ごと、街・戦いは 北（青森・秋田）・中（岩手・宮城）・南（福島・山形）で 変える。
 enum MusicTrack: String, CaseIterable, Sendable {
-    case title, village, overworld, cave, battle, boss, ending
-    case overworldSapporo, overworldShiretoko
-    case villageSapporo, villageShiretoko
-    case caveDeep
-    case battleSapporo, battleShiretoko
-    case finalBoss
+    case title, ending, boss, finalBoss, cave, caveDeep
+    case fieldHakodate, fieldSapporo, fieldShiretoko
+    case villageHakodate, villageSapporo, villageShiretoko
+    case battleHakodate, battleSapporo, battleShiretoko
+    case fieldAomori, fieldAkita, fieldIwate, fieldMiyagi, fieldFukushima, fieldYamagata
+    case villageNorth, villageMiddle, villageSouth
+    case battleNorth, battleMiddle, battleSouth
 
     static func field(_ region: Region) -> MusicTrack {
         switch region {
-        case .hakodate: .overworld
-        case .sapporo: .overworldSapporo
-        case .shiretoko: .overworldShiretoko
+        case .hakodate: .fieldHakodate
+        case .sapporo: .fieldSapporo
+        case .shiretoko: .fieldShiretoko
+        case .aomori: .fieldAomori
+        case .akita: .fieldAkita
+        case .iwate: .fieldIwate
+        case .miyagi: .fieldMiyagi
+        case .fukushima: .fieldFukushima
+        case .yamagata: .fieldYamagata
         }
     }
 
     static func village(_ region: Region) -> MusicTrack {
         switch region {
-        case .hakodate: .village
+        case .hakodate: .villageHakodate
         case .sapporo: .villageSapporo
         case .shiretoko: .villageShiretoko
+        case .aomori, .akita: .villageNorth
+        case .iwate, .miyagi: .villageMiddle
+        case .fukushima, .yamagata: .villageSouth
         }
     }
 
-    /// 函館エリアの ほらあなは ふつうの曲、札幌から先は 奥ふかい曲。
+    /// 函館エリア・青森・秋田の ほらあなは ふつうの曲、ほかは 奥ふかい曲。
     static func cave(_ region: Region) -> MusicTrack {
-        region == .hakodate ? .cave : .caveDeep
+        [.hakodate, .aomori, .akita].contains(region) ? .cave : .caveDeep
     }
 
     static func battle(_ region: Region) -> MusicTrack {
         switch region {
-        case .hakodate: .battle
+        case .hakodate: .battleHakodate
         case .sapporo: .battleSapporo
         case .shiretoko: .battleShiretoko
+        case .aomori, .akita: .battleNorth
+        case .iwate, .miyagi: .battleMiddle
+        case .fukushima, .yamagata: .battleSouth
         }
     }
 }

@@ -80,11 +80,20 @@ struct Battle {
     private(set) var end: BattleEnd?
     /// 「ちしきの チャンス」で出す問題の山。先頭が次の問題。空なら チャンスは 出ない。
     private(set) var quizzes: [Quiz]
+    /// つづけて 正解した 数（戦いを またいで 数える）。2回め から 追い打ちが 強くなる。
+    private(set) var streak: Int
+    /// この 戦いで 正解した 問題（ちしきの てちょうに のせる）。
+    private(set) var solved: [Quiz] = []
+    /// ガードの 呪文で しゅびを 上げているか（この 戦いの あいだだけ）。
+    private(set) var isGuarded = false
+    /// 起き上がり小法師で もう 起き上がったか（1戦に 1回）。
+    private(set) var hasRevived = false
 
-    init(hero: Hero, enemies: [Enemy], quizzes: [Quiz] = []) {
+    init(hero: Hero, enemies: [Enemy], quizzes: [Quiz] = [], streak: Int = 0) {
         self.hero = hero
         self.enemies = enemies
         self.quizzes = quizzes
+        self.streak = streak
     }
 
     init(hero: Hero, enemy: Enemy) {
@@ -96,15 +105,24 @@ struct Battle {
     /// ボスがいる戦いか。
     var isBoss: Bool { enemies.contains { $0.kind.isBoss } }
     /// 1体目。画面の見出しなどに使う。
-    var enemy: Enemy { enemies.first ?? Enemy(.potato) }
+    var enemy: Enemy { enemies.first ?? Enemy(.ringoSlime) }
     /// ねらう相手が決まっていないときの相手。
     var defaultTarget: Int? { living.first?.id }
     /// 「ちしきの チャンス」で出す問題。
     var nextQuiz: Quiz? { quizzes.first }
     /// こうげきの ときに「ちしきの チャンス」が 出る 確率（分母）。会心の一撃のように ときどき出る。
     /// ボス戦は 見せ場なので 出やすくする。
-    /// 戦いの 数が 半分に なったので、問題に 出会う 回数が へりすぎないよう ふだんの敵は 1/3 に。
-    var quizChanceDenominator: Int { isBoss ? 2 : 3 }
+    /// 七夕の短冊を 身につけていると 出やすい。
+    var quizChanceDenominator: Int {
+        let base = isBoss ? 2 : 4
+        return hero.charmEffect == .moreQuiz ? base - 1 : base
+    }
+
+    /// 敵の こうげきを 受けるときの しゅび（ガード中は 1.5倍）。
+    var heroDefense: Int { isGuarded ? hero.defense * 3 / 2 : hero.defense }
+
+    /// コンボの 追い打ちの 倍率（％）。2回め 125、3回め 150 … 5回め 以上 200。
+    static func comboPercent(_ streak: Int) -> Int { 100 + 25 * min(4, max(0, streak - 1)) }
 
     private func index(of id: Int?) -> Int? {
         if let id, let found = enemies.firstIndex(where: { $0.id == id && !$0.isDead }) { return found }
@@ -164,21 +182,38 @@ struct Battle {
             answer(choice, target: target, rng: &rng, into: &result)
 
         case .spell(let spell):
-            guard hero.spells.contains(spell), hero.mp >= spell.mpCost else {
+            guard hero.spells.contains(spell), spell.isBattleUsable, hero.mp >= spell.mpCost else {
                 say("MPが たりない！", .miss, pause: .beat, into: &result)
                 return
             }
             hero.mp -= spell.mpCost
             // 攻撃呪文は、唱えた行で火の玉を飛ばしてからダメージの行を出す。
-            let castEffect: BattleEffect? = spell.isHealing ? nil : .flame(big: spell == .flame)
+            let castEffect: BattleEffect? = switch spell.effect {
+            case .single: .flame(big: spell != .fire)
+            case .all: .flame(big: true)
+            default: nil
+            }
             say("\(hero.name)は \(spell.name)を となえた！", .spell, pause: .beat, effect: castEffect, into: &result)
-            let amount = rng.next(in: spell.power)
-            if spell.isHealing {
-                let healed = hero.heal(amount)
+            switch spell.effect {
+            case .heal:
+                let healed = hero.heal(rng.next(in: spell.healRange(level: hero.level)))
                 // HP が満タンで 0 しか回復しないときは、粒と「+0」を出さない。
                 say("HPが \(healed) かいふくした！", .heal, effect: healed > 0 ? .heal(healed) : nil, into: &result)
-            } else {
-                hit(slot, for: amount, into: &result)
+            case .single:
+                hit(slot, for: rng.next(in: spell.power), into: &result)
+            case .all:
+                for index in enemies.indices where !enemies[index].isDead {
+                    hit(index, for: rng.next(in: spell.power), into: &result)
+                }
+            case .defend:
+                if isGuarded {
+                    say("しかし もう まもりは かたい。", .miss, into: &result)
+                } else {
+                    isGuarded = true
+                    say("しゅびが ぐんと あがった！", .heal, into: &result)
+                }
+            case .escape:
+                say("しかし なにも おこらなかった。", .miss, into: &result)
             }
 
         case .item(let item):
@@ -250,15 +285,21 @@ struct Battle {
         say("\(hero.name)「\(quiz.choices[choice])！」", .spell, pause: .beat, into: &result)
         guard choice == quiz.answer else {
             say("ざんねん！ こたえは「\(quiz.correctChoice)」。", .miss, into: &result)
+            if streak >= 2 { say("ちしき コンボが とぎれた……", into: &result) }
+            streak = 0
             // まちがえた問題は すぐまた出す（覚えたかを たしかめられるように）。
             quizzes.insert(quiz, at: min(2, quizzes.count))
             return
         }
         quizzes.append(quiz)
+        solved.append(quiz)
+        streak += 1
         // こうげきで たおしていたら、生きている 先頭に 追い打ちする。
         guard let slot = index(of: target) else { return }
         say("せいかい！ ちしきの ひかりで おいうち！", .critical, effect: .flame(big: true), into: &result)
-        hit(slot, for: Self.criticalDamage(attack: hero.attack, rng: &rng), isCritical: true, into: &result)
+        if streak >= 2 { say("ちしき コンボ ×\(streak)！", .coin, into: &result) }
+        let damage = Self.criticalDamage(attack: hero.attack, rng: &rng) * Self.comboPercent(streak) / 100
+        hit(slot, for: damage, isCritical: true, into: &result)
         // ちしきの ひかりは 敵が 上げた 強さも 消しさる。
         for index in enemies.indices where !enemies[index].isDead && !enemies[index].boosts.isEmpty {
             enemies[index].boosts = [:]
@@ -287,7 +328,7 @@ struct Battle {
         let usable = attacker.kind.specialMoves.filter { canUse($0, by: slot) }
         guard !usable.isEmpty, rng.chance(attacker.kind.specialChance) else {
             say("\(attacker.name)の こうげき！", pause: .beat, into: &result)
-            hit(heroFor: Self.damage(attack: attacker.attack, defense: hero.defense, rng: &rng), into: &result)
+            hit(heroFor: Self.damage(attack: attacker.attack, defense: heroDefense, rng: &rng), into: &result)
             return
         }
         switch usable[rng.next(in: 0...(usable.count - 1))] {
@@ -297,7 +338,7 @@ struct Battle {
         case .smash:
             say("\(attacker.name)の こうげき！", pause: .beat, into: &result)
             say("つうこんの いちげき！", .critical, into: &result)
-            let damage = Self.damage(attack: attacker.attack, defense: hero.defense, rng: &rng)
+            let damage = Self.damage(attack: attacker.attack, defense: heroDefense, rng: &rng)
             hit(heroFor: max(1, damage * 3 / 2), into: &result)
         case .heal(let text):
             sayWrapped("\(attacker.name)は", "\(text)！", .spell, pause: .beat, into: &result)
@@ -378,7 +419,9 @@ struct Battle {
         if end == .fled { return .fled }
         if living.isEmpty {
             let exp = enemies.reduce(0) { $0 + $1.kind.stats.exp }
-            let gold = enemies.reduce(0) { $0 + $1.kind.stats.gold }
+            var gold = enemies.reduce(0) { $0 + $1.kind.stats.gold }
+            // 金魚ねぶたを 身につけていると 1.5倍。
+            if hero.charmEffect == .moreGold { gold = gold * 3 / 2 }
             say("たたかいに かった！", .victory, into: &result)
             // 報酬は「かった！」を読んでからタップで次のページに出す。
             var rewardPause = BattleLinePause.page
@@ -398,6 +441,14 @@ struct Battle {
                 }
             }
             return .won(exp: exp, gold: gold)
+        }
+        if hero.isDead, hero.charmEffect == .revive, !hasRevived {
+            hasRevived = true
+            hero.hp = max(1, hero.maxHP / 3)
+            say("\(hero.name)は たおれた……", .damage, pause: .beat, into: &result)
+            say("起き上がり小法師が ころりと おきあがった！", .heal, effect: .heal(hero.hp), into: &result)
+            say("\(hero.name)も ふたたび たちあがった！", into: &result)
+            return nil
         }
         if hero.isDead {
             say("\(hero.name)は ちからつきた…", .gameOver, pause: .beat, into: &result)

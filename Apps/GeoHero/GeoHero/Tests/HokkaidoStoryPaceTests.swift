@@ -165,7 +165,7 @@ enum StoryPace {
     }
 }
 
-struct StoryPaceTests {
+struct HokkaidoStoryPaceTests {
     /// ストーリーどおりに 進むと、場所ごとに 敵を 合わせた レベル（`EncounterTests` の 着いたころの表）で 着く。
     /// ずれると、レベルを 上げすぎて 敵が 弱く 感じたり、足りなくて レベル上げを しいられたりする。
     /// 函館の はじめの 3か所は 歩く道が みじかいので、まわりを 歩いて 上げる 前提で 見ない。

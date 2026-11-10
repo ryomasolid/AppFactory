@@ -3,7 +3,7 @@ import Testing
 
 /// 遭遇テーブルの組み方を守る。
 /// 1つのエリアに強さの違いすぎる敵を混ぜると、同じ場所なのに歯ごたえがバラバラになる。
-struct EncounterTests {
+struct HokkaidoEncounterTests {
 
     /// 経験値を「その敵の強さ」の目安として使う（設計者が付けた値なので一番素直）。
     private func exps(_ kinds: [EnemyKind]) -> [Int] {
@@ -314,7 +314,7 @@ struct EncounterTests {
 
     /// ボスのいる ほらあなは6つ（函館山・駒ヶ岳・天狗山・藻岩山・知床岬・羅臼岳）。
     @Test func thereAreSixBosses() {
-        let bosses = MapID.allCases.compactMap { World.map($0).bossKind }
+        let bosses = MapID.allCases.filter { $0.region.map { !$0.isTohoku } ?? false }.compactMap { World.map($0).bossKind }
         #expect(Set(bosses) == [.squidLord, .komaLord, .tengu, .bearLord, .todoLord, .guardian], "ボスが そろっていない: \(bosses)")
         #expect(bosses.count == 6, "ボスのいるマップが \(bosses.count) つ")
     }
@@ -375,7 +375,7 @@ struct EncounterTests {
 }
 
 /// 街ごとの ちがい。旅が進むほど 宿代は高く、品ぞろえは強くなる。
-struct TownTests {
+struct HokkaidoTownTests {
     private let route: [MapID] = [.hakodate, .matsumae, .onuma, .sapporo, .otaru, .jozankei, .nakashibetsu, .utoro, .rausu]
 
     /// 奥の街ほど 宿代が高い。
@@ -404,7 +404,7 @@ struct TownTests {
                 switch item.kind {
                 case .weapon(let power): weapon = max(weapon, power)
                 case .armor(let power): armor = max(armor, power)
-                case .consumable: break
+                case .consumable, .charm: break
                 }
             }
             #expect(weapon >= previousWeapon, "\(id) の ぶきが 手前の街より弱い")

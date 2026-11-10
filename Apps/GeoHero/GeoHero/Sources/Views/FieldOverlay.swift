@@ -16,6 +16,12 @@ struct FieldOverlay: View {
     }
     /// どうぐ画面で選んでいる持ちもの。nil なら一覧。
     @State private var selectedItem: Item?
+    /// ずかん・てちょうの ページ。
+    @State private var page = 0
+    /// ずかんで 見ている 敵。
+    @State private var selectedEnemy: EnemyKind?
+    /// てちょうで 見ている 県。
+    @State private var notebookRegion: Region?
 
     var body: some View {
         content
@@ -23,6 +29,9 @@ struct FieldOverlay: View {
             .onChange(of: game.overlay) { _, screen in
                 if screen != .shop { shopPanel = .menu }
                 if screen != .items { selectedItem = nil }
+                if screen != .book { selectedEnemy = nil }
+                if screen != .notebook { notebookRegion = nil }
+                page = 0
             }
     }
 
@@ -39,6 +48,7 @@ struct FieldOverlay: View {
                     Choice(title: "つよさ") { game.overlay = .status },
                     Choice(title: "じゅもん", isEnabled: !hero.spells.isEmpty) { game.overlay = .spells },
                     Choice(title: "どうぐ") { game.overlay = .items },
+                    Choice(title: "きろく") { game.overlay = .records },
                     Choice(title: "おと", detail: game.soundEnabled ? "ON" : "OFF") { game.soundEnabled.toggle() },
                     Choice(title: "セーブ") { game.saveFromMenu() },
                     Choice(title: "とじる", isCancel: true) { game.closeOverlay() },
@@ -61,6 +71,7 @@ struct FieldOverlay: View {
                 }
                 row("ぶき", hero.weaponName)
                 row("よろい", hero.armorName)
+                row("かざり", hero.charmName)
                 ChoiceList([
                     Choice(title: "きろくを シェア") { ShareSheet.present(game.adventureSummary) },
                     Choice(title: "もどる", isCancel: true) { game.overlay = .menu },
@@ -73,7 +84,7 @@ struct FieldOverlay: View {
                     Choice(
                         title: spell.name,
                         detail: "MP \(spell.mpCost)",
-                        isEnabled: spell.isHealing && hero.mp >= spell.mpCost
+                        isEnabled: spell.isFieldUsable && hero.mp >= spell.mpCost
                     ) {
                         game.castInField(spell)
                     }
@@ -109,6 +120,59 @@ struct FieldOverlay: View {
                 if let item = Launch.shopConfirm { shopPanel = .confirmBuy(item) }
                 else if Launch.shopSell { shopPanel = .selling }
                 else if Launch.shopBuy { shopPanel = .buying }
+            }
+
+        case .records:
+            records(hero: hero)
+
+        case .book:
+            RetroWindow {
+                if let kind = selectedEnemy {
+                    bookEntry(kind)
+                } else {
+                    bookList()
+                }
+            }
+
+        case .notebook:
+            RetroWindow {
+                if let region = notebookRegion {
+                    notebookPage(region)
+                } else {
+                    notebookList()
+                }
+            }
+
+        case .exam:
+            RetroWindow {
+                if let exam = game.exam, let quiz = exam.current {
+                    heading("\(exam.region.name) ちしき検定 \(exam.index + 1)／\(exam.questions.count)")
+                    PhraseLine(text: quiz.question)
+                    divider()
+                    ChoiceList(quiz.choices.enumerated().map { index, choice in
+                        Choice(title: choice) { game.answerExam(index) }
+                    } + [Choice(title: "やめる", separated: true, isCancel: true) { game.quitExam() }])
+                }
+            }
+
+        case .train:
+            RetroWindow {
+                speech("えきいん", "どちらへ まいりますか？")
+                divider()
+                // 駅の ある 地方だけ（札幌・知床は ひこうき）。北海道に いるあいだは 函館は「いま ここ」。
+                ChoiceList(Region.allCases.compactMap { region -> Choice? in
+                    guard let station = region.stationName else { return nil }
+                    let here = region == game.region || (region == .hakodate && !game.region.isTohoku)
+                    let open = game.progress.canTravel(to: region)
+                    return Choice(
+                        title: station,
+                        detail: here ? "いま ここ" : (open ? region.shortName : "きっぷ なし"),
+                        detailStyle: here ? Retro.dim : (open ? Retro.accent : Retro.hpLow),
+                        isEnabled: open && !here
+                    ) {
+                        Task { await game.travel(to: region) }
+                    }
+                } + [Choice(title: "やめる", separated: true, isCancel: true) { game.stayOnPlatform() }])
             }
 
         case .inn:
@@ -179,6 +243,18 @@ struct FieldOverlay: View {
                 game.useInField(item)
             })
         }
+        if case .charm = item.kind {
+            if hero.isEquipped(item) {
+                return (item.effectNote, Choice(title: "はずす") {
+                    selectedItem = nil
+                    game.unequip(item)
+                })
+            }
+            return (item.effectNote, Choice(title: "みにつける") {
+                selectedItem = nil
+                game.equip(item)
+            })
+        }
         if hero.isEquipped(item) {
             return (equippedNote(item), Choice(title: "はずす") {
                 selectedItem = nil
@@ -194,7 +270,7 @@ struct FieldOverlay: View {
     /// いま そうびしているものが どれだけ足してくれているか。
     private func equippedNote(_ item: Item) -> String {
         switch item.kind {
-        case .consumable: return ""
+        case .consumable, .charm: return ""
         case .weapon(let power): return "いま こうげきを +\(power) している"
         case .armor(let power): return "いま しゅびを +\(power) している"
         }
@@ -205,7 +281,7 @@ struct FieldOverlay: View {
     private func statPreview(_ item: Item, hero: Hero) -> some View {
         let change: (label: String, now: Int, next: Int)? = {
             switch item.kind {
-            case .consumable: nil
+            case .consumable, .charm: nil
             case .weapon(let power): ("こうげき", hero.attack, hero.base.attack + power)
             case .armor(let power): ("しゅび", hero.defense, hero.base.defense + power)
             }
@@ -234,7 +310,7 @@ struct FieldOverlay: View {
     /// そうびしたら どれだけ変わるか。
     private func equipPreview(_ item: Item, hero: Hero) -> String {
         switch item.kind {
-        case .consumable: return ""
+        case .consumable, .charm: return ""
         case .weapon(let power):
             let now = hero.attack
             return "そうびすると こうげき \(now)→\(hero.base.attack + power)"
@@ -242,6 +318,121 @@ struct FieldOverlay: View {
             let now = hero.defense
             return "そうびすると しゅび \(now)→\(hero.base.defense + power)"
         }
+    }
+
+    // MARK: - きろく
+
+    /// きろくの 一覧。まつり・スタンプ・検定は ここで 見て、ずかん・てちょうへ すすむ。
+    private func records(hero: Hero) -> some View {
+        let progress = game.progress
+        let festivals = Region.tohoku.filter(progress.festivalRestored).count
+        let exams = Region.tohoku.filter { progress.has(.examPassed($0)) }.count
+        let stamps = game.stamps.values.reduce(0, +)
+        return RetroWindow {
+            heading("ぼうけんの きろく")
+            row("ぬし", "\(Region.allCases.filter { progress.defeatedBosses.contains($0.lord) }.count) / \(Region.allCases.count)")
+            row("まつり", "\(festivals) / \(Region.tohoku.count)")
+            row("めいしょ スタンプ", "\(stamps) / \(World.stampPlaques.count)")
+            row("ちしき検定", "\(exams) / \(Region.tohoku.count)")
+            row("ちしき コンボ", "×\(game.quizStreak)")
+            divider()
+            ChoiceList([
+                Choice(title: "まもの ずかん", detail: "\(game.seenEnemies.count)/\(EnemyKind.allCases.count)") {
+                    game.overlay = .book
+                },
+                Choice(title: "ちしきの てちょう", detail: "\(game.learnedQuizzes.count)/\(QuizBank.total)") {
+                    game.overlay = .notebook
+                },
+                Choice(title: "もどる", separated: true, isCancel: true) { game.overlay = .menu },
+            ])
+        }
+    }
+
+    /// ずかんの 1ページに ならべる 数。
+    private static let bookPageSize = 8
+
+    /// まもの ずかんの 一覧（旅の順）。倒していない 敵は「？？？」。
+    @ViewBuilder
+    private func bookList() -> some View {
+        let all = EnemyKind.allCases
+        let pages = (all.count + Self.bookPageSize - 1) / Self.bookPageSize
+        let current = min(page, pages - 1)
+        let shown = Array(all.dropFirst(current * Self.bookPageSize).prefix(Self.bookPageSize))
+        heading("まもの ずかん \(game.seenEnemies.count)/\(all.count)　\(current + 1)/\(pages)")
+        ChoiceList(shown.map { kind in
+            let seen = game.seenEnemies.contains(kind)
+            return Choice(title: seen ? kind.name : "？？？", detail: Self.placeLabel(kind), isEnabled: seen) {
+                selectedEnemy = kind
+            }
+        } + [
+            Choice(title: "つぎの ページ", separated: true) { page = (current + 1) % pages },
+            Choice(title: "もどる", isCancel: true) { game.overlay = .records },
+        ])
+    }
+
+    /// ずかんの 右に 出す 地方（恐山は 恐山）。
+    private static func placeLabel(_ kind: EnemyKind) -> String {
+        !kind.region.isTohoku ? kind.region.shortName : (Balance.place(of: kind) > 24 ? "恐山" : kind.region.shortName)
+    }
+
+    /// ずかんの 1体。絵と その土地の ひとこと。
+    @ViewBuilder
+    private func bookEntry(_ kind: EnemyKind) -> some View {
+        HStack(spacing: 12) {
+            SpriteCache.image(SpriteID(enemy: kind)).resizable().interpolation(.none).frame(width: 72, height: 72)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(kind.name).foregroundStyle(Retro.accent)
+                Text(Self.placeLabel(kind)).font(Retro.font(13)).foregroundStyle(Retro.dim)
+            }
+        }
+        PhraseLine(text: kind.lore, fontSize: 15)
+            .font(Retro.font(15))
+        divider()
+        ChoiceList([Choice(title: "もどる", isCancel: true) { selectedEnemy = nil }])
+    }
+
+    /// てちょうの 県の 一覧。
+    @ViewBuilder
+    private func notebookList() -> some View {
+        heading("ちしきの てちょう")
+        note("せいかいした もんだいが のる")
+        divider()
+        ChoiceList(Region.allCases.map { region in
+            let quizzes = QuizBank.quizzes(in: region)
+            let learned = quizzes.filter { game.learnedQuizzes.contains($0.question) }.count
+            return Choice(title: region.name, detail: "\(learned)/\(quizzes.count)", isEnabled: !quizzes.isEmpty) {
+                notebookRegion = region
+                page = 0
+            }
+        } + [Choice(title: "もどる", separated: true, isCancel: true) { game.overlay = .records }])
+    }
+
+    /// てちょうの 1ページに ならべる 数（問題は 2行に なるので 少なめ）。
+    private static let notebookPageSize = 4
+
+    /// 県の 問題と 答え。まだ せいかいしていない 問題は かくす。
+    @ViewBuilder
+    private func notebookPage(_ region: Region) -> some View {
+        let quizzes = QuizBank.quizzes(in: region)
+        let pages = max(1, (quizzes.count + Self.notebookPageSize - 1) / Self.notebookPageSize)
+        let current = min(page, pages - 1)
+        let shown = Array(quizzes.dropFirst(current * Self.notebookPageSize).prefix(Self.notebookPageSize))
+        heading("\(region.name)　\(current + 1)/\(pages)")
+        ForEach(shown, id: \.question) { quiz in
+            if game.learnedQuizzes.contains(quiz.question) {
+                VStack(alignment: .leading, spacing: 2) {
+                    PhraseLine(text: quiz.question, fontSize: 13).font(Retro.font(13))
+                    Text("→ \(quiz.correctChoice)").font(Retro.font(14)).foregroundStyle(Retro.accent)
+                }
+            } else {
+                Text("？？？").font(Retro.font(13)).foregroundStyle(Retro.dim)
+            }
+        }
+        divider()
+        ChoiceList([
+            Choice(title: "つぎの ページ", isEnabled: pages > 1) { page = (current + 1) % pages },
+            Choice(title: "もどる", isCancel: true) { notebookRegion = nil },
+        ])
     }
 
     // MARK: - 道具屋

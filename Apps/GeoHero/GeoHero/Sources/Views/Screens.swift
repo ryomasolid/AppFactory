@@ -496,7 +496,7 @@ struct TitleView: View {
                     .tracking(4)
                     .foregroundStyle(Retro.accent)
                     .shadow(color: .black, radius: 0, x: 2, y: 2)
-                Text("〜 北海道 守護神 かいほう編 〜")
+                Text("〜 北海道・東北 編 〜")
                     .font(Retro.font(13))
                     .foregroundStyle(Retro.dim)
                     .padding(.top, 6)
@@ -596,25 +596,43 @@ struct EndingView: View {
     @Environment(GameState.self) private var game
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             Spacer()
-            SpriteCache.image(.hero1).resizable().interpolation(.none).frame(width: 120, height: 120)
-            RetroWindow {
-                Text("知床の守護神は 正気を とりもどした！")
-                Text("守護神「よくぞ 解きはなってくれた。")
-                Text("　まおうは まだ 4つの地方を あやつっている。")
-                Text("　つぎの地方へ いそぐのだ。」")
-                Text("北海道に へいわが もどった。")
+            HStack(spacing: 24) {
+                SpriteCache.image(.hero1).resizable().interpolation(.none).frame(width: 100, height: 100)
+                SpriteCache.image(.dancer).resizable().interpolation(.none).frame(width: 80, height: 80)
             }
-            Text("つづく").font(Retro.font(34)).foregroundStyle(Retro.accent)
+            RetroWindow {
+                ForEach(lines, id: \.self) { Text($0) }
+            }
+            Text(game.endingKind == .secret ? "しんの ちりの ゆうしゃ" : "おしまい")
+                .font(Retro.font(game.endingKind == .secret ? 26 : 34))
+                .foregroundStyle(Retro.accent)
             Text("LV \(game.hero.level)  \(game.hero.gold)G").font(Retro.font(16)).foregroundStyle(.white)
             Spacer()
+            RetroChoice(title: "ぼうけんを つづける") { game.continueAfterEnding() }
+                .frame(width: 240)
             RetroChoice(title: "きろくを シェア") { ShareSheet.present(game.adventureSummary) }
-                .frame(width: 200)
+                .frame(width: 240)
             RetroChoice(title: "タイトルへ") { game.backToTitle() }
-                .frame(width: 200)
+                .frame(width: 240)
             Spacer()
         }
         .padding()
+    }
+
+    private var lines: [String] {
+        if game.endingKind == .secret {
+            return ["まおうの かげは 恐山の 風に きえた。",
+                    "北海道と 東北の 守護神が",
+                    "\(game.hero.name)の まわりに あらわれた。",
+                    "「6県の ちしきを きわめし ゆうしゃよ。",
+                    "　つぎは 関東の 地が まっている。」"]
+        }
+        return ["東北の 守護神は 正気を とりもどした！",
+                "守護神「よくぞ 6つの まつりを とりもどした。",
+                "　ねぶた・竿燈・さんさ・七夕・わらじ・花笠……",
+                "　東北の 夏が もどってきたぞ。」",
+                "（恐山に まだ やみが のこっている……）"]
     }
 }

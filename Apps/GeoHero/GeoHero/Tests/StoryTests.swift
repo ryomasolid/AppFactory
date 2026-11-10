@@ -1,417 +1,183 @@
-import Foundation
 import Testing
 @testable import GeoHero
 
-/// 函館の物語（親方の話 → 奉行の てがた → 函館山）と 迷子さがし。
-@MainActor
+/// 物語が さいごまで 進む。
+/// 人に 話しかけて 立った 印で 関所が ひらき、ボスを 倒すと 次へ……を くりかえして、
+/// 守護神と 恐山の まおうの かげまで たどりつけるかを 見る。
 struct StoryTests {
 
-    private func makeGame() -> GameState {
-        let game = GameState()
-        game.stepDuration = .zero
-        game.messageInterval = .zero
-        game.fadeDuration = .zero
-        game.waitsForTap = false
-        game.rng = AnyRandomSource(SeededRandomSource(seed: 7))
-        game.newGame()
-        game.say([])
-        return game
-    }
-
-    /// その人の となりの 歩けるマスに立って 向きあい、話を 最後まで読む。読んだ せりふを返す。
-    @discardableResult
-    private func talk(to resident: Resident, in game: GameState, town: MapID = .hakodate) throws -> [String] {
-        let map = World.map(town)
-        let npc = try #require(map.npcs.first { $0.role == .resident(resident) }, "\(resident) が \(town) にいない")
-        let side = try #require(Direction.allCases.first { direction in
-            map.isWalkable(npc.position + direction.delta, progress: game.progress)
-        }, "\(resident) の となりに 立てない")
-        game.mapID = town
-        game.position = npc.position + side.delta
-        game.facing = [.up: Direction.down, .down: .up, .left: .right, .right: .left][side]!
-        game.pressA()
-        var lines: [String] = []
-        while let page = game.currentPage {
-            lines += page
-            game.advanceMessage()
+    /// いまの 進みぐあいで 入れる 県の 地図。
+    private func maps(open progress: StoryProgress) -> [GameMap] {
+        World.all.values.filter { map in
+            guard let region = map.region else { return false }
+            return progress.canTravel(to: region)
         }
-        return lines
     }
 
-    /// 函館山の前に立って 1歩 入ろうとする。
-    private func tryEnteringHakodateyama(_ game: GameState) async {
-        let gate = World.hakodateArea.warps.first { $0.value.to == .hakodateyama }!.key
-        game.mapID = .hakodateArea
-        game.position = gate + Point(x: 0, y: 1)
-        await game.walk(.up)
+    /// その ボスの 部屋に 入れるか（ほらあなへの 道の 関所を ぜんぶ こえられるか）。
+    private func canReachBoss(_ kind: EnemyKind, _ progress: StoryProgress) -> Bool {
+        guard let room = World.all.values.first(where: { $0.bossKind == kind }) else { return false }
+        var current = room.id
+        for _ in 0..<5 {
+            guard let (map, warp) = World.all.values.lazy.compactMap({ map -> (GameMap, Warp)? in
+                guard let found = map.warps.first(where: { $0.value.to == current
+                    && [.cave, .stairsDown].contains(map.tile(at: $0.key)) }) else { return nil }
+                return (map, found.value)
+            }).first else { return false }
+            if let need = warp.needs, !progress.has(need) { return false }
+            if let need = warp.requires, !progress.defeatedBosses.contains(need) { return false }
+            if map.kind == .field { return progress.canTravel(to: map.region!) }
+            current = map.id
+        }
+        return false
     }
 
-    @Test func hakodateyamaIsClosedWithoutThePass() async {
-        let game = makeGame()
-        await tryEnteringHakodateyama(game)
-        #expect(game.mapID == .hakodateArea)
-        #expect(game.currentPage?.joined().contains("てがた") == true)
+    /// 話して 倒して を くりかえし、倒した 順の ボスを 返す。
+    private func playThrough(examsPassed: Bool) -> (order: [EnemyKind], progress: StoryProgress) {
+        var progress = StoryProgress(flags: [], defeatedBosses: [], stamps: [:], seen: 0)
+        if examsPassed { progress.flags.formUnion(Region.allCases.map(StoryFlag.examPassed)) }
+        var order: [EnemyKind] = []
+        for _ in 0..<60 {
+            var changed = false
+            for map in maps(open: progress) {
+                for npc in map.npcs(progress) {
+                    guard case let .resident(resident) = npc.role else { continue }
+                    let scene = resident.scene(progress)
+                    let fresh = Set(scene.sets).subtracting(progress.flags)
+                    if !fresh.isEmpty { progress.flags.formUnion(fresh); changed = true }
+                }
+            }
+            if let boss = EnemyKind.allCases.first(where: { $0.isBoss && !progress.defeatedBosses.contains($0)
+                && canReachBoss($0, progress) }) {
+                progress.defeatedBosses.insert(boss)
+                order.append(boss)
+                changed = true
+            }
+            if !changed { break }
+        }
+        return (order, progress)
     }
 
-    /// 親方の話を聞かずに 奉行へ行っても てがたは もらえない。
-    @Test func magistrateWantsProofFirst() throws {
-        let game = makeGame()
-        let lines = try talk(to: .magistrate, in: game)
-        #expect(lines.joined().contains("親方"), "つぎに どこへ行けばいいか 言っていない")
-        #expect(!game.storyFlags.contains(.hakodateyamaPass))
+    @Test func theWholeStoryCanBeFinished() {
+        let (order, _) = playThrough(examsPassed: true)
+        let expected: [EnemyKind] = Region.allCases.flatMap { [$0.subBoss, $0.lord] } + [.maouShadow]
+        #expect(order == expected, "ボスの 順番: \(order.map(\.name))")
     }
 
-    @Test func fisherThenMagistrateOpensTheMountain() async throws {
-        let game = makeGame()
-        try talk(to: .fisherBoss, in: game)
-        #expect(game.storyFlags.contains(.heardFromFisher))
-        try talk(to: .magistrate, in: game)
-        #expect(game.storyFlags.contains(.hakodateyamaPass))
-        await tryEnteringHakodateyama(game)
-        #expect(game.mapID == .hakodateyama)
+    /// 検定に 合格していないと まおうの かげには とどかない。
+    @Test func secretBossNeedsEveryExam() {
+        let (order, _) = playThrough(examsPassed: false)
+        #expect(order.contains(.zaoGuardian))
+        #expect(!order.contains(.maouShadow))
     }
 
-    /// 長老は いまの つぎの ひと手を 教える。
-    @Test func elderPointsToTheNextStep() throws {
-        let game = makeGame()
-        game.facing = .up
-        game.pressA()
-        #expect(game.currentPage?.joined().contains("奉行") == true)
+    /// ぬしを 倒す まで 次の 県へは 行けない。
+    @Test func trainNeedsThePreviousLord() {
+        var progress = StoryProgress(flags: [], defeatedBosses: [], stamps: [:])
+        // 北海道⇄東北は 知床の 守護神を 解きはなってから。
+        #expect(progress.canTravel(to: .hakodate))
+        #expect(!progress.canTravel(to: .aomori))
+        progress.defeatedBosses.insert(.guardian)
+        #expect(progress.canTravel(to: .aomori))
+        #expect(!progress.canTravel(to: .akita))
+        progress.defeatedBosses.insert(.yukioni)
+        #expect(progress.canTravel(to: .akita))
+        #expect(!progress.canTravel(to: .iwate))
     }
 
-    /// 迷子は 見つけると 元町から消え、朝市の 母のとなりに 出る。お礼は 1度だけ。
-    @Test func lostChildGoesHomeAndMotherThanksOnce() throws {
-        let game = makeGame()
-        let map = World.map(.hakodate)
-        let lost = try #require(map.npcs.first { $0.role == .resident(.lostChild) }).position
-        let home = try #require(map.npcs.first { $0.role == .resident(.childAtHome) }).position
-        #expect(game.npcs.contains { $0.position == lost })
-        #expect(!game.npcs.contains { $0.position == home })
-
-        try talk(to: .mother, in: game)
-        #expect(!game.storyFlags.contains(.childReturned), "見つける前に お礼が出た")
-
-        try talk(to: .lostChild, in: game)
-        #expect(!game.npcs.contains { $0.position == lost }, "迷子が 元町に残っている")
-        #expect(game.npcs.contains { $0.position == home }, "迷子が 母のところに いない")
-
-        let herbs = game.hero.inventory[.herb, default: 0]
-        try talk(to: .mother, in: game)
-        #expect(game.hero.inventory[.herb, default: 0] == herbs + 2)
-        try talk(to: .mother, in: game)
-        #expect(game.hero.inventory[.herb, default: 0] == herbs + 2, "お礼を 2度 もらえる")
-    }
-
-    /// ぬしを倒すと 親方が お礼をくれる。1度だけ。
-    @Test func fisherRewardsAfterTheBossOnce() throws {
-        let game = makeGame()
-        game.defeatedBosses = [.squidLord]
-        let gold = game.hero.gold
-        try talk(to: .fisherBoss, in: game)
-        #expect(game.hero.gold == gold + 60)
-        try talk(to: .fisherBoss, in: game)
-        #expect(game.hero.gold == gold + 60)
-    }
-
-    /// てがたの仕組みより前に ぬしを倒した人は、山の前で止めない。
-    @Test func bossDefeatImpliesThePass() async {
-        let game = makeGame()
-        game.defeatedBosses = [.squidLord]
-        await tryEnteringHakodateyama(game)
-        #expect(game.mapID == .hakodateyama)
-    }
-
-    /// 街の人・宝箱・看板には みな 街の入口から 話しかけに行ける（大沼の 島の ひなも）。
-    @Test(arguments: MapID.allCases.filter(\.isTown))
-    func everyoneInTownIsReachable(town: MapID) throws {
-        let map = World.map(town)
-        let entrance = try #require(map.warps.first { $0.value.to.isField }).key + Point(x: 0, y: -1)
-        var seen: Set<Point> = [entrance]
-        var queue = [entrance]
-        while let point = queue.popLast() {
-            for direction in Direction.allCases {
-                let next = point + direction.delta
-                guard map.isWalkable(next), seen.insert(next).inserted else { continue }
-                queue.append(next)
+    /// 関所の 印には かならず 止められたときの せりふが ある。
+    @Test func everyGateExplainsItself() {
+        for map in World.all.values {
+            for warp in map.warps.values {
+                guard let need = warp.needs else { continue }
+                #expect(Story.gates[need] != nil, "\(map.id) → \(warp.to) の 関所 \(need) の せりふが ない")
             }
         }
-        let targets = map.npcs.map(\.position) + map.chests.map(\.position) + Array(map.plaques.keys)
-        for target in targets {
-            let reachable = Direction.allCases.contains { seen.contains(target + $0.delta) }
-            #expect(reachable, "\(town) の \(target) に 話しかけられない")
+    }
+
+    /// 長老は どの だんかいでも 次に やることを 教える。
+    @Test func elderAlwaysHasAHint() {
+        let (_, finished) = playThrough(examsPassed: true)
+        #expect(Story.elderHint(finished).joined().contains("しんの ちりの ゆうしゃ"))
+        let start = StoryProgress(flags: [], defeatedBosses: [], stamps: [:])
+        #expect(Story.elderHint(start).joined().contains("奉行"))
+        let hokkaidoDone = StoryProgress(flags: [], defeatedBosses: Set(Region.hokkaido.flatMap { [$0.subBoss, $0.lord] }), stamps: [:])
+        #expect(Story.elderHint(hokkaidoDone).joined().contains("新函館北斗駅"))
+    }
+
+    /// おつかい・迷子さがしは さいごまで すすめられ、お礼が もらえる。
+    @Test func sideQuestsFinish() {
+        for errand in Errand.all {
+            var progress = StoryProgress(flags: [], defeatedBosses: [], stamps: [:])
+            for step in 0..<3 {
+                let scene = step == 1 ? errand.receiverScene(progress) : errand.giverScene(progress)
+                progress.flags.formUnion(scene.sets)
+            }
+            #expect(progress.has(errand.thanked), "\(errand.id) が おわらない")
         }
-        for plaque in map.plaques.keys {
-            #expect(map.tile(at: plaque) == .signpost, "\(plaque) に 看板のマスがない")
+        for quest in LostQuest.all {
+            var progress = StoryProgress(flags: [], defeatedBosses: [], stamps: [:])
+            progress.flags.formUnion(quest.lostScene().sets)
+            progress.flags.formUnion(quest.seekerScene(progress).sets)
+            #expect(progress.has(quest.returned), "\(quest.id) が おわらない")
+            #expect(!quest.ask.isEmpty && !quest.home.isEmpty)
         }
     }
 
-    // MARK: - 函館エリアの つづき（松前・大沼）
-
-    /// 駒ヶ岳の前に立って 1歩 入ろうとする。
-    private func tryEnteringKomagatake(_ game: GameState) async {
-        let gate = World.hakodateArea.warps.first { $0.value.to == .komagatake }!.key
-        game.mapID = .hakodateArea
-        game.position = gate + Point(x: 0, y: 1)
-        await game.walk(.up)
+    /// 物語の 人は みんな どこかの 地図に いる（迷子は 見つけたあとの すがたも）。
+    @Test func everyResidentIsPlaced() {
+        let placed = Set(World.all.values.flatMap(\.npcs).compactMap { npc -> Resident? in
+            if case let .resident(resident) = npc.role { return resident }
+            return nil
+        })
+        for resident in Resident.allCases {
+            #expect(placed.contains(resident), "\(resident) が 地図に いない")
+            #expect(resident.scene(StoryProgress(flags: [], defeatedBosses: [], stamps: [:])).lines != ["……"],
+                    "\(resident) の せりふが ない")
+        }
     }
 
-    /// 殿様は イカのぬしを倒した ゆうしゃにだけ 火よけの おふだを さずける。
-    @Test func lordGivesTheCharmAfterTheSquid() throws {
-        let game = makeGame()
-        try talk(to: .lord, in: game, town: .matsumae)
-        #expect(!game.storyFlags.contains(.fireCharm), "ぬしを倒す前に おふだが もらえた")
-        game.defeatedBosses = [.squidLord]
-        let lines = try talk(to: .lord, in: game, town: .matsumae)
-        #expect(lines.joined().contains("おふだ"))
-        #expect(game.storyFlags.contains(.fireCharm))
+    /// 案内所は 半分で 道具、ぜんぶで ゴールド。
+    @Test func stampGuidesReward() {
+        let total = World.stampTotal(in: .aomori)
+        var progress = StoryProgress(flags: [], defeatedBosses: [], stamps: [.aomori: (total + 1) / 2])
+        let half = Resident.aomoriGuide.scene(progress)
+        #expect(half.items.count == 3)
+        progress.flags.formUnion(half.sets)
+        progress.stamps[.aomori] = total
+        #expect(Resident.aomoriGuide.scene(progress).gold > 0)
     }
 
-    @Test func komagatakeNeedsTheCharm() async {
-        let game = makeGame()
-        game.defeatedBosses = [.squidLord]
-        await tryEnteringKomagatake(game)
-        #expect(game.mapID == .hakodateArea)
-        #expect(game.currentPage?.joined().contains("おふだ") == true)
-        while game.currentPage != nil { game.advanceMessage() }
-        game.storyFlags.insert(.fireCharm)
-        await tryEnteringKomagatake(game)
-        #expect(game.mapID == .komagatake)
+    /// 学芸員は ずかんの 数で ごほうびを くれる。
+    @Test func curatorRewardsTheBook() {
+        var progress = StoryProgress(flags: [], defeatedBosses: [], stamps: [:], seen: 10)
+        #expect(Story.curatorScene(progress).items.isEmpty)
+        progress.seen = 30
+        let first = Story.curatorScene(progress)
+        #expect(first.items == [.tanzaku])
+        progress.flags.formUnion(first.sets)
+        #expect(Story.curatorScene(progress).items.isEmpty)
+        progress.seen = EnemyKind.allCases.count
+        let second = Story.curatorScene(progress)
+        #expect(second.items == [.okiagari])
     }
 
-    /// ぬしを倒した 奉行は 松前へ 行くよう 教える（つぎに どこへ行けばいいか 分かるように）。
-    @Test func magistratePointsToMatsumaeAfterTheSquid() throws {
-        let game = makeGame()
-        game.defeatedBosses = [.squidLord]
-        let lines = try talk(to: .magistrate, in: game)
-        #expect(lines.joined().contains("松前"))
+    /// 検定の 先生は 合格前なら 検定を はじめる。
+    @Test func examinersStartTheExam() {
+        for region in Region.tohoku {
+            let scene = Story.examScene(region, StoryProgress(flags: [], defeatedBosses: [], stamps: [:]))
+            #expect(scene.startsExam == region)
+            #expect(QuizBank.quizzes(in: region).count >= Story.examLength * 3)
+        }
     }
 
-    /// 島の ひなを 見つけると 岸へ もどり、せわがかりが 1度だけ お礼をくれる。
-    @Test func cygnetSwimsHomeAndKeeperThanksOnce() throws {
-        let game = makeGame()
-        let map = World.map(.onuma)
-        let lost = try #require(map.npcs.first { $0.role == .resident(.lostCygnet) }).position
-        #expect(map.tile(at: lost + Point(x: -1, y: 0)) == .townFloor, "ひなは 島の上に いるはず")
-
-        let gold = game.hero.gold
-        try talk(to: .swanKeeper, in: game, town: .onuma)
-        #expect(game.hero.gold == gold, "見つける前に お礼が出た")
-        try talk(to: .lostCygnet, in: game, town: .onuma)
-        #expect(!game.npcs.contains { $0.position == lost })
-        try talk(to: .swanKeeper, in: game, town: .onuma)
-        #expect(game.hero.gold == gold + 70)
-        try talk(to: .swanKeeper, in: game, town: .onuma)
-        #expect(game.hero.gold == gold + 70, "お礼を 2度 もらえる")
-    }
-
-    // MARK: - めいしょ スタンプ
-
-    /// 名所の看板を はじめて読むと スタンプが たまる。2度目は たまらない。
-    @Test func readingAPlaqueStampsOnce() throws {
-        let game = makeGame()
-        let plaque = try #require(World.stampPlaques.first { $0.map == .hakodate })
-        let map = World.map(.hakodate)
-        let side = try #require(Direction.allCases.first { map.isWalkable(plaque.point + $0.delta) })
-        game.position = plaque.point + side.delta
-        game.facing = [.up: Direction.down, .down: .up, .left: .right, .right: .left][side]!
-        game.pressA()
-        var lines: [String] = []
-        while let page = game.currentPage { lines += page; game.advanceMessage() }
-        #expect(lines.joined().contains("スタンプ"))
-        #expect(game.stamps[.hakodate] == 1)
-        game.pressA()
-        while game.currentPage != nil { game.advanceMessage() }
-        #expect(game.stamps[.hakodate] == 1)
-    }
-
-    /// 案内所は 半分で 薬草、ぜんぶで ゴールドをくれる。それぞれ 1度だけ。
-    @Test func guideRewardsHalfAndAllStamps() throws {
-        #expect(World.stampTotal(in: .hakodate) >= 10, "名所が すくない: \(World.stampTotal(in: .hakodate))")
-        let game = makeGame()
-        let herbs = game.hero.inventory[.herb, default: 0]
-        game.readPlaques = Set(World.stampPlaques(in: .hakodate).prefix((World.stampTotal(in: .hakodate) + 1) / 2))
-        try talk(to: .guide, in: game)
-        #expect(game.hero.inventory[.herb, default: 0] == herbs + 3)
-        try talk(to: .guide, in: game)
-        #expect(game.hero.inventory[.herb, default: 0] == herbs + 3, "薬草を 2度 もらえる")
-
-        let gold = game.hero.gold
-        game.readPlaques = Set(World.stampPlaques(in: .hakodate))
-        try talk(to: .guide, in: game)
-        #expect(game.hero.gold == gold + 200)
-        try talk(to: .guide, in: game)
-        #expect(game.hero.gold == gold + 200, "ゴールドを 2度 もらえる")
-    }
-
-    @Test func stampsSurviveSaving() throws {
-        var save = SaveData(hero: Hero(), map: .onuma, position: Point(x: 13, y: 20), openedChests: [])
-        save.readPlaques = [PlaqueID(map: .onuma, point: Point(x: 5, y: 3))]
-        let decoded = try JSONDecoder().decode(SaveData.self, from: JSONEncoder().encode(save))
-        #expect(decoded == save)
-    }
-
-    // MARK: - 札幌・小樽
-
-    /// 藻岩山の前に立って 1歩 入ろうとする。
-    private func tryEnteringMoiwa(_ game: GameState) async {
-        let gate = World.sapporoArea.warps.first { $0.value.to == .moiwa1 }!.key
-        game.mapID = .sapporoArea
-        game.position = gate + Point(x: 0, y: 1)
-        await game.walk(.up)
-    }
-
-    /// 長官の話 → 天狗を倒す → オルゴール職人から オルゴール → 藻岩山へ入れる。
-    @Test func musicBoxOpensMoiwa() async throws {
-        let game = makeGame()
-        game.defeatedBosses = [.squidLord, .komaLord]
-        let governor = try talk(to: .governor, in: game, town: .doucho)
-        #expect(governor.joined().contains("小樽"), "長官が つぎの行き先を 言っていない")
-        await tryEnteringMoiwa(game)
-        #expect(game.mapID == .sapporoArea, "オルゴールが ないのに 藻岩山へ 入れる")
-        while game.currentPage != nil { game.advanceMessage() }
-
-        try talk(to: .musicBoxMaker, in: game, town: .otaru)
-        #expect(!game.storyFlags.contains(.musicBox), "天狗を倒す前に オルゴールが もらえた")
-        game.defeatedBosses.insert(.tengu)
-        try talk(to: .musicBoxMaker, in: game, town: .otaru)
-        #expect(game.storyFlags.contains(.musicBox))
-        await tryEnteringMoiwa(game)
-        #expect(game.mapID == .moiwa1)
-    }
-
-    /// ラーメンの 出前: 店で あずかり、北大の学生に とどけ、店で お礼を 1度だけ もらう。
-    @Test func ramenDelivery() throws {
-        let game = makeGame()
-        try talk(to: .student, in: game, town: .sapporo)
-        #expect(!game.storyFlags.contains(.ramenDelivered), "あずかる前に とどけられた")
-        try talk(to: .ramenChef, in: game, town: .sapporo)
-        #expect(game.storyFlags.contains(.ramenCarrying))
-        try talk(to: .student, in: game, town: .sapporo)
-        #expect(game.storyFlags.contains(.ramenDelivered))
-        let gold = game.hero.gold
-        try talk(to: .ramenChef, in: game, town: .sapporo)
-        try talk(to: .ramenChef, in: game, town: .sapporo)
-        #expect(game.hero.gold == gold + 90, "お礼が 1度で ない")
-    }
-
-    /// 倉庫の ネコを 見つけると かいぬしの となりに もどり、お礼は 1度だけ。
-    @Test func lostCatGoesHome() throws {
-        let game = makeGame()
-        let herbs = game.hero.inventory[.herb, default: 0]
-        try talk(to: .lostCat, in: game, town: .otaru)
-        #expect(game.npcs.contains { $0.role == .resident(.catHome) } == false || game.mapID == .otaru)
-        try talk(to: .catOwner, in: game, town: .otaru)
-        try talk(to: .catOwner, in: game, town: .otaru)
-        #expect(game.hero.inventory[.herb, default: 0] == herbs + 2)
-        #expect(World.otaru.npcs(game.progress).contains { $0.role == .resident(.catHome) })
-    }
-
-    /// 定山渓の 足湯で HP・MPが ぜんぶ なおる。
-    @Test func footBathHeals() throws {
-        let game = makeGame()
-        _ = game.hero.gainExp(LevelTable.row(5).exp)
-        game.hero.hp = 1
-        game.hero.mp = 0
-        try talk(to: .yumori, in: game, town: .jozankei)
-        #expect(game.hero.hp == game.hero.maxHP)
-        #expect(game.hero.mp == game.hero.maxMP)
-    }
-
-    /// 札幌の案内所は 札幌・小樽・定山渓の スタンプを 数える（函館の スタンプは 数えない）。
-    @Test func sapporoGuideCountsItsOwnStamps() throws {
-        let total = World.stampTotal(in: .sapporo)
-        #expect(total >= 10, "札幌・小樽の 名所が すくない: \(total)")
-        let game = makeGame()
-        game.readPlaques = Set(World.stampPlaques(in: .hakodate))
-        let gold = game.hero.gold
-        try talk(to: .sapporoGuide, in: game, town: .sapporo)
-        #expect(game.hero.gold == gold, "函館の スタンプで 札幌の ごほうびが 出た")
-        game.readPlaques.formUnion(World.stampPlaques(in: .sapporo))
-        try talk(to: .sapporoGuide, in: game, town: .sapporo)
-        #expect(game.hero.gold == gold + 200)
-    }
-
-    // MARK: - 知床
-
-    /// 羅臼岳の前に立って 1歩 入ろうとする。
-    private func tryEnteringRausudake(_ game: GameState) async {
-        let gate = World.shiretokoArea.warps.first { $0.value.to == .rausudake1 }!.key
-        game.mapID = .shiretokoArea
-        game.position = gate + Point(x: 0, y: 1)
-        await game.walk(.up)
-    }
-
-    /// エカシの話 → トドのぬしを倒す → カムイの はね → 羅臼岳へ入れる。
-    @Test func kamuiFeatherOpensRausudake() async throws {
-        let game = makeGame()
-        game.defeatedBosses = [.squidLord, .komaLord, .tengu, .bearLord]
-        let first = try talk(to: .ekashi, in: game, town: .rausu)
-        #expect(first.joined().contains("知床岬"), "エカシが つぎの行き先を 言っていない")
-        #expect(!game.storyFlags.contains(.kamuiFeather))
-        await tryEnteringRausudake(game)
-        #expect(game.mapID == .shiretokoArea, "はねが ないのに 羅臼岳へ 入れる")
-        while game.currentPage != nil { game.advanceMessage() }
-
-        game.defeatedBosses.insert(.todoLord)
-        try talk(to: .ekashi, in: game, town: .rausu)
-        #expect(game.storyFlags.contains(.kamuiFeather))
-        await tryEnteringRausudake(game)
-        #expect(game.mapID == .rausudake1)
-    }
-
-    /// 牛乳の 出前: 中標津で あずかり、羅臼の 番屋へ とどけ、牧場主から お礼を 1度だけ。
-    @Test func milkDelivery() throws {
-        let game = makeGame()
-        try talk(to: .banyaOyaji, in: game, town: .rausu)
-        #expect(!game.storyFlags.contains(.milkDelivered), "あずかる前に とどけられた")
-        try talk(to: .rancher, in: game, town: .nakashibetsu)
-        try talk(to: .banyaOyaji, in: game, town: .rausu)
-        #expect(game.storyFlags.contains(.milkDelivered))
-        let gold = game.hero.gold
-        try talk(to: .rancher, in: game, town: .nakashibetsu)
-        try talk(to: .rancher, in: game, town: .nakashibetsu)
-        #expect(game.hero.gold == gold + 120)
-    }
-
-    /// 知床五湖の キツネの子を 見つけると レンジャーの となりに もどり、お礼は 1度だけ。
-    @Test func lostFoxGoesHome() throws {
-        let game = makeGame()
-        let herbs = game.hero.inventory[.herb, default: 0]
-        try talk(to: .lostFox, in: game, town: .utoro)
-        try talk(to: .foxRanger, in: game, town: .utoro)
-        try talk(to: .foxRanger, in: game, town: .utoro)
-        #expect(game.hero.inventory[.herb, default: 0] == herbs + 3)
-        #expect(World.utoro.npcs(game.progress).contains { $0.role == .resident(.foxHome) })
-    }
-
-    /// 羅臼の案内所は 知床の スタンプだけを 数える。
-    @Test func shiretokoGuideCountsItsOwnStamps() throws {
-        #expect(World.stampTotal(in: .shiretoko) >= 10, "知床の 名所が すくない")
-        let game = makeGame()
-        let gold = game.hero.gold
-        game.readPlaques = Set(World.stampPlaques(in: .shiretoko))
-        try talk(to: .shiretokoGuide, in: game, town: .rausu)
-        #expect(game.hero.gold == gold + 200)
-    }
-
-    /// 物語の前の セーブ（新しい項目がない）も 読める。
-    @Test func oldSaveWithoutStoryStillLoads() throws {
-        let old = """
-        {"hero": \(String(data: try JSONEncoder().encode(Hero()), encoding: .utf8)!),
-         "map": "sapporo", "position": {"x": 7, "y": 9}, "openedChests": [], "defeatedBosses": ["squidLord"]}
-        """
-        let save = try JSONDecoder().decode(SaveData.self, from: Data(old.utf8))
-        #expect(save.storyFlags.isEmpty)
-        #expect(save.defeatedBosses == [.squidLord])
-        #expect(save.lastTown == .hakodate)
-    }
-
-    @Test func storyFlagsSurviveSaving() throws {
-        var save = SaveData(hero: Hero(), map: .innInside, position: Point(x: 4, y: 4), openedChests: [])
-        save.storyFlags = [.heardFromFisher, .childFound]
-        save.lastTown = .sapporo
-        save.interiorReturn = Point(x: 11, y: 5)
-        let decoded = try JSONDecoder().decode(SaveData.self, from: JSONEncoder().encode(save))
-        #expect(decoded == save)
+    /// ボスの あいさつと たおしたあとの せりふが ある（ラスボス・裏ボスは エンディングへ）。
+    @Test func bossesHaveLines() {
+        for kind in EnemyKind.allCases where kind.isBoss {
+            #expect(Story.bossGreeting(kind).count >= 2, "\(kind)")
+            if !kind.isFinalBoss && !kind.isSecretBoss {
+                #expect(!Story.bossDefeated(kind).isEmpty, "\(kind)")
+            }
+        }
     }
 }

@@ -15,6 +15,12 @@ struct SaveData: Codable, Equatable {
     /// 宿屋・道具屋の中でセーブしたとき、出る先の街と扉の前。
     var lastTown: MapID = World.startMap
     var interiorReturn: Point?
+    /// 倒した ことの ある 敵（まもの ずかん）。
+    var seenEnemies: Set<EnemyKind> = []
+    /// 正解した ことの ある 問題（ちしきの てちょう）。
+    var learnedQuizzes: Set<String> = []
+    /// つづけて 正解した 数。
+    var quizStreak = 0
 }
 
 extension SaveData {
@@ -30,11 +36,14 @@ extension SaveData {
         readPlaques = try c.decodeIfPresent(Set<PlaqueID>.self, forKey: .readPlaques) ?? []
         lastTown = try c.decodeIfPresent(MapID.self, forKey: .lastTown) ?? World.startMap
         interiorReturn = try c.decodeIfPresent(Point.self, forKey: .interiorReturn)
+        seenEnemies = try c.decodeIfPresent(Set<EnemyKind>.self, forKey: .seenEnemies) ?? []
+        learnedQuizzes = try c.decodeIfPresent(Set<String>.self, forKey: .learnedQuizzes) ?? []
+        quizStreak = try c.decodeIfPresent(Int.self, forKey: .quizStreak) ?? 0
     }
 }
 
 enum SaveStore {
-    // 進みぐあいの持ちかたを変えたので v2。古いセーブは読まない。
+    // 1.4 と おなじ 置き場所（北海道の ころの セーブを そのまま つづける）。
     static let key = "geohero.save.v2"
 
     static func load(from defaults: UserDefaults = .standard) -> SaveData? {

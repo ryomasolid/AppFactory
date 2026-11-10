@@ -28,6 +28,17 @@ struct BattleSession {
     var levelUp: LevelUpPage?
 }
 
+/// ちしき検定の 進みぐあい。
+struct ExamSession: Equatable {
+    let region: Region
+    let questions: [Quiz]
+    var index = 0
+    var correct = 0
+
+    /// いま 出している 問題。おわったら nil。
+    var current: Quiz? { questions.indices.contains(index) ? questions[index] : nil }
+}
+
 /// 呪文・道具の演出と、その通し番号（同じ演出が続いても出し直すため）。
 struct EffectCue: Equatable {
     let id: Int
@@ -61,10 +72,20 @@ struct ChoiceSlot: Equatable {
 @Observable
 final class GameState {
     enum Screen: Equatable { case title, naming, field, battle, ending }
-    enum Overlay: Equatable { case none, menu, status, items, spells, shop, inn, recoverGold }
+    enum Overlay: Equatable {
+        case none, menu, status, items, spells, shop, inn
+        /// 全滅で なくした ゴールドを 広告で 取りもどすか。
+        case recoverGold
+        /// きろく（まつり・ずかん・てちょう・スタンプ・検定）。
+        case records, book, notebook
+        /// ちしき検定の 問題。
+        case exam
+        /// 新幹線の 行き先。
+        case train
+    }
 
     /// 1歩ごとの遭遇率（分母）と、戦闘後に遭遇しない歩数。
-    /// ずっと歩くと 2.7秒に 1回 戦いになって「歩くたびに出る」と いわれたので、平均 36歩に のばした。
+    /// ずっと歩くと 2.7秒に 1回 戦いになって「歩くたびに出る」と いわれたので、平均 36歩に のばした（1.4）。
     static let encounterDenominator = 24
     static let safeSteps = 12
 
@@ -93,17 +114,24 @@ final class GameState {
     var storyFlags: Set<StoryFlag> = []
     /// 読んだ 名所の看板（めいしょ スタンプ）。
     var readPlaques: Set<PlaqueID> = []
-    /// 地方ごとの 押した スタンプの数。
+    /// 県ごとの 押した スタンプの数。
     var stamps: [Region: Int] {
         Dictionary(grouping: readPlaques.intersection(World.stampPlaques), by: { $0.map.region ?? .hakodate })
             .mapValues(\.count)
     }
-    var progress: StoryProgress { StoryProgress(flags: storyFlags, defeatedBosses: defeatedBosses, stamps: stamps) }
+    /// 倒した ことの ある 敵（まもの ずかん）。
+    var seenEnemies: Set<EnemyKind> = []
+    /// 正解した ことの ある 問題（ちしきの てちょう）。問題文で おぼえる。
+    var learnedQuizzes: Set<String> = []
+    /// つづけて 正解した 数（ちしき コンボ）。まちがえると 0。
+    var quizStreak = 0
+    var progress: StoryProgress {
+        StoryProgress(flags: storyFlags, defeatedBosses: defeatedBosses, stamps: stamps, seen: seenEnemies.count)
+    }
     /// いまの地図に 出ている人。
     var npcs: [NPC] { map.npcs(progress) }
-    /// 土地ごとの「ちしき」の問題の山。戦いをまたいで続きから出す（毎回 同じ問題から始まらないように）。
-    /// セーブには残さない（試作）。
-    @ObservationIgnored var quizDecks: [QuizRegion: [Quiz]] = [:]
+    /// 街ごとの「ちしき」の問題の山。戦いをまたいで続きから出す（毎回 同じ問題から始まらないように）。
+    @ObservationIgnored var quizDecks: [MapID: [Quiz]] = [:]
     /// いま出ている「ちしきの チャンス」。答えを選ぶと こうげきと いっしょに 出す。
     private(set) var quizChance: Quiz?
     /// チャンスが出たときに ねらっていた相手。
@@ -114,8 +142,6 @@ final class GameState {
     private(set) var pages: [[String]] = []
     @ObservationIgnored private var afterMessages: (() -> Void)?
     @ObservationIgnored private var stepsSinceBattle = 0
-    /// いまの 1歩が 押しはじめの 1歩か。
-    @ObservationIgnored private var isNewPressWalk = false
     @ObservationIgnored var rng = AnyRandomSource(SystemRandomSource())
     /// 1歩の時間と戦闘メッセージの間隔。テストではゼロにする。
     /// 画面をおおう黒幕の濃さ（0＝見えない、1＝まっくら）。濃さを変えるのは画面側のアニメーション。
@@ -170,11 +196,11 @@ final class GameState {
     }
 
     var map: GameMap { World.map(mapID) }
-    /// いまの地方。宿屋・道具屋の中では 入ってきた街の地方。
+    /// いまの県。宿屋・道具屋の中では 入ってきた街の県。
     var region: Region { mapID.region ?? lastTown.region ?? .hakodate }
     var currentPage: [String]? { pages.first }
     /// いま使っている街。宿屋・道具屋の中では 入ってきた街を見る。
-    var town: TownInfo { mapID.townInfo ?? lastTown.townInfo ?? .hakodate }
+    var town: TownInfo { mapID.townInfo ?? lastTown.townInfo ?? World.startMap.townInfo! }
     /// 宿代。奥の街ほど 高い。
     var innPrice: Int { town.innBase + hero.level * town.innPerLevel }
     /// 道具屋の品ぞろえ。街ごとに変える。
@@ -196,7 +222,7 @@ final class GameState {
             if mapID.isField { .field(region) } else if mapID.isCave { .cave(region) } else { .village(region) }
         case .battle:
             if let battle, !battle.musicStopped {
-                if battle.battle.enemies.contains(where: \.kind.isFinalBoss) {
+                if battle.battle.enemies.contains(where: { $0.kind.isFinalBoss || $0.kind.isSecretBoss }) {
                     .finalBoss
                 } else {
                     battle.battle.isBoss ? .boss : .battle(region)
@@ -229,17 +255,21 @@ final class GameState {
         defeatedBosses = []
         storyFlags = []
         readPlaques = []
+        seenEnemies = []
+        learnedQuizzes = []
+        quizStreak = 0
+        quizDecks = [:]
         lastTown = World.startMap
         interiorReturn = nil
         enterField()
         say([
-            "まおうが この国の 5つの地方の",
-            "守護神を すべて あやつって しまった。",
+            "まおうが この国の 地方の 守護神を",
+            "つぎつぎと あやつって しまった。",
             "まものは ふえ、地は あれはてた。",
             "ちょうろう「おお \(hero.name)よ。",
             "そなたには いにしえの ゆうしゃの ちが ながれておる。",
             "この北海道の 守護神は 知床の おくに とらわれておる。",
-            "だが 道には まおうの てさきが 3ひき。",
+            "海の むこうの 東北でも まつりの 火が きえたと いう。",
             "まずは この 函館エリアから じゃ。",
             "函館山に イカのぬしが すみついた。",
             "山は いま 奉行所が とじておる。",
@@ -248,7 +278,7 @@ final class GameState {
             "Bで メニューを ひらけます）",
             "（たたかいで こうげきすると ときどき",
             "「ちしきの チャンス」が でます。",
-            "せいかいすると おいうちが きまります）",
+            "つづけて せいかいすると コンボで 強く なります）",
         ])
     }
 
@@ -261,6 +291,9 @@ final class GameState {
         defeatedBosses = save.defeatedBosses
         storyFlags = save.storyFlags
         readPlaques = save.readPlaques
+        seenEnemies = save.seenEnemies
+        learnedQuizzes = save.learnedQuizzes
+        quizStreak = save.quizStreak
         lastTown = save.lastTown
         interiorReturn = save.interiorReturn
         if mapID.isTown { lastTown = mapID }
@@ -290,6 +323,8 @@ final class GameState {
     @ObservationIgnored private var walkLoop: Task<Void, Never>?
     /// 歩いている途中に ちょんと押して離した向き。次の一歩で 使う。
     @ObservationIgnored private var tappedDirection: Direction?
+    /// いまの 1歩が 押しはじめの 1歩か。
+    @ObservationIgnored private var isNewPressWalk = false
 
     /// 押している間は歩き続ける。歩く処理は常に1本だけ動かす。
     /// ちょんと押してすぐ離しても 一歩は歩く（歩く処理が 動き出す前に「離した」が
@@ -362,6 +397,12 @@ final class GameState {
     }
 
     private func arrived() async {
+        // 駅に のったら 行き先を えらぶ。
+        if map.tile(at: position) == .station {
+            playSound(.confirm)
+            overlay = .train
+            return
+        }
         if let warp = map.warps[position] {
             // まだ前のボスを倒していない ほらあなには入れない。
             if let needed = warp.requires, !defeatedBosses.contains(needed) {
@@ -377,11 +418,8 @@ final class GameState {
                 return
             }
             // 出入りは 暗転をはさんで「移った」と分かるようにする。
-            // 空港（フィールドから となりの地方の フィールドへ）は ひこうきなので、暗いあいだに 字を出す。
-            let isFlight = mapID.isField && warp.to.isField
             playSound(.stairs)
-            await drawCurtain(caption: isFlight ? "ひこうきで とんでいる……" : nil)
-            if isFlight { try? await Task.sleep(for: sleepDuration) }
+            await drawCurtain()
             lastMoveWasWarp = true
             if mapID.isTown { lastTown = mapID }
             let from = mapID
@@ -397,9 +435,7 @@ final class GameState {
             stepsSinceBattle = 0
             hideBanner()
             await openCurtain()
-            if isFlight, let region = mapID.region {
-                showBanner(region.banner)
-            } else if from.isField, let town = mapID.townInfo {
+            if from.isField, let town = mapID.townInfo {
                 showBanner(town.banner)
             }
             return
@@ -427,6 +463,90 @@ final class GameState {
         bannerTask?.cancel()
         bannerTask = nil
         arrivalBanner = nil
+    }
+
+    // MARK: - 新幹線
+
+    /// 新幹線で 県を うつる。駅の 下に おりる。
+    func travel(to destination: Region) async {
+        overlay = .none
+        guard destination != region else { return }
+        guard progress.canTravel(to: destination) else {
+            playSound(.bump)
+            return say(["かかりいん「\(destination.shortName)ゆきの きっぷを おもちですか？",
+                        "　……きっぷが ないと おのせ できません。」"])
+        }
+        playSound(.stairs)
+        await drawCurtain(caption: "しんかんせんで はしっている……")
+        try? await Task.sleep(for: sleepDuration)
+        let field = World.map(destination.field)
+        mapID = destination.field
+        position = (field.station ?? Point(x: 1, y: 1)) + Point(x: 0, y: 1)
+        facing = .down
+        lastMoveWasWarp = true
+        stepsSinceBattle = 0
+        hideBanner()
+        await openCurtain()
+        showBanner(destination.banner)
+    }
+
+    /// 駅から おりずに 引きかえす（いまの 県に いる）。
+    func stayOnPlatform() {
+        overlay = .none
+    }
+
+    // MARK: - ちしき検定
+
+    /// いま うけている ちしき検定。
+    private(set) var exam: ExamSession?
+
+    /// 県の 問題から \(Story.examLength)もん 出す。ぜんぶ 正解で 合格。
+    func startExam(_ region: Region) {
+        let questions = Array(QuizBank.quizzes(in: region).shuffled().prefix(Story.examLength))
+        guard !questions.isEmpty else { return }
+        exam = ExamSession(region: region, questions: questions)
+        overlay = .exam
+    }
+
+    /// 検定の 答え。まちがえたら そこで おわり（また いつでも うけられる）。
+    func answerExam(_ choice: Int) {
+        guard var session = exam, let quiz = session.current else { return }
+        overlay = .none
+        session.index += 1
+        guard choice == quiz.answer else {
+            playSound(.miss)
+            exam = nil
+            return say(["ざんねん！ こたえは「\(quiz.correctChoice)」。",
+                        "けんていいん「\(session.index - 1)もん せいかい でした。",
+                        "　\(session.region.shortName)の 人の 話を よく きいて また どうぞ。」"])
+        }
+        playSound(.critical)
+        learnedQuizzes.insert(quiz.question)
+        session.correct += 1
+        exam = session
+        if session.current != nil {
+            say(["せいかい！（\(session.correct)／\(session.questions.count)）"]) { [weak self] in
+                self?.overlay = .exam
+            }
+            return
+        }
+        exam = nil
+        let reward = Story.examReward(session.region)
+        storyFlags.insert(.examPassed(session.region))
+        hero.receive(reward)
+        playSound(.levelUp)
+        say(["せいかい！（\(session.correct)／\(session.questions.count)）",
+             "けんていいん「おみごと！ \(session.region.name)の ちしき検定 合格です！",
+             "　ごほうびに \(reward.name)を どうぞ。」",
+             "\(reward.name)を てにいれた！",
+             "（\(reward.effectNote)）"])
+    }
+
+    /// 検定を とちゅうで やめる。
+    func quitExam() {
+        exam = nil
+        overlay = .none
+        say(["けんていいん「また いつでも どうぞ。」"])
     }
 
     // MARK: - ウィンドウの カーソル
@@ -526,7 +646,7 @@ final class GameState {
             say(["かんばんに こう かいてある。", "「ここは \(town.name)（\(town.reading)）。", "\(town.tagline)」"])
         } else if bossPoint == target, let kind = map.bossKind {
             playSound(.confirm)
-            say(GameState.bossGreeting(kind)) { [weak self] in
+            say(Story.bossGreeting(kind)) { [weak self] in
                 self?.startBattle(kind)
             }
         } else {
@@ -546,7 +666,7 @@ final class GameState {
     private func talk(to npc: NPC) {
         switch npc.role {
         case .elder:
-            say(elderHint())
+            say(Story.elderHint(progress))
         case .villager(let lines):
             say(lines)
         case .resident(let resident):
@@ -570,6 +690,7 @@ final class GameState {
         }
         say(scene.lines) { [weak self] in
             self?.storyFlags.formUnion(scene.sets)
+            if let region = scene.startsExam { self?.startExam(region) }
         }
     }
 
@@ -586,7 +707,11 @@ final class GameState {
         case .item(let item):
             hero.receive(item)
             // めずらしい 道具は 何に 使うかも 見せる。
-            let note = item.kind != .consumable ? "さっそく そうびした。" : (item.isTreasure ? "（\(item.effectNote)）" : "")
+            let note: String = switch item.kind {
+            case .consumable: item.isTreasure ? "（\(item.effectNote)）" : ""
+            case .charm: hero.charm == item ? "さっそく みにつけた。" : "（\(item.effectNote)）"
+            default: "さっそく そうびした。"
+            }
             say(["たからばこを あけた！", "\(item.name)を てにいれた！", note].filter { !$0.isEmpty })
         }
     }
@@ -687,17 +812,40 @@ final class GameState {
     }
 
     func castInField(_ spell: Spell) {
-        guard spell.isHealing, hero.spells.contains(spell), hero.mp >= spell.mpCost else {
+        guard spell.isFieldUsable, hero.spells.contains(spell), hero.mp >= spell.mpCost else {
             return say(["MPが たりない！"])
         }
+        if spell.effect == .escape {
+            guard let exit = World.caveExit(from: mapID) else {
+                overlay = .none
+                return say(["\(hero.name)は \(spell.name)を となえた！", "しかし ここでは つかえない。"])
+            }
+            hero.mp -= spell.mpCost
+            overlay = .none
+            Task { await escape(to: exit) }
+            return
+        }
         hero.mp -= spell.mpCost
-        let healed = hero.heal(rng.next(in: spell.power))
+        let healed = hero.heal(rng.next(in: spell.healRange(level: hero.level)))
         playSound(.heal)
         overlay = .none
         say(["\(hero.name)は \(spell.name)を となえた！", "HPが \(healed) かいふくした！"])
     }
 
-    func useHerbInField() { useInField(.herb) }
+    /// だっしゅつ：ほらあなの 入口の 前へ もどる。
+    private func escape(to exit: (map: MapID, point: Point)) async {
+        playSound(.spell)
+        await drawCurtain()
+        mapID = exit.map
+        position = exit.point
+        facing = .down
+        lastMoveWasWarp = true
+        stepsSinceBattle = 0
+        await openCurtain()
+        say(["\(hero.name)は \(Spell.escape.name)を となえた！", "ほらあなの いりぐちに もどってきた。"])
+    }
+
+    func useHerbInField() { useInField(.apple) }
 
     /// 回復の道具を フィールドで つかう。
     func useInField(_ item: Item) {
@@ -715,7 +863,8 @@ final class GameState {
         SaveStore.save(SaveData(
             hero: hero, map: mapID, position: position,
             openedChests: openedChests, defeatedBosses: defeatedBosses,
-            storyFlags: storyFlags, readPlaques: readPlaques, lastTown: lastTown, interiorReturn: interiorReturn
+            storyFlags: storyFlags, readPlaques: readPlaques, lastTown: lastTown, interiorReturn: interiorReturn,
+            seenEnemies: seenEnemies, learnedQuizzes: learnedQuizzes, quizStreak: quizStreak
         ))
         hasSave = true
     }
@@ -731,48 +880,6 @@ final class GameState {
         say(["おはようございます。", "HPと MPが かいふくした！", "ぼうけんの きろくを かきとめました。"])
     }
 
-    /// 長老の助言。どこまで進んだかで 言うことを変える。
-    private func elderHint() -> [String] {
-        if !progress.has(.hakodateyamaPass) {
-            ["ちょうろう「函館山は 奉行所が とじておる。",
-             "　五稜郭の 奉行に あかしを みせれば ひらくはずじゃ。",
-             "　五稜郭は 街の 北。 港の ものが なにか 見たらしいぞ。」"]
-        } else if !defeatedBosses.contains(.squidLord) {
-            ["ちょうろう「ぬしとの たたかいでは ちしきの チャンスが よく くる。",
-             "　函館の ことを よく しっておけば おいうちが きまるはずじゃ。",
-             "　街の ものの はなしを きいておくのじゃぞ。」"]
-        } else if !progress.has(.fireCharm) {
-            ["ちょうろう「よくぞ ぬしを たおした。",
-             "　つぎは 駒ヶ岳じゃが、火よけの おふだが いる。",
-             "　松前の 殿様を たずねよ。 函館湾を まわった 西の はてじゃ。」"]
-        } else if !defeatedBosses.contains(.komaLord) {
-            ["ちょうろう「駒ヶ岳は 大沼の 北じゃ。",
-             "　大沼の ものの はなしを きいておけば",
-             "　ちしきの チャンスで おいうちが きまるぞ。」"]
-        } else if !defeatedBosses.contains(.tengu) && !progress.has(.musicBox) {
-            ["ちょうろう「札幌の 赤れんが庁舎の 長官を たずねよ。",
-             "　小樽の 天狗山には 天狗が おる。",
-             "　小樽の ことを しっておけば ちしきで おいうちが きまるぞ。」"]
-        } else if !progress.has(.musicBox) {
-            ["ちょうろう「天狗を こらしめたか。",
-             "　小樽の オルゴール職人に しらせて やるのじゃ。」"]
-        } else if !defeatedBosses.contains(.bearLord) {
-            ["ちょうろう「藻岩山は 札幌の 南西じゃ。",
-             "　札幌の ものの はなしを きいておくのじゃぞ。」"]
-        } else if !progress.has(.kamuiFeather) {
-            ["ちょうろう「知床では 羅臼の エカシを たずねよ。",
-             "　羅臼は 中標津から 東の 海ぞいを いった さきじゃ。",
-             "　トドのぬしは 知床岬の ほらあなに おる。」"]
-        } else if !defeatedBosses.contains(.guardian) {
-            ["ちょうろう「のこるは 羅臼岳の 守護神。",
-             "　はげしい ふぶきを おこす。",
-             "　知床の ことを よく しり、HPに よゆうを もって いどむのじゃ。」"]
-        } else {
-            ["ちょうろう「よくぞ 守護神を 解きはなった。",
-             "　つぎの地方が そなたを まっておる。」"]
-        }
-    }
-
     // MARK: - イベントの おしらせ
 
     /// App Store の アプリ内イベントから 開いたときに タイトルに 出す おしらせ。
@@ -786,7 +893,7 @@ final class GameState {
             eventNotice = [
                 "めいしょスタンプラリー かいさい中！",
                 "街の 名所の かんばんを よむと スタンプが たまるよ。",
-                "函館・札幌・羅臼の 案内所で ごほうびを もらおう！",
+                "各地の 案内所で ごほうびを もらおう！",
             ]
         default:
             eventNotice = nil
@@ -799,14 +906,16 @@ final class GameState {
 
     /// シェアする きろくカードの 中身。
     var adventureSummary: AdventureSummary {
-        let order: [EnemyKind] = [.squidLord, .komaLord, .tengu, .bearLord, .todoLord, .guardian]
-        let stampCount = stamps.values.reduce(0, +)
+        let bosses = EnemyKind.allCases.filter(\.isBoss)
         return AdventureSummary(
-            name: hero.name, level: hero.level, regionName: region.banner.name,
-            bosses: order.filter(defeatedBosses.contains).count, bossTotal: order.count,
-            stamps: stampCount, stampTotal: World.stampPlaques.count,
-            lastBoss: order.last(where: defeatedBosses.contains),
-            cleared: defeatedBosses.contains(.guardian)
+            name: hero.name, level: hero.level, regionName: region.name,
+            festivals: Region.allCases.filter(progress.festivalRestored).count,
+            bosses: bosses.filter { defeatedBosses.contains($0) }.count, bossTotal: bosses.count,
+            stamps: stamps.values.reduce(0, +), stampTotal: World.stampPlaques.count,
+            book: seenEnemies.count, bookTotal: EnemyKind.allCases.count,
+            lastBoss: bosses.last { defeatedBosses.contains($0) },
+            cleared: defeatedBosses.contains(.zaoGuardian),
+            mastered: defeatedBosses.contains(.maouShadow)
         )
     }
 
@@ -818,76 +927,10 @@ final class GameState {
 
     /// 中ぐらいの ぬしを たおして 気分の いいときに、評価を たのむ（バージョンごとに 1回）。
     private func askForReviewIfFitting(after kind: EnemyKind) {
-        guard [.komaLord, .bearLord, .todoLord].contains(kind),
+        guard [.komaLord, .bearLord, .todoLord, .namahageKing, .datemaru, .tenagaAshinaga].contains(kind),
               UserDefaults.standard.string(forKey: Self.reviewKey) != appVersion else { return }
         UserDefaults.standard.set(appVersion, forKey: Self.reviewKey)
         reviewRequests += 1
-    }
-
-    // MARK: - ボスのせりふ
-
-    static func bossGreeting(_ kind: EnemyKind) -> [String] {
-        switch kind {
-        case .squidLord:
-            ["シュルルル……",
-             "イカのぬし「みなとの さかなは わたしのものだ。",
-             "　すみで まっくろに してやろう！」"]
-        case .komaLord:
-            ["ヒヒーン……！",
-             "駒ヶ岳のぬし「この 山の 火は わたしのものだ。",
-             "　ひこうきも 人も 近づけさせぬ！」"]
-        case .tengu:
-            ["ヒュウウ……",
-             "天狗「わっはっは！ この オルゴールの 音は わしの ものじゃ。",
-             "　うちわの かぜで ふきとばしてくれる！」"]
-        case .todoLord:
-            ["オウッ オウッ……！",
-             "トドのぬし「この はねは わたさんぞ。",
-             "　つめたい 海の そこへ しずめてくれる！」"]
-        case .bearLord:
-            ["グオオオ……",
-             "ヒグマのぬし「この山は とおさん。",
-             "　まおうさまの じゃまは させん！」"]
-        default:
-            ["ゴゴゴ……",
-             "知床の守護神「……ちが、ながれて いる な。",
-             "　だが われは まおうの もの。",
-             "　ふぶきの なかで ねむるが よい！」",
-             "（あやつられた 守護神が おそいかかってきた！）"]
-        }
-    }
-
-    static func bossDefeated(_ kind: EnemyKind) -> [String] {
-        switch kind {
-        case .squidLord:
-            ["イカのぬしを たおした！",
-             "みなとに さかなが もどってきた。",
-             "五稜郭の 奉行に しらせに いこう。"]
-        case .komaLord:
-            ["駒ヶ岳のぬしを たおした！",
-             "山の けむりが おさまり、空が はれていく。",
-             "大沼の ひとびとから おれいに",
-             "札幌ゆきの ひこうきの きっぷを もらった！",
-             "函館の 東の 函館空港から とべる。"]
-        case .tengu:
-            ["天狗を たおした！",
-             "天狗は うちわを おとして 山の おくへ にげていった。",
-             "とられた オルゴールも おちている。",
-             "小樽の オルゴール職人に しらせに いこう。"]
-        case .todoLord:
-            ["トドのぬしを たおした！",
-             "トドのぬしは 海へ にげていった。",
-             "あとに 大きな はねが のこっている。",
-             "羅臼の エカシに しらせに いこう。"]
-        case .bearLord:
-            ["ヒグマのぬしを たおした！",
-             "藻岩山に しずけさが もどった。",
-             "札幌の ひとびとから おれいに",
-             "知床ゆきの ひこうきの きっぷを もらった！",
-             "南東の 新千歳空港から とべる。"]
-        default:
-            []
-        }
     }
 
     // MARK: - そうびと 売り買い
@@ -896,7 +939,7 @@ final class GameState {
         hero.equip(item)
         playSound(.confirm)
         overlay = .none
-        say(["\(item.name)を そうびした。"])
+        say([item.isCharm ? "\(item.name)を みにつけた。" : "\(item.name)を そうびした。"])
     }
 
     func unequip(_ item: Item) {
@@ -940,11 +983,11 @@ final class GameState {
         tappedDirection = nil
         playSound(.encounter)
         var quizzes: [Quiz] = []
-        if let region = QuizRegion.at(mapID, position) {
-            quizzes = quizDecks[region] ?? region.quizzes.shuffled()
+        if let town = QuizBank.town(at: mapID, position) {
+            quizzes = quizDecks[town] ?? (QuizBank.byTown[town] ?? []).shuffled()
         }
         battle = BattleSession(
-            battle: Battle(hero: hero, enemies: group, quizzes: quizzes),
+            battle: Battle(hero: hero, enemies: group, quizzes: quizzes, streak: quizStreak),
             log: [EnemyGroup.encounterText(group)]
         )
         overlay = .none
@@ -955,9 +998,12 @@ final class GameState {
         guard var session = battle, !session.isPlaying, session.end == nil else { return }
         quizChance = nil
         let result = session.battle.take(command, target: target, rng: &rng)
-        if let region = QuizRegion.at(mapID, position), !session.battle.quizzes.isEmpty {
-            quizDecks[region] = session.battle.quizzes
+        if let town = QuizBank.town(at: mapID, position), !session.battle.quizzes.isEmpty {
+            quizDecks[town] = session.battle.quizzes
         }
+        // コンボと てちょうは 答えた その場で のこす（にげても 消えないように）。
+        quizStreak = session.battle.streak
+        learnedQuizzes.formUnion(session.battle.solved.map(\.question))
         session.log = []
         session.isPlaying = true
         battle = session
@@ -1078,17 +1124,23 @@ final class GameState {
         guard let session = battle, let end = session.end else { return }
         hero = session.battle.hero
         stepsSinceBattle = 0
+        if case .won = end {
+            // 倒した 敵を ずかんに のせる。
+            let fresh = Set(session.battle.enemies.map(\.kind)).subtracting(seenEnemies)
+            seenEnemies.formUnion(fresh)
+        }
         switch end {
         case .won where session.battle.isBoss:
             let kind = session.battle.enemies.first?.kind
             if let kind { defeatedBosses.insert(kind) }
             battle = nil
-            if kind?.isFinalBoss == true {
+            if kind?.isFinalBoss == true || kind?.isSecretBoss == true {
+                endingKind = kind?.isSecretBoss == true ? .secret : .main
                 screen = .ending
             } else {
                 screen = .field
                 if let kind {
-                    say(GameState.bossDefeated(kind)) { [weak self] in self?.askForReviewIfFitting(after: kind) }
+                    say(Story.bossDefeated(kind)) { [weak self] in self?.askForReviewIfFitting(after: kind) }
                 }
             }
         case .won, .fled:
@@ -1111,6 +1163,32 @@ final class GameState {
                 overlay = .recoverGold
             }
         }
+    }
+
+    // MARK: - エンディングの あと
+
+    enum EndingKind: Equatable { case main, secret }
+    /// いま 出している エンディング。
+    private(set) var endingKind: EndingKind = .main
+
+    /// エンディングの あとも 冒険を つづける（恐山や ずかん うめの ため）。
+    /// 守護神を 倒した 蔵王の ふもとの 山形の 街に もどして、きろくを かきとめる。
+    func continueAfterEnding() {
+        let (map, point) = endingKind == .secret ? World.revivePoint(in: .aomori) : World.revivePoint(in: .yamagata)
+        mapID = map
+        position = point
+        lastTown = map
+        interiorReturn = nil
+        facing = .down
+        hero.restoreFully()
+        enterField()
+        save()
+        say(endingKind == .secret
+            ? ["\(hero.name)は 恐山から 青森の 街に もどってきた。", "ぼうけんの きろくを かきとめました。"]
+            : ["\(hero.name)は 山形の 街に もどってきた。",
+               "東北の 守護神「下北の 恐山に まだ やみが のこっている。",
+               "　6県の ちしきを きわめ、うちはらって おくれ。」",
+               "ぼうけんの きろくを かきとめました。"])
     }
 
     func backToTitle() {

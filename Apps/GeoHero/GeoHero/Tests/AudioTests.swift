@@ -43,7 +43,7 @@ struct ScoreTests {
     }
 
     @Test func renderedMusicIsAudible() {
-        let score = MusicTrack.battle.score
+        let score = MusicTrack.battleNorth.score
         let samples = Synth.render(score)
         let expected = Double(MML.ticksPerWhole * 8) * Synth.samplesPerTick(tempo: score.tempo)
         #expect(abs(Double(samples.count) - expected) < 2)
@@ -66,7 +66,7 @@ struct BattleSoundTests {
     @Test func attackAndWinPlayCues() {
         var rng = SeededRandomSource(seed: 7)
         var hero = Hero()
-        hero.receive(.steelSword)
+        hero.receive(.nebutaHoko)
         var battle = Battle(hero: hero, enemy: Enemy(.potato))
         var cues: [SoundCue] = []
         for _ in 0..<10 where battle.end == nil {
@@ -80,7 +80,7 @@ struct BattleSoundTests {
         var rng = SeededRandomSource(seed: 11)
         var hero = Hero()
         _ = hero.gainExp(LevelTable.row(5).exp)
-        var battle = Battle(hero: hero, enemy: Enemy(.iceGolem))
+        var battle = Battle(hero: hero, enemy: Enemy(.yukioni))
         let before = battle.enemy.hp
         let result = battle.take(.attack, rng: &rng)
         let dealt = result.lines.compactMap(\.enemyDamage).reduce(0, +)
@@ -92,7 +92,7 @@ struct BattleSoundTests {
 
     @Test func levelUpAndGameOverCues() {
         var rng = SeededRandomSource(seed: 3)
-        var weak = Battle(hero: Hero(), enemy: Enemy(.guardian))
+        var weak = Battle(hero: Hero(), enemy: Enemy(.zaoGuardian))
         var cues: [SoundCue] = []
         for _ in 0..<20 where weak.end == nil {
             cues += weak.take(.attack, rng: &rng).cues
@@ -101,7 +101,7 @@ struct BattleSoundTests {
 
         var hero = Hero()
         hero.exp = LevelTable.row(2).exp - 1
-        hero.receive(.steelSword)
+        hero.receive(.nebutaHoko)
         var battle = Battle(hero: hero, enemy: Enemy(.potato))
         cues = []
         for _ in 0..<10 where battle.end == nil {
@@ -125,15 +125,15 @@ struct GameSoundTests {
         var played: [SoundCue] = []
         game.playSound = { played.append($0) }
 
-        #expect(game.musicTrack == .village)
+        #expect(game.musicTrack == .villageHakodate)
         game.position = Point(x: 1, y: 1)
         await game.walk(.up)
         #expect(played.last == .bump)
 
-        game.hero.receive(.steelSword)
+        game.hero.receive(.katana)
         game.startBattle(.potato)
         #expect(played.last == .encounter)
-        #expect(game.musicTrack == .battle)
+        #expect(game.musicTrack == .battleHakodate)
         for _ in 0..<10 where game.battle?.end == nil {
             await game.command(.attack)
         }
@@ -141,23 +141,22 @@ struct GameSoundTests {
         // 勝利のジングルが鳴ったら戦闘の BGM は止める。
         #expect(game.musicTrack == nil)
         await game.finishBattle()
-        #expect(game.musicTrack == .village)
+        #expect(game.musicTrack == .villageHakodate)
     }
 }
 
-/// 曲は 地方ごとに かわる（同じ曲ばかりで 飽きないように）。
+/// 曲は 県ごとに かわる。
 @MainActor
 struct RegionMusicTests {
 
-    @Test func eachRegionHasItsOwnTracks() {
-        for pick in [MusicTrack.field, MusicTrack.village, MusicTrack.battle] {
-            let tracks = Region.allCases.map(pick)
-            #expect(Set(tracks).count == Region.allCases.count, "\(tracks) に 同じ曲が ある")
-        }
-        #expect(MusicTrack.cave(.hakodate) != MusicTrack.cave(.shiretoko))
+    @Test func eachRegionHasItsOwnFieldTrack() {
+        #expect(Set(Region.allCases.map(MusicTrack.field)).count == Region.allCases.count)
+        // 北海道は 地方ごと、東北は 北・中・南の 3つ。
+        #expect(Set(Region.allCases.map(MusicTrack.battle)).count == 6)
+        #expect(MusicTrack.cave(.aomori) != MusicTrack.cave(.yamagata))
     }
 
-    /// どの曲も どこかで 流れる（作ったのに 使われない曲を 作らない）。
+    /// どの曲も どこかで 流れる。
     @Test func everyTrackIsUsed() {
         var used: Set<MusicTrack> = [.title, .ending, .boss, .finalBoss]
         for region in Region.allCases {
@@ -166,25 +165,30 @@ struct RegionMusicTests {
         #expect(used == Set(MusicTrack.allCases))
     }
 
-    /// ラスボスは 専用の曲、ほかの ボスは ボスの曲。
+    /// 守護神と まおうの かげは 専用の曲、ほかの ボスは ボスの曲。
     @Test func finalBossHasItsOwnTheme() {
         let game = GameState()
         game.newGame()
-        game.startBattle(.guardian)
+        game.startBattle(.zaoGuardian)
         #expect(game.musicTrack == .finalBoss)
         game.battle = nil
         game.screen = .field
-        game.startBattle(.squidLord)
+        game.startBattle(.maouShadow)
+        #expect(game.musicTrack == .finalBoss)
+        game.battle = nil
+        game.screen = .field
+        game.startBattle(.hachirotaro)
         #expect(game.musicTrack == .boss)
     }
 
-    /// 札幌の 街では 札幌の 曲が 流れる。
     @Test func townMusicFollowsTheRegion() {
         let game = GameState()
         game.newGame()
-        game.mapID = .sapporo
-        #expect(game.musicTrack == .villageSapporo)
-        game.mapID = .rausudake1
+        game.mapID = .sendai
+        #expect(game.musicTrack == .villageMiddle)
+        game.mapID = .zao2
         #expect(game.musicTrack == .caveDeep)
+        game.mapID = .akitaField
+        #expect(game.musicTrack == .fieldAkita)
     }
 }

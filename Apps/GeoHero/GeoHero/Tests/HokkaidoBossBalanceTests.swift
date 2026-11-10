@@ -4,10 +4,10 @@ import Testing
 /// ボスは 着くころの レベル・装備で、ときどき出る「ちしきの チャンス」に 正解して まもりを やぶり、
 /// 回復しながら戦えば 勝てる。
 /// 駒ヶ岳のぬし・天狗を 足して 旅が のびたので、藻岩山・羅臼岳の ボスも 着くころのレベルに合わせた。
-struct BossBalanceTests {
+struct HokkaidoBossBalanceTests {
 
     /// ボスと、倒しに行くころの レベル・装備・問題の土地。
-    private let bosses: [(EnemyKind, Int, Item, Item, QuizRegion)] = [
+    private let bosses: [(EnemyKind, Int, Item, Item, MapID)] = [
         (.squidLord, 4, .copperSword, .leatherArmor, .hakodate),
         (.komaLord, 7, .copperSword, .leatherArmor, .onuma),
         (.tengu, 10, .copperSword, .leatherArmor, .otaru),
@@ -18,7 +18,7 @@ struct BossBalanceTests {
 
     /// HPが へったら 回復し、それ以外は こうげき（チャンスが 出たら 正解する）。薬草は 5つ。
     private func wins(_ kind: EnemyKind, level: Int, weapon: Item, armor: Item,
-                      region: QuizRegion) -> (wins: Int, averageTurns: Int) {
+                      region: MapID) -> (wins: Int, averageTurns: Int) {
         var wins = 0
         var turns = 0
         for seed in UInt64(1)...20 {
@@ -29,7 +29,7 @@ struct BossBalanceTests {
             hero.receive(armor)
             for _ in 0..<5 { hero.receive(.herb) }
             hero.restoreFully()
-            var battle = Battle(hero: hero, enemies: [Enemy(kind)], quizzes: region.quizzes)
+            var battle = Battle(hero: hero, enemies: [Enemy(kind)], quizzes: QuizBank.byTown[region] ?? [])
             var end: BattleEnd?
             for _ in 0..<80 where end == nil {
                 let me = battle.hero

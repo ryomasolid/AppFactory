@@ -1,8 +1,9 @@
 import Foundation
 
 /// 起動引数で途中の場面から始める（シミュレータでの表示確認用）。
-/// 例: `-startMap field -startX 5 -startY 8 -startFacing left` / `-startBattle guardian -autoAttack YES` / `-startLevel 10`
-/// / `-startBattle potato,potato,kelpSlime`（複数体と戦う）
+/// 例: `-startMap aomoriField -startX 24 -startY 17 -startFacing left` / `-startBattle zaoGuardian -autoAttack YES` / `-startLevel 10`
+/// / `-startBattle ringoSlime,ringoSlime,hotate`（複数体と戦う）
+/// / `-defeated hachirotaro,yukioni`（倒した ボス）/ `-flags aomori.heard,aomori.towada`（物語の 印）
 /// / `-startBattle cod -autoCommand fire`（1.5秒後に自動で呪文・道具を使う。attack / heal / fire / highHeal / flame / herb）
 /// / `-startHP 20`（HP を減らした状態から。回復の演出や瀕死の表示の確認用）
 /// / `-startNaming YES`（名前を決める画面から）
@@ -10,10 +11,10 @@ import Foundation
 /// / `-autoInn YES`（宿屋に泊まって、暗転とねむりの演出を見る）
 /// / `-startOverlay shop`（menu・status・items・spells・shop・inn のウィンドウを開いた状態）
 /// / `-startOverlay shop -shopConfirm herb`（道具屋の「かうかい？」を出した状態）
-/// / `-startOverlay items -selectItem copperSword`（どうぐ画面で1つ選んだ状態）
+/// / `-startOverlay items -selectItem ringoBokuto`（どうぐ画面で1つ選んだ状態）
 /// / `-startOverlay shop -shopSell YES`（道具屋の「うる」一覧を出した状態）
 /// / `-startOverlay shop -shopBuy YES`（道具屋の「かう」一覧。街ごとの品ぞろえを見る）
-/// / `-openedChests hakodateyama-0,moiwa1-0`（開けた宝箱）
+/// / `-openedChests towadako-0,hakkoda1-0`（開けた宝箱）
 /// / `-startMap field -startX 16 -startY 35 -autoStep up`（1秒後に1歩あるく。街に入ったときの地名の札を見る）
 /// / `-autoWalk right,right,up,up`（1秒後から 順に あるく。App プレビューの 動画を 撮る用）
 /// / `-startBattle sakuraSpirit -autoQuiz YES`（「ちしきの チャンス」を 出して 正解する。動画を 撮る用）
@@ -46,7 +47,7 @@ enum Launch {
         UserDefaults.standard.bool(forKey: "shopBuy")
     }
 
-    /// どうぐ画面で選んでおく持ちもの（`-selectItem copperSword`）。表示確認用。
+    /// どうぐ画面で選んでおく持ちもの（`-selectItem ringoBokuto`）。表示確認用。
     static var selectItem: Item? {
         UserDefaults.standard.string(forKey: "selectItem").flatMap(Item.init(rawValue:))
     }
@@ -64,8 +65,10 @@ enum Launch {
         let startHP = defaults.integer(forKey: "startHP")
         let grantExp = defaults.integer(forKey: "grantExp")
         let openedChests = defaults.string(forKey: "openedChests")
+        let defeated = defaults.string(forKey: "defeated")
+        let flags = defaults.string(forKey: "flags")
         guard mapName != nil || battleName != nil || level > 0 || overlayName != nil
-            || openedChests != nil || startHP > 0 || grantExp > 0 else { return }
+            || openedChests != nil || startHP > 0 || grantExp > 0 || defeated != nil || flags != nil || defaults.bool(forKey: "seenAll") else { return }
 
         game.newGame()
         game.say([])
@@ -73,9 +76,22 @@ enum Launch {
             _ = game.hero.gainExp(LevelTable.row(level).exp)
             game.hero.restoreFully()
             game.hero.gold = 500
-            // 表示確認がしやすいよう、ひととおりの装備を持たせる。
-            game.hero.receive(.copperSword)
-            game.hero.receive(.leatherArmor)
+            // 表示確認がしやすいよう、その レベルの ころの 装備を持たせる。
+            if let arrival = Balance.places.last(where: { $0.arrival.level <= level })?.arrival {
+                game.hero.receive(arrival.weapon)
+                game.hero.receive(arrival.armor)
+            }
+        }
+        // 図鑑・てちょうの 表示確認用（`-seenAll YES`）。
+        if defaults.bool(forKey: "seenAll") {
+            game.seenEnemies = Set(EnemyKind.allCases.prefix(20))
+            game.learnedQuizzes = Set(QuizBank.quizzes(in: .aomori).prefix(8).map(\.question))
+        }
+        if let defeated {
+            game.defeatedBosses = Set(defeated.split(separator: ",").compactMap { EnemyKind(rawValue: String($0)) })
+        }
+        if let flags {
+            game.storyFlags = Set(flags.split(separator: ",").map { StoryFlag(rawValue: String($0)) })
         }
         if startHP > 0 {
             game.hero.hp = min(startHP, game.hero.maxHP)
@@ -103,6 +119,9 @@ enum Launch {
         case "spells": game.overlay = .spells
         case "shop": game.overlay = .shop
         case "inn": game.overlay = .inn
+        case "records": game.overlay = .records
+        case "book": game.overlay = .book
+        case "notebook": game.overlay = .notebook
         default: break
         }
         if let step = defaults.string(forKey: "autoStep").flatMap(Direction.init(rawValue:)) {
@@ -133,7 +152,7 @@ enum Launch {
             }
         }
         if let battleName {
-            // カンマ区切りで複数体（`-startBattle potato,potato,kelpSlime`）。
+            // カンマ区切りで複数体（`-startBattle ringoSlime,ringoSlime,hotate`）。
             let kinds = battleName.split(separator: ",").compactMap { EnemyKind(rawValue: String($0)) }
             guard !kinds.isEmpty else { return }
             game.startBattle(kinds)
@@ -190,7 +209,7 @@ enum Launch {
     static func autoCommand(_ name: String?) -> BattleCommand? {
         guard let name else { return nil }
         if name == "attack" { return .attack }
-        if name == "herb" { return .item(.herb) }
+        if name == "herb" { return .item(.apple) }
         return Spell(rawValue: name).map { .spell($0) }
     }
 }

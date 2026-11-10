@@ -10,6 +10,9 @@ struct AdventureCard: View {
             Text("地理の勇者 RPG")
                 .font(Retro.font(30))
                 .foregroundStyle(Retro.accent)
+            Text("〜 北海道・東北 編 〜")
+                .font(Retro.font(14))
+                .foregroundStyle(Retro.dim)
             HStack(spacing: 18) {
                 SpriteCache.image(.hero1).resizable().interpolation(.none).frame(width: 96, height: 96)
                 if let boss = summary.lastBoss {
@@ -19,7 +22,9 @@ struct AdventureCard: View {
             RetroWindow {
                 Text("\(summary.name)  LV \(summary.level)")
                 Text("いま: \(summary.regionName)")
+                Text("もどった まつり: \(summary.festivals) / \(Region.tohoku.count)")
                 Text("たおした ぬし: \(summary.bosses) / \(summary.bossTotal)")
+                Text("まもの ずかん: \(summary.book) / \(summary.bookTotal)")
                 Text("めいしょスタンプ: \(summary.stamps) / \(summary.stampTotal)")
             }
             Text(summary.headline)
@@ -40,20 +45,30 @@ struct AdventureSummary: Equatable {
     let name: String
     let level: Int
     let regionName: String
+    let festivals: Int
     let bosses: Int
     let bossTotal: Int
     let stamps: Int
     let stampTotal: Int
+    let book: Int
+    let bookTotal: Int
     let lastBoss: EnemyKind?
     let cleared: Bool
+    /// 恐山の 裏ボスまで 倒した。
+    let mastered: Bool
 
-    var headline: String { cleared ? "北海道に へいわを とりもどした！" : "北海道を 冒険中！" }
+    var headline: String {
+        if mastered { return "しんの ちりの ゆうしゃに なった！" }
+        if cleared { return "東北の まつりを ぜんぶ とりもどした！" }
+        return Region.tohoku.contains { $0.banner.name == regionName } ? "東北を 冒険中！" : "北海道を 冒険中！"
+    }
 
     /// シェアに そえる 文。
     var message: String {
-        "「地理の勇者 RPG」で \(headline) LV\(level)・ぬし \(bosses)/\(bossTotal)・めいしょスタンプ \(stamps)/\(stampTotal) #地理の勇者 \(Self.storeURL)"
+        "「地理の勇者 RPG」で \(headline) LV\(level)・ぬし \(bosses)/\(bossTotal)・ずかん \(book)/\(bookTotal) #地理の勇者 \(Self.storeURL)"
     }
 
+    /// App Store の ページ（地理の勇者 RPG）。
     static let storeURL = "https://apps.apple.com/jp/app/id6813561253"
 }
 

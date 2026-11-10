@@ -134,6 +134,7 @@ struct MapLayer: View {
         case .town: (.townLarge, 2.0)
         case .cave: (.caveLarge, 1.7)
         case .airport: (.airportLarge, 1.8)
+        case .station: (.stationLarge, 1.8)
         default: nil
         }
     }
@@ -191,9 +192,16 @@ struct MapLayer: View {
                 }
             }
             // フィールドでは 街と ほらあなの下に 地名を出す。どこが どの街か 地図だけで分かるように。
-            for (point, warp) in map.warps {
-                guard MapLayer.landmark(map.tile(at: point)) != nil, let name = warp.to.placeName,
-                      abs(point.x - center.x) <= radius, abs(point.y - center.y) <= radius else { continue }
+            var labels: [(Point, String)] = map.warps.compactMap { point, warp in
+                guard MapLayer.landmark(map.tile(at: point)) != nil, let name = warp.to.placeName else { return nil }
+                return (point, name)
+            }
+            // 駅には 駅の 名前（新青森駅 など）。
+            if let station = map.station, let region = map.region, let name = region.stationName {
+                labels.append((station, name))
+            }
+            for (point, name) in labels {
+                guard abs(point.x - center.x) <= radius, abs(point.y - center.y) <= radius else { continue }
                 let below = rect(for: point)
                 let text = context.resolve(Text(name).font(Retro.font(tile * 0.36)).foregroundColor(.white))
                 let size = text.measure(in: CGSize(width: tile * 4, height: tile))

@@ -10,47 +10,30 @@ extension MusicTrack {
                 lead("o4 g4 e8 g8 >c4< g4 | a4 f8 a8 >c4< a4 | g8 a8 g8 f8 e4 c4 | d4 e8 f8 g2 | g4 e8 g8 >c4 e4< | >d4 c8< b8 a4 f4 | g8 f8 e8 d8 e4 d4 | c2 r2"),
                 bass("o3 c4 g4 c4 g4 | f4 >c4< f4 >c4< | c4 g4 c4 g4 | g4 >d4< g4 b4 | c4 g4 c4 g4 | f4 a4 f4 a4 | g4 b4 g4 b4 | c4 g4 c2"),
             ])
-        case .village:
-            Score(tempo: 92, voices: [
-                lead("o4 f4 a8 >c8< a4 f4 | g4 a8 b-8 a4 g4 | f4 a8 >c8 d4 c4< | b-8 a8 g8 a8 f2 | d4 f8 a8 g4 f4 | e4 g8 b-8 a4 g4 | f8 g8 a8 b-8 >c4< a4 | g4 e4 f2", duty: 0.5, volume: 0.09),
-                bass("o3 f4 >c4< f4 >c4< | c4 g4 c4 g4 | f4 >c4< f4 >c4< | c4 g4 f2 | d4 a4 d4 a4 | c4 g4 c4 g4 | f4 >c4< f4 >c4< | c4 g4 f2"),
-            ])
-        case .overworld:
+        case .fieldHakodate:
             Score(tempo: 126, voices: [
                 lead("o4 d4 g8 a8 b4 a8 g8 | a4 f+8 d8 e4 f+4 | g4 b8 >d8 e4 d8 c8< | b4 a8 g8 a2 | d4 g8 a8 b4 >c8 d8< | >e4 d8 c8< b4 a4 | g8 a8 b8 g8 a4 f+4 | g2 r4 d4"),
                 bass("o2 " + pump("g") + pump("d") + pump("c") + pump("d") + pump("g") + pump("c") + pump("d") + "g4 >d4< g2"),
                 drums(String(repeating: "c8 r8 ", count: 32)),
             ])
-        case .cave:
-            Score(tempo: 84, voices: [
-                lead("o4 e4 r4 f4 e4 | d+4 e8 r8 r2 | a4 r4 b-4 a4 | g+4 a8 r8 r2 | >c4 r8< b8 a4 g+4 | a4 f4 e2 | d4 e8 f8 e4 d4 | e2 r2", duty: 0.125, volume: 0.10),
-                bass("o2 a4 r4 a4 r4 | a4 r4 a4 r4 | f4 r4 f4 r4 | e4 r4 e4 r4 | a4 r4 a4 r4 | d4 r4 d4 r4 | e4 r4 e4 r4 | e4 r4 e4 r4"),
-            ])
-        case .battle:
-            Score(tempo: 150, voices: [
-                lead("o4 e8 e8 g8 e8 a8 e8 b8 a8 | g8 f+8 e8 d8 e4 r4 | e8 e8 g8 e8 >c8< e8 b8 a8 | b8 >c8 d8 c8< b4 r4 | >e8 d8 c8< b8 a8 g8 f+8 e8 | f+8 g8 a8 b8 >c4< b4 | a8 g8 f+8 e8 d+8 e8 f+8 d+8 | e4 r4 e4 r4"),
-                bass("o2 " + pump("e") + pump("e") + pump("c") + pump("b") + pump("c") + pump("a") + pump("b") + "e8 >e8< e8 >e8< e4 r4"),
-                drums(String(repeating: "c8 r8 c8 c8 ", count: 16)),
-            ])
-        case .boss:
-            Score(tempo: 160, voices: [
-                lead("o4 d8 d8 r8 d8 f8 d8 g+8 a8 | a8 a8 r8 a8 b-8 a8 g8 f8 | d8 d8 r8 d8 f8 g8 a8 >c8< | >d4 c+4 d4< r4 | f8 g8 a8 b-8 a8 g8 f8 e8 | d8 e8 f8 g8 a4 f4 | g8 a8 b-8 >c8 d8 c8< b-8 g8 | a4 c+4 d2", duty: 0.25, volume: 0.12),
-                bass("o2 " + pump("d") + pump("a") + pump("d") + "d8 d8 c+8 c+8 d4 r4 " + pump("b-") + pump("d") + pump("g") + "a8 a8 a8 a8 d4 r4"),
-                drums(String(repeating: "c8 c8 r8 c8 ", count: 16)),
-            ])
-        case .overworldSapporo:
+        case .fieldSapporo:
             // 札幌・小樽の 野原。明るい 行進曲。
             Score(tempo: 132, voices: [
                 lead("o4 f4 a8 >c8< f4 a8 >c8< | >d4 c8< b-8 a4 g4 | a4 >c8 d8 c4< a4 | g8 a8 b-8 >c8< a2 | >d4 d8 e8 f4 d4< | >c4 c8< b-8 a4 f4 | g8 a8 b-8 >c8 d4 e4< | >f2< r4 c4"),
                 bass("o2 " + pump("f") + pump("b-") + pump("f") + pump("c") + pump("b-") + pump("f") + pump("c") + "f4 >c4< f2"),
                 drums(String(repeating: "c8 r8 c8 c8 ", count: 16)),
             ])
-        case .overworldShiretoko:
+        case .fieldShiretoko:
             // 知床の 原野。ゆったり 大きく。
             Score(tempo: 112, voices: [
                 lead("o4 d4. e8 f4 a4 | g4 f8 e8 d2 | c4. d8 e4 g4 | f4 e8 d8 e2 | a4. b-8 >c4 d4< | >c4< b-8 a8 g2 | f8 g8 a8 b-8 a4 e4 | d2. r4", duty: 0.5, volume: 0.10),
                 bass("o2 d2 a2 | b-2 f2 | c2 g2 | a2 a2 | f2 >c2< | g2 d2 | b-2 a2 | d2 d2"),
                 drums(String(repeating: "c4 r4 r4 c8 c8 ", count: 8)),
+            ])
+        case .villageHakodate:
+            Score(tempo: 92, voices: [
+                lead("o4 f4 a8 >c8< a4 f4 | g4 a8 b-8 a4 g4 | f4 a8 >c8 d4 c4< | b-8 a8 g8 a8 f2 | d4 f8 a8 g4 f4 | e4 g8 b-8 a4 g4 | f8 g8 a8 b-8 >c4< a4 | g4 e4 f2", duty: 0.5, volume: 0.09),
+                bass("o3 f4 >c4< f4 >c4< | c4 g4 c4 g4 | f4 >c4< f4 >c4< | c4 g4 f2 | d4 a4 d4 a4 | c4 g4 c4 g4 | f4 >c4< f4 >c4< | c4 g4 f2"),
             ])
         case .villageSapporo:
             // 札幌・小樽の 街。にぎやかに。
@@ -65,11 +48,11 @@ extension MusicTrack {
                 lead("o4 a4 >c4 d4 c4< | a4 g4 e2 | g4 a4 >c4 d4< | >e2 d4< r4 | >e4 d4 c4< a4 | g4 a4 e2 | d4 e4 g4 a4 | a2. r4", duty: 0.5, volume: 0.09),
                 bass("o2 a2 e2 | a2 e2 | c2 g2 | e2 e2 | a2 >c2< | g2 e2 | d2 e2 | a2 a2"),
             ])
-        case .caveDeep:
-            // 札幌・知床の ほらあな。奥ふかく 冷たい。
-            Score(tempo: 76, voices: [
-                lead("o4 d4 r4 d+4 r4 | d4 c+8 r8 r2 | f4 r4 e4 r4 | d+4 d8 r8 r2 | a4 r8 g+8 g4 f4 | e4 f4 d+2 | d4 e8 f8 g+4 a4 | d2 r2", duty: 0.125, volume: 0.10),
-                bass("o2 d4 r4 d4 r4 | d4 r4 d4 r4 | c+4 r4 c+4 r4 | c+4 r4 c+4 r4 | d4 r4 d4 r4 | a4 r4 a4 r4 | g+4 r4 g+4 r4 | d4 r4 d4 r4"),
+        case .battleHakodate:
+            Score(tempo: 150, voices: [
+                lead("o4 e8 e8 g8 e8 a8 e8 b8 a8 | g8 f+8 e8 d8 e4 r4 | e8 e8 g8 e8 >c8< e8 b8 a8 | b8 >c8 d8 c8< b4 r4 | >e8 d8 c8< b8 a8 g8 f+8 e8 | f+8 g8 a8 b8 >c4< b4 | a8 g8 f+8 e8 d+8 e8 f+8 d+8 | e4 r4 e4 r4"),
+                bass("o2 " + pump("e") + pump("e") + pump("c") + pump("b") + pump("c") + pump("a") + pump("b") + "e8 >e8< e8 >e8< e4 r4"),
+                drums(String(repeating: "c8 r8 c8 c8 ", count: 16)),
             ])
         case .battleSapporo:
             Score(tempo: 156, voices: [
@@ -83,17 +66,119 @@ extension MusicTrack {
                 bass("o2 " + pump("d") + pump("g") + pump("d") + pump("g") + pump("c") + pump("g") + pump("a") + "d8 >d8< d8 >d8< d4 r4"),
                 drums(String(repeating: "c8 r8 c8 c8 ", count: 16)),
             ])
+        case .fieldAomori:
+            // 青森の 野原。ねぶた囃子のような はねる リズム。
+            Score(tempo: 138, voices: [
+                lead("o4 a8 a8 >c8 d8 e4 d4< | >c8 d8 c8< a8 g4 a4 | e8 g8 a8 >c8 d4 c8< a8 | g8 a8 g8 e8 d4 r4 | a8 >c8 d8 e8 g4 e4 | d8 e8 d8 c8< a4 g4 | e8 g8 a8 >c8< a8 g8 e8 g8 | a2 r4 e4"),
+                bass("o2 a8 >a8< a8 >a8< a8 >a8< a8 >a8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | d8 >d8< d8 >d8< d8 >d8< d8 >d8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | d8 >d8< d8 >d8< d8 >d8< d8 >d8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | a4 >e4< a2"),
+                drums("c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8"),
+            ])
+        case .fieldAkita:
+            // 秋田の 野原。ゆったりした 民謡ふう。
+            Score(tempo: 116, voices: [
+                lead("o4 e4. g8 a4 >c4< | b8 a8 g8 e8 a2 | >c4. d8 e4 d4 | c8< b8 a8 g8 e2 | g4. a8 b4 >d4 | e8 d8 c8< b8 a4 g4 | e8 g8 a8 b8 g4 e4 | a2. r4", duty: 0.5, volume: 0.10),
+                bass("o2 a2 e2 | a2 a2 | f2 c2 | e2 e2 | g2 d2 | c2 e2 | a2 e2 | a2 a2"),
+                drums("c4 r4 c8 c8 r4 c4 r4 c8 c8 r4 c4 r4 c8 c8 r4 c4 r4 c8 c8 r4 c4 r4 c8 c8 r4 c4 r4 c8 c8 r4 c4 r4 c8 c8 r4 c4 r4 c8 c8 r4"),
+            ])
+        case .fieldIwate:
+            // 岩手の 野原。ひろい 大地を 大きく。
+            Score(tempo: 110, voices: [
+                lead("o4 g4. a8 b4 >d4 | e4 d8 c8< b2 | a4. b8 >c4 e4 | d4 c8< b8 a2 | g4. b8 >d4 g4 | f+4 e8 d8 e2 | c8 d8 e8 f+8 g4 d4 | g2. r4", duty: 0.5, volume: 0.10),
+                bass("o2 g2 d2 | c2 g2 | a2 e2 | d2 d2 | g2 b2 | c2 c2 | a2 d2 | g2 g2"),
+                drums("c4 r4 r4 c8 c8 c4 r4 r4 c8 c8 c4 r4 r4 c8 c8 c4 r4 r4 c8 c8 c4 r4 r4 c8 c8 c4 r4 r4 c8 c8 c4 r4 r4 c8 c8 c4 r4 r4 c8 c8"),
+            ])
+        case .fieldMiyagi:
+            // 宮城の 野原。明るい 行進曲。
+            Score(tempo: 128, voices: [
+                lead("o4 c8 e8 g8 >c8< b4 g4 | a8 g8 f8 a8 g2 | e8 g8 >c8 e8 d4 c4< | b8 >c8 d8< b8 >c2< | f8 a8 >c8< a8 g4 e4 | f8 g8 a8 b8 >c4< g4 | a8 b8 >c8 d8 e4 d4 | c2 r4 g4"),
+                bass("o2 c8 >c8< c8 >c8< c8 >c8< c8 >c8< | f8 >f8< f8 >f8< f8 >f8< f8 >f8< | c8 >c8< c8 >c8< c8 >c8< c8 >c8< | g8 >g8< g8 >g8< g8 >g8< g8 >g8< | f8 >f8< f8 >f8< f8 >f8< f8 >f8< | f8 >f8< f8 >f8< f8 >f8< f8 >f8< | g8 >g8< g8 >g8< g8 >g8< g8 >g8< | c4 g4 c2"),
+                drums("c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8"),
+            ])
+        case .fieldFukushima:
+            // 福島の 野原。
+            Score(tempo: 122, voices: [
+                lead("o4 d8 f8 a8 >d8< c4 a4 | b-8 a8 g8 f8 g2 | f8 a8 >c8 f8 e4 d4< | >c8< b-8 a8 g8 a2 | b-8 >d8 f8 d8< >c4< a4 | g8 a8 b-8 >c8 d4< a4 | b-8 a8 g8 e8 f4 e4 | d2 r4 a4"),
+                bass("o2 d8 >d8< d8 >d8< d8 >d8< d8 >d8< | g8 >g8< g8 >g8< g8 >g8< g8 >g8< | f8 >f8< f8 >f8< f8 >f8< f8 >f8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | b-8 >b-8< b-8 >b-8< b-8 >b-8< b-8 >b-8< | g8 >g8< g8 >g8< g8 >g8< g8 >g8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | d4 a4 d2"),
+                drums("c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8 c8 r8 c8 r8 c8 c8 r8 c8"),
+            ])
+        case .fieldYamagata:
+            // 山形の 野原。花笠音頭のような 手びょうし。
+            Score(tempo: 136, voices: [
+                lead("o4 e8 e8 g8 a8 >c4< a4 | g8 a8 g8 e8 d4 e4 | g8 a8 >c8 d8 e4 d8 c8< | a8 >c8< a8 g8 e2 | a8 >c8 d8 e8 g4 e4 | d8 e8 d8 c8< a4 g4 | e8 g8 a8 >c8 d8 c8< a8 g8 | a2 r4 e4"),
+                bass("o2 a8 >a8< a8 >a8< a8 >a8< a8 >a8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | d8 >d8< d8 >d8< d8 >d8< d8 >d8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | a4 e4 a2"),
+                drums("c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8"),
+            ])
+        case .villageNorth:
+            // 青森・秋田の 街。
+            Score(tempo: 90, voices: [
+                lead("o4 a4 >c8 d8 e4 d4 | c8< a8 g8 a8 e2 | g4 a8 >c8 d4 e4 | d8 c8< a8 g8 a2 | >e4 d8 c8< a4 g4 | e8 g8 a8 >c8< b-2 | a4 g8 e8 d4 e4 | a2. r4", duty: 0.5, volume: 0.10),
+                bass("o3 a2 e2 | a2 a2 | c2 g2 | d2 a2 | c2 a2 | e2 g2 | d2 e2 | a2 a2"),
+            ])
+        case .villageMiddle:
+            // 岩手・宮城の 街。
+            Score(tempo: 96, voices: [
+                lead("o4 g4 b8 >d8 e4 d4< | b8 a8 g8 a8 b2 | >c4 e8 d8 c4< b4 | a8 g8 e8 g8 a2 | b4 >d8 e8 g4 e4 | d8 c8< b8 a8 g4 e4 | d8 e8 g8 a8 b4 a4 | g2. r4", duty: 0.5, volume: 0.10),
+                bass("o3 g2 d2 | e2 g2 | c2 g2 | d2 d2 | g2 e2 | c2 g2 | c2 d2 | g2 g2"),
+            ])
+        case .villageSouth:
+            // 福島・山形の 街。
+            Score(tempo: 100, voices: [
+                lead("o4 f4 a8 >c8 d4 c4< | a8 g8 f8 g8 a2 | b-4 >d8 c8< b-4 a4 | g8 f8 d8 f8 g2 | a4 >c8 d8 f4 d4 | c8< a8 g8 f8 d4 f4 | g8 a8 >c8< b-8 a4 g4 | f2. r4", duty: 0.5, volume: 0.10),
+                bass("o3 f2 c2 | d2 c2 | b-2 f2 | g2 c2 | f2 d2 | a2 d2 | b-2 c2 | f2 f2"),
+                drums("c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8 c8 r8 r8 c8"),
+            ])
+        case .battleNorth:
+            // 青森・秋田の 戦い。
+            Score(tempo: 152, voices: [
+                lead("o4 e8 e8 a8 e8 b8 e8 >c8< b8 | a8 g8 e8 d8 e4 r4 | e8 e8 a8 e8 >d8< e8 >c8< b8 | >c8 d8 e8 d8 c4< r4 | >e8 d8 c8< a8 >c8< a8 g8 e8 | g8 a8 >c8 d8 e4 d4 | c8< b8 a8 g8 e8 g8 a8 b8 | a4 r4 a4 r4"),
+                bass("o2 a8 >a8< a8 >a8< a8 >a8< a8 >a8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | c8 >c8< c8 >c8< c8 >c8< c8 >c8< | c8 >c8< c8 >c8< c8 >c8< c8 >c8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | a8 >a8< a8 >a8< a4 r4"),
+                drums("c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8"),
+            ])
+        case .battleMiddle:
+            // 岩手・宮城の 戦い。
+            Score(tempo: 156, voices: [
+                lead("o4 d8 d8 g8 d8 a8 d8 b8 a8 | g8 f+8 e8 d8 e4 r4 | d8 d8 g8 d8 >c8< d8 b8 a8 | b8 >c8 d8 c8< b4 r4 | >d8 c8< b8 a8 g8 f+8 e8 d8 | e8 f+8 g8 a8 b4 a4 | g8 f+8 e8 d8 c+8 d8 e8 c+8 | d4 r4 d4 r4"),
+                bass("o2 g8 >g8< g8 >g8< g8 >g8< g8 >g8< | d8 >d8< d8 >d8< d8 >d8< d8 >d8< | g8 >g8< g8 >g8< g8 >g8< g8 >g8< | g8 >g8< g8 >g8< g8 >g8< g8 >g8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | c8 >c8< c8 >c8< c8 >c8< c8 >c8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | d8 >d8< d8 >d8< d4 r4"),
+                drums("c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8 c8 c8 r8 c8 r8 c8 r8 c8"),
+            ])
+        case .battleSouth:
+            // 福島・山形の 戦い。
+            Score(tempo: 160, voices: [
+                lead("o4 c8 c8 f8 c8 g8 c8 a-8 g8 | f8 e-8 d8 c8 d4 r4 | c8 c8 f8 c8 b-8 c8 a-8 g8 | a-8 b-8 >c8< b-8 a-4 r4 | >c8< b-8 a-8 g8 f8 e-8 d8 c8 | d8 e-8 f8 g8 a-4 g4 | f8 e-8 d8 c8 b8 c8 d8 b8 | >c4< r4 c4 r4", duty: 0.125, volume: 0.10),
+                bass("o2 f8 >f8< f8 >f8< f8 >f8< f8 >f8< | c8 >c8< c8 >c8< c8 >c8< c8 >c8< | f8 >f8< f8 >f8< f8 >f8< f8 >f8< | a-8 >a-8< a-8 >a-8< a-8 >a-8< a-8 >a-8< | f8 >f8< f8 >f8< f8 >f8< f8 >f8< | d8 >d8< d8 >d8< d8 >d8< d8 >d8< | g8 >g8< g8 >g8< g8 >g8< g8 >g8< | c8 >c8< c8 >c8< c4 r4"),
+                drums("c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8"),
+            ])
+        case .cave:
+            // 青森・秋田の ほらあな。
+            Score(tempo: 84, voices: [
+                lead("o4 a4 r4 b-4 a4 | g+4 a8 r8 r2 | >c4 r4 d4 c4< | b4 >c8< r8 r2 | e4 r8 f8 e4 d4 | c4 d4 e2 | f4 e8 d8 c4< b4 | a2 r2", duty: 0.125, volume: 0.10),
+                bass("o2 a4 r4 a4 r4 | a4 r4 a4 r4 | f4 r4 f4 r4 | e4 r4 e4 r4 | a4 r4 a4 r4 | f4 r4 f4 r4 | d4 r4 e4 r4 | a4 r4 a4 r4"),
+            ])
+        case .caveDeep:
+            // 岩手から 先の ほらあな。奥ふかく 冷たい。
+            Score(tempo: 74, voices: [
+                lead("o4 e4 r4 f4 r4 | e4 d+8 r8 r2 | g4 r4 f+4 r4 | f4 e8 r8 r2 | b4 r8 a+8 a4 g4 | f+4 g4 e2 | e4 f+8 g8 a+4 b4 | e2 r2", duty: 0.125, volume: 0.10),
+                bass("o2 e4 r4 e4 r4 | e4 r4 e4 r4 | d+4 r4 d+4 r4 | d+4 r4 d+4 r4 | e4 r4 e4 r4 | b4 r4 b4 r4 | a+4 r4 a+4 r4 | e4 r4 e4 r4"),
+            ])
+        case .boss:
+            // ぬしとの 戦い。
+            Score(tempo: 164, voices: [
+                lead("o4 e8 e8 r8 e8 g8 e8 a+8 b8 | b8 b8 r8 b8 >c8< b8 a8 g8 | e8 e8 r8 e8 g8 a8 b8 >d8< | >e4 d+4 e4< r4 | g8 a8 b8 >c8< b8 a8 g8 f+8 | e8 f+8 g8 a8 b4 g4 | a8 b8 >c8 d8 e8 d8 c8< a8 | b4 d+4 e2", duty: 0.25, volume: 0.10),
+                bass("o2 e8 >e8< e8 >e8< e8 >e8< e8 >e8< | b8 >b8< b8 >b8< b8 >b8< b8 >b8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | e8 e8 d+8 d+8 e4 r4 | c8 >c8< c8 >c8< c8 >c8< c8 >c8< | e8 >e8< e8 >e8< e8 >e8< e8 >e8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | b8 b8 b8 b8 e4 r4"),
+                drums("c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8"),
+            ])
         case .finalBoss:
-            // 知床の 守護神。
-            Score(tempo: 168, voices: [
-                lead("o4 c8 c8 >c8< c8 b8 c8 g8 c8 | a-8 c8 g8 c8 f8 c8 e-8 d8 | c8 c8 >c8< c8 b8 c8 >d8 e-8< | >f4 e-4 d4 c4< | g8 a-8 g8 f8 e-8 f8 g8 >c8< | b8 >c8 d8 e-8 f4 d4< | e-8 f8 g8 a-8 b8 g8 >d8< b8 | >c4< g4 >c4< r4", duty: 0.125, volume: 0.12),
-                bass("o2 " + pump("c") + pump("a-") + pump("c") + pump("f") + pump("c") + pump("g") + pump("g") + "c8 >c8< c8 >c8< c4 r4"),
-                drums(String(repeating: "c8 c8 c8 r8 ", count: 16)),
+            // 守護神・まおうの かげとの 戦い。
+            Score(tempo: 170, voices: [
+                lead("o4 d8 d8 >d8< d8 c+8 d8 a8 d8 | b-8 d8 a8 d8 g8 d8 f8 e8 | d8 d8 >d8< d8 c+8 d8 >e8 f8< | >g4 f4 e4 d4< | a8 b-8 a8 g8 f8 g8 a8 >d8< | c+8 d8 e8 f8 g4 e4 | f8 g8 a8 b-8 >c+8< a8 >e8< c+8 | d4 a4 >d4< r4", duty: 0.125, volume: 0.10),
+                bass("o2 d8 >d8< d8 >d8< d8 >d8< d8 >d8< | b-8 >b-8< b-8 >b-8< b-8 >b-8< b-8 >b-8< | d8 >d8< d8 >d8< d8 >d8< d8 >d8< | g8 >g8< g8 >g8< g8 >g8< g8 >g8< | d8 >d8< d8 >d8< d8 >d8< d8 >d8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | a8 >a8< a8 >a8< a8 >a8< a8 >a8< | d8 >d8< d8 >d8< d4 r4"),
+                drums("c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8 c8 c8 c8 r8"),
             ])
         case .ending:
-            Score(tempo: 84, voices: [
-                lead("o4 c4 e4 g4 >c4< | b4 g4 a2 | f4 a4 >c4 d4< | >e2 d4 c4< | a4 >c4< b4 a4 | g4 e4 f4 d4 | e4 f4 g4 b4 | >c2.< r4", duty: 0.5, volume: 0.10),
-                bass("o3 c4 g4 c4 g4 | e4 g4 f2 | f4 a4 f4 a4 | c4 g4 c4 e4 | f4 a4 g4 f4 | c4 g4 d4 g4 | c4 d4 e4 g4 | c2. r4"),
+            // エンディング。
+            Score(tempo: 86, voices: [
+                lead("o4 d4 e4 g4 a4 | b4 a8 g8 e2 | g4 a4 b4 >d4 | e2 d4 b4< | a4 b4 >d4 e4 | d4< b4 a4 g4 | e4 g4 a4 b4 | >d2.< r4", duty: 0.5, volume: 0.10),
+                bass("o3 g2 d2 | e2 c2 | g2 g2 | c2 g2 | d2 c2 | g2 d2 | c2 d2 | g2 g2"),
             ])
         }
     }
@@ -167,11 +252,6 @@ private func drums(_ notes: String) -> Voice {
     Voice(wave: .noise, volume: 0.05, notes: "l8 " + notes)
 }
 
-/// 根音とその1オクターブ上を8分音符で交互に（1小節ぶん）。
-private func pump(_ root: String) -> String {
-    String(repeating: "\(root)8 >\(root)8< ", count: 4) + "| "
-}
-
 private func sq(_ from: Double, _ to: Double, _ duration: Double, _ volume: Float = 0.15, duty: Double = 0.5) -> Segment {
     Segment(wave: .square(duty: duty), from: from, to: to, duration: duration, volume: volume)
 }
@@ -182,4 +262,9 @@ private func noise(_ duration: Double, _ volume: Float) -> Segment {
 
 private func rest(_ duration: Double) -> Segment {
     Segment(wave: .square(duty: 0.5), from: 0, to: 0, duration: duration, volume: 0)
+}
+
+/// ベースの「ド ド(高い) ド ド(高い)」を 1小節ぶん（北海道の 曲で 使う）。
+private func pump(_ root: String) -> String {
+    String(repeating: "\(root)8 >\(root)8< ", count: 4) + "| "
 }

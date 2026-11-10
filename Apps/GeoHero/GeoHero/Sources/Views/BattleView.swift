@@ -7,6 +7,10 @@ struct BattleView: View {
     private enum Submenu: Equatable { case none, spells, items, targets }
     /// 相手を選んだあとに出すコマンド（こうげき か 攻撃呪文）。
     @State private var pendingAttack: BattleCommand?
+    /// まほう・どうぐの 一覧の ページ（多いと 枠に 入らないので 4つずつ 見せる）。
+    @State private var page = 0
+    /// 1ページに ならべる 数（2列 × 2行）。
+    static let pageSize = 4
 
     var body: some View {
         if let session = game.battle {
@@ -80,6 +84,17 @@ struct BattleView: View {
             arena(session)
                 .overlay(alignment: .topLeading) {
                     StatusPanel(hero: game.hero).padding(10)
+                }
+                .overlay(alignment: .topTrailing) {
+                    // つづけて 正解している あいだは コンボの 数を 出す。
+                    if session.battle.streak >= 2 {
+                        Text("ちしき コンボ ×\(session.battle.streak)")
+                            .font(Retro.font(14))
+                            .foregroundStyle(Retro.accent)
+                            .padding(6)
+                            .background(Color.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 4))
+                            .padding(10)
+                    }
                 }
 
             MessageBox(
@@ -247,23 +262,11 @@ struct BattleView: View {
                 RetroChoice(title: "にげる") { run(.run) }
             }
         case .spells:
-            let half = (hero.spells.count + 1) / 2
-            TwoColumns {
-                ForEach(hero.spells.prefix(half)) { spellChoice($0, session) }
-            } right: {
-                ForEach(hero.spells.dropFirst(half)) { spellChoice($0, session) }
-            }
-            RetroChoice(title: "もどる") { submenu = .none }
+            paged(hero.spells.filter(\.isBattleUsable)) { spellChoice($0, session) }
         case .items:
-            // 戦いで 使える 道具を 2列に ならべる。なければ ハスカップを 0こで 出す（ないことが 分かるように）。
-            let owned = hero.battleItems.isEmpty ? [(item: Item.herb, count: 0)] : hero.battleItems
-            let half = (owned.count + 1) / 2
-            TwoColumns {
-                ForEach(owned.prefix(half), id: \.item) { itemChoice($0.item, $0.count) }
-            } right: {
-                ForEach(owned.dropFirst(half), id: \.item) { itemChoice($0.item, $0.count) }
-            }
-            RetroChoice(title: "もどる") { submenu = .none }
+            // 戦いで 使える 道具を 2列に ならべる。なければ りんごを 0こで 出す（ないことが 分かるように）。
+            let owned = hero.battleItems.isEmpty ? [(item: Item.apple, count: 0)] : hero.battleItems
+            paged(owned.map { ItemStack(item: $0.item, count: $0.count) }) { itemChoice($0.item, $0.count) }
         case .targets:
             let living = session.battle.living
             let half = (living.count + 1) / 2
@@ -275,6 +278,30 @@ struct BattleView: View {
             RetroChoice(title: "もどる") {
                 pendingAttack = nil
                 submenu = .none
+            }
+        }
+    }
+
+    /// 4つずつ 2列に ならべ、多ければ「つぎへ」で めくる。
+    @ViewBuilder
+    private func paged<Entry: Identifiable, Row: View>(_ entries: [Entry], row: @escaping (Entry) -> Row) -> some View {
+        let pages = max(1, (entries.count + Self.pageSize - 1) / Self.pageSize)
+        let current = min(page, pages - 1)
+        let shown = Array(entries.dropFirst(current * Self.pageSize).prefix(Self.pageSize))
+        let half = (shown.count + 1) / 2
+        TwoColumns {
+            ForEach(shown.prefix(half)) { row($0) }
+        } right: {
+            ForEach(shown.dropFirst(half)) { row($0) }
+        }
+        TwoColumns {
+            RetroChoice(title: "もどる") {
+                page = 0
+                submenu = .none
+            }
+        } right: {
+            if pages > 1 {
+                RetroChoice(title: "つぎへ", detail: "\(current + 1)/\(pages)") { page = (current + 1) % pages }
             }
         }
     }
@@ -293,10 +320,10 @@ struct BattleView: View {
 
     private func spellChoice(_ spell: Spell, _ session: BattleSession) -> some View {
         RetroChoice(title: spell.name, detail: "MP \(spell.mpCost)", isEnabled: game.hero.mp >= spell.mpCost) {
-            if spell.isHealing {
-                run(.spell(spell))
-            } else {
+            if spell.effect == .single {
                 aim(.spell(spell), session)
+            } else {
+                run(.spell(spell))
             }
         }
     }
@@ -317,6 +344,7 @@ struct BattleView: View {
 
     private func run(_ command: BattleCommand, target: Int? = nil) {
         submenu = .none
+        page = 0
         pendingAttack = nil
         // こうげきは ときどき「ちしきの チャンス」が 出るので GameState に まかせる。
         if command == .attack {
@@ -325,6 +353,13 @@ struct BattleView: View {
             Task { await game.command(command, target: target) }
         }
     }
+}
+
+/// どうぐの 一覧の 1行（ページで めくるため 見分けを もたせる）。
+private struct ItemStack: Identifiable {
+    let item: Item
+    let count: Int
+    var id: Item { item }
 }
 
 /// 枠の中の選択肢を2列に分けて並べる。

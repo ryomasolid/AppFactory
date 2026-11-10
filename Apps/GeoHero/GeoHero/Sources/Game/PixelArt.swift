@@ -4,19 +4,21 @@ import SwiftUI
 /// ドット絵の識別子。絵そのもの（16×16 の文字列）は `TileArt` / `CharacterArt` / `EnemyArt` に置く。
 enum SpriteID: String, CaseIterable {
     // 地形
-    case grass, forest, hills, mountain, water, road, bridge, town, cave
+    case grass, forest, hills, mountain, water, road, bridge, town, cave, paddy, snow
     case townFloor, house, innRoof, shopRoof, fountain, wall, caveFloor, stairsUp, stairsDown
     case houseWall, innSign, shopSign, door, woodFloor, counter, bed, shelf, innerWall, darkness
-    case exit, signpost, blossom, airport
-    /// 街と ほらあな・空港を 1マスより大きく描くための、背景を透かした版。
-    case townLarge, caveLarge, airportLarge
+    case exit, signpost, blossom, station, airport
+    /// 街と ほらあな・駅を 1マスより大きく描くための、背景を透かした版。
+    case townLarge, caveLarge, stationLarge, airportLarge
     case chestClosed, chestOpen
     // 人（勇者は hero1/hero2 が下向き、ほかの向きはそれぞれ歩きの2コマ）
     case hero1, hero2, heroUp1, heroUp2, heroLeft1, heroLeft2, heroRight1, heroRight2
     case elder, innkeeper, shopkeeper, villager
-    /// 物語の人（奉行・港の親方・こども）。ふつうの村人と 見分けがつくように 絵を分ける。
-    case magistrate, fisherman, child
-    /// 大沼の 白鳥の ひな・小樽の ネコ・定山渓の かっぱ。
+    /// 物語の人。ふつうの村人と 見分けがつくように 絵を分ける。
+    case magistrate, fisherman, child, hunter, monk, dancer
+    /// 迷子・動物（秋田犬・ざしきわらし・赤べこ）。
+    case akitaDog, zashiki, akabeko
+    /// 北海道: 大沼の 白鳥の ひな・小樽の ネコ・定山渓の かっぱ。
     case cygnet, cat, kappa
 
     /// 向きと歩数から勇者の絵を選ぶ（1歩ごとに2コマを交互に）。
@@ -29,19 +31,62 @@ enum SpriteID: String, CaseIterable {
         case .right: return second ? .heroRight2 : .heroRight1
         }
     }
-    // 敵
+    // 敵（名前は `EnemyKind` と そろえる）
+    // ── 北海道 ──
     case potato, kelpSlime, seagull, squidKid, scallop, squidRice, nightBat, hairyCrab, brickGolem
     case cornSoldier, ramenGhost, lambSheep, squirrel, fox, snowFestival, flyingSquirrel, maitake, salamander
     case bearCub, fishOwl, woodpecker, deer, cod, salmon, seaEagle, snowman, orca
     case hikarigoke, icicleOgre, iceBat, phantomWolf, iceGolem, blizzardSpirit
     case sakuraSpirit, matsumaeZuke, kitamaeShip, apple, dango, junsai, lavaSlime, pumiceGolem, sulfurSmoke
-    /// ボス5体（函館山・駒ヶ岳・天狗山・藻岩山・羅臼岳）。
     case squidLord, komaLord, tengu, bearLord, todoLord, guardian
+    // ── 東北 ──
+    case ringoSlime, hotate, umineko
+    case hachinoheIka, neputaGhost, ninnikun
+    case himemasu, oiraseMoss, otomeStatue
+    case sukayuSlime, kamoshika, yukinko
+    case kiritanpoSoldier, hatahata, komachiRice
+    case shidarezakura, kantoLantern, inaniwaUdon
+    case kunimasu, ruriSlime, tamagawaAcid
+    case konamahage, kanpuWind, shottsuru
+    case wankoBowl, nanbuKettle, reimenSlime
+    case tonoKappa, konjikiBeetle, chagchagUmako
+    case dragonBlueSlime, stalactite, kikugashira
+    case lavaFlow, komakusa, nanbuKatafuji
+    case gyutanSoldier, zundaSlime, sasakama
+    case kokeshiGhost, hoya, fukinagashi
+    case oysterSoldier, pineSpirit, anago
+    case mikazukiHelm, aobazuku, hirosegawaSpirit
+    case momoSpirit, warajiSoldier, ufo
+    case kuraGhost, urushiSlime, kozuyu
+    case limestoneGolem, takineBat, groundwater
+    case goshikiSlime, inawashiroSpirit, bandaiBomb
+    case sakuranboTwins, imoniPot, benibanaSpirit
+    case shogiPiece, mogamiSpirit, laFrance
+    case shizukaCicada, stoneSteps, gankutsuSpirit
+    case snowMonster, okamaSlime, zaoFox
+    case pinwheelGhost, sulfurGas, osoreCrow
+    case hachirotaro
+    case yukioni
+    case tatsuko
+    case namahageKing
+    case ryusendoLord
+    case mitsuishiOni
+    case giantOyster
+    case datemaru
+    case abukumaLord
+    case tenagaAshinaga
+    case yamaderaCicada
+    case zaoGuardian
+    case maouShadow
 
     static let art: [SpriteID: [String]] = TileArt.all
         .merging(CharacterArt.all) { first, _ in first }
         .merging(EnemyArt.all) { first, _ in first }
-        // 草の上に立つ 空港（ふつうのマス用）は、背景を透かした版に 草を敷いて作る。
+        .merging(HokkaidoCharacterArt.all) { first, _ in first }
+        .merging(HokkaidoEnemyArt.all) { first, _ in first }
+        // 草の上に立つ 駅（ふつうのマス用）は、背景を透かした版に 草を敷いて作る。
+        .merging([.station: (TileArt.all[.stationLarge] ?? []).map { $0.replacingOccurrences(of: ".", with: "g") }]) { first, _ in first }
+        // 空港（北海道）も 同じように 草を敷く。
         .merging([.airport: (TileArt.all[.airportLarge] ?? []).map { $0.replacingOccurrences(of: ".", with: "g") }]) { first, _ in first }
 
     init(tile: Tile) {
@@ -55,7 +100,10 @@ enum SpriteID: String, CaseIterable {
         case .bridge: self = .bridge
         case .town: self = .town
         case .cave: self = .cave
+        case .station: self = .station
         case .airport: self = .airport
+        case .paddy: self = .paddy
+        case .snow: self = .snow
         case .blossom: self = .blossom
         case .townFloor: self = .townFloor
         case .exit: self = .exit
@@ -82,15 +130,7 @@ enum SpriteID: String, CaseIterable {
     }
 
     init(enemy: EnemyKind) {
-        switch enemy {
-        case .squidLord: self = .squidLord
-        case .komaLord: self = .komaLord
-        case .tengu: self = .tengu
-        case .todoLord: self = .todoLord
-        case .bearLord: self = .bearLord
-        case .guardian: self = .guardian
-        default: self = SpriteID(rawValue: enemy.rawValue) ?? .potato
-        }
+        self = SpriteID(rawValue: enemy.rawValue) ?? .ringoSlime
     }
 
     init(npc role: NPCRole) {
@@ -99,18 +139,7 @@ enum SpriteID: String, CaseIterable {
         case .shopkeeper: self = .shopkeeper
         case .elder: self = .elder
         case .villager: self = .villager
-        case .resident(let resident):
-            switch resident {
-            case .magistrate, .lord, .governor: self = .magistrate
-            case .ekashi: self = .elder
-            case .fisherBoss, .ranger, .ramenChef, .yumori, .musicBoxMaker, .rancher, .banyaOyaji: self = .fisherman
-            case .lostChild, .childAtHome, .portKid, .student: self = .child
-            case .mother, .guide, .sapporoGuide, .shiretokoGuide, .swanKeeper, .catOwner, .foxRanger: self = .villager
-            case .lostFox, .foxHome: self = .fox
-            case .lostCygnet, .cygnetHome: self = .cygnet
-            case .lostCat, .catHome: self = .cat
-            case .kappa: self = .kappa
-            }
+        case .resident(let resident): self = resident.sprite
         }
     }
 }

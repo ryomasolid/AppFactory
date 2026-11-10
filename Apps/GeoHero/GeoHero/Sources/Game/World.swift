@@ -32,8 +32,14 @@ enum Tile: Character, CaseIterable {
     case bridge = "b"
     case town = "T"
     case cave = "C"
-    /// 空港。きっぷがあれば となりの地方へ とべる。
-    case airport = "A"
+    /// 新幹線の駅。のると ほかの県へ 行ける（ひらいた県だけ）。
+    case station = "A"
+    /// 空港（北海道）。きっぷが あれば となりの 地方へ とべる（ワープ）。
+    case airport = "J"
+    /// 田んぼ（東北の 米どころ）。歩ける。
+    case paddy = "p"
+    /// 雪原。歩ける。
+    case snow = "n"
     /// さくらの木（街の中）。通れない。
     case blossom = "k"
     case townFloor = "_"
@@ -74,10 +80,47 @@ enum Tile: Character, CaseIterable {
     }
 }
 
-/// 地方。地方ごとに フィールドが1枚あり、空港から ひこうきで行き来する。
-/// 函館エリア → 札幌・小樽 → 知床 の順にたどる。
-enum Region: String, CaseIterable {
+/// 旅の 地方。北海道の 3地方（ひこうきで 行き来する）と 東北の 6県（新幹線で 行き来する）。
+/// 函館エリア → 札幌・小樽 → 知床 → 青森 → 秋田 → 岩手 → 宮城 → 福島 → 山形 の順に たどる
+/// （ひとつ前の 地方の ぬしを 倒すと 次へ 行ける）。北海道と 東北は 新函館北斗駅で つながる。
+enum Region: String, Codable, CaseIterable, CodingKeyRepresentable {
     case hakodate, sapporo, shiretoko
+    case aomori, akita, iwate, miyagi, fukushima, yamagata
+
+    /// 東北の 6県（まつり・ちしき検定が ある）。
+    static let tohoku: [Region] = [.aomori, .akita, .iwate, .miyagi, .fukushima, .yamagata]
+    /// 北海道の 3地方。
+    static let hokkaido: [Region] = [.hakodate, .sapporo, .shiretoko]
+
+    var isTohoku: Bool { Region.tohoku.contains(self) }
+
+    /// 旅の順番（0 から）。
+    var order: Int { Region.allCases.firstIndex(of: self) ?? 0 }
+
+    /// 「青森県」「函館エリア」。
+    var name: String {
+        switch self {
+        case .hakodate: "函館エリア"
+        case .sapporo: "札幌・小樽"
+        case .shiretoko: "知床"
+        case .aomori: "青森県"
+        case .akita: "秋田県"
+        case .iwate: "岩手県"
+        case .miyagi: "宮城県"
+        case .fukushima: "福島県"
+        case .yamagata: "山形県"
+        }
+    }
+
+    /// 「青森」「函館」（県を つけない みじかい名前。一覧で使う）。
+    var shortName: String {
+        switch self {
+        case .hakodate: "函館"
+        case .sapporo: "札幌"
+        case .shiretoko: "知床"
+        default: String(name.dropLast())
+        }
+    }
 
     /// その地方の フィールド。
     var field: MapID {
@@ -85,107 +128,157 @@ enum Region: String, CaseIterable {
         case .hakodate: .hakodateArea
         case .sapporo: .sapporoArea
         case .shiretoko: .shiretokoArea
+        case .aomori: .aomoriField
+        case .akita: .akitaField
+        case .iwate: .iwateField
+        case .miyagi: .miyagiField
+        case .fukushima: .fukushimaField
+        case .yamagata: .yamagataField
         }
     }
 
-    /// ひこうきで着いたときの札。
+    /// 新幹線の駅の名前。駅の ない 地方（札幌・知床は ひこうき）は nil。
+    var stationName: String? {
+        switch self {
+        case .hakodate: "新函館北斗駅"
+        case .sapporo, .shiretoko: nil
+        case .aomori: "新青森駅"
+        case .akita: "秋田駅"
+        case .iwate: "盛岡駅"
+        case .miyagi: "仙台駅"
+        case .fukushima: "福島駅"
+        case .yamagata: "山形駅"
+        }
+    }
+
+    /// 新幹線・ひこうきで 着いたときの札。
     var banner: PlaceBanner {
         switch self {
         case .hakodate: PlaceBanner(name: "函館エリア", reading: "はこだて えりあ", tagline: "旅の はじまりの 道南")
         case .sapporo: PlaceBanner(name: "札幌・小樽", reading: "さっぽろ・おたる", tagline: "北の 大きな 街と みなと町")
         case .shiretoko: PlaceBanner(name: "知床", reading: "しれとこ", tagline: "ちの はての 半島")
+        case .aomori: PlaceBanner(name: "青森県", reading: "あおもりけん", tagline: "りんごと ねぶたの 本州の きた")
+        case .akita: PlaceBanner(name: "秋田県", reading: "あきたけん", tagline: "竿燈と なまはげの 米どころ")
+        case .iwate: PlaceBanner(name: "岩手県", reading: "いわてけん", tagline: "本州で いちばん ひろい 県")
+        case .miyagi: PlaceBanner(name: "宮城県", reading: "みやぎけん", tagline: "杜の都と 日本三景")
+        case .fukushima: PlaceBanner(name: "福島県", reading: "ふくしまけん", tagline: "赤べこと 磐梯山の 県")
+        case .yamagata: PlaceBanner(name: "山形県", reading: "やまがたけん", tagline: "さくらんぼと 樹氷の 県")
         }
     }
+
+    /// 県の まつり。ぬしを 倒すと もどる（東北だけ）。
+    var festival: String {
+        switch self {
+        case .hakodate, .sapporo, .shiretoko: ""
+        case .aomori: "青森ねぶた祭"
+        case .akita: "秋田竿燈まつり"
+        case .iwate: "盛岡さんさ踊り"
+        case .miyagi: "仙台七夕まつり"
+        case .fukushima: "福島わらじまつり"
+        case .yamagata: "山形花笠まつり"
+        }
+    }
+
+    /// この地方の ぬし（倒すと 次の 地方へ 行ける）。
+    var lord: EnemyKind {
+        switch self {
+        case .hakodate: .komaLord
+        case .sapporo: .bearLord
+        case .shiretoko: .guardian
+        case .aomori: .yukioni
+        case .akita: .namahageKing
+        case .iwate: .mitsuishiOni
+        case .miyagi: .datemaru
+        case .fukushima: .tenagaAshinaga
+        case .yamagata: .zaoGuardian
+        }
+    }
+
+    /// この地方の 中ボス（1つめの ほらあなの ボス）。
+    var subBoss: EnemyKind {
+        switch self {
+        case .hakodate: .squidLord
+        case .sapporo: .tengu
+        case .shiretoko: .todoLord
+        case .aomori: .hachirotaro
+        case .akita: .tatsuko
+        case .iwate: .ryusendoLord
+        case .miyagi: .giantOyster
+        case .fukushima: .abukumaLord
+        case .yamagata: .yamaderaCicada
+        }
+    }
+
+    /// ひとつ前の 地方。
+    var previous: Region? { order > 0 ? Region.allCases[order - 1] : nil }
+    var next: Region? { order + 1 < Region.allCases.count ? Region.allCases[order + 1] : nil }
+}
+
+/// 地図の しゅるい。
+enum MapKind: Equatable {
+    case field, town, cave, interior
 }
 
 enum MapID: String, Codable, CaseIterable {
-    /// 地方の フィールド。函館エリアは 1枚きりだったころの名前（field）でセーブに残る。
+    // ── 北海道（1.4 の 名前。セーブに 残るので 変えない。函館エリアは 1枚きりだったころの "field"）──
     case hakodateArea = "field"
     case sapporoArea, shiretokoArea
-    /// 街。函館エリアは 函館・松前・大沼、札幌・小樽は 札幌・小樽、知床は 羅臼。
-    case hakodate, matsumae, onuma
-    case sapporo, otaru, jozankei
-    case nakashibetsu, utoro, rausu
-    /// ほらあな。
-    case hakodateyama, komagatake
-    case tenguyama, moiwa1, moiwa2
-    case shiretokoMisaki
-    case rausudake1, rausudake2
+    case hakodate, matsumae, onuma, sapporo, otaru, jozankei, nakashibetsu, utoro, rausu
+    case hakodateyama, komagatake, tenguyama, moiwa1, moiwa2, shiretokoMisaki, rausudake1, rausudake2
+    case bugyosho, asaichiSouko, motomachiHouse, bukeyashiki, tsukemonoya, ryoshiHouse, noukaHouse, dangoya, yamagoya
+    case glassKobo, tokeidaiHouse, sapporoHouse, doucho, susukinoHouse, orgelDo, otaruSouko, onsenHouse
+    case bokujoHouse, nakaHouse, utoroCenter, utoroHouse, banya, ekashiHouse, rausuHouse
+    // ── 青森 ──
+    case aomoriField, aomori, hirosaki, hachinohe, towadako, hakkoda1, hakkoda2, osorezan1, osorezan2
+    case nebutaHouse, aomoriHouse, hirosakiCastle, ringoHouse, matagiHouse, hachinoheHouse
+    // ── 秋田 ──
+    case akitaField, akita, kakunodate, oga, tazawako, shinzan1, shinzan2
+    case kantoHouse, akitaHouse, kakunodateBukeyashiki, kabazaikuHouse, namahageHouse, ogaHouse
+    // ── 岩手 ──
+    case iwateField, morioka, hiraizumi, tono, ryusendo1, ryusendo2, iwatesan1, iwatesan2
+    case wankoHouse, nanbuHouse, chusonji, hiraizumiHouse, tonoHouse, magariya
+    // ── 宮城 ──
+    case miyagiField, sendai, matsushima, naruko, oysterCave, aobayama1, aobayama2
+    case tanabataHouse, sendaiHouse, museum, zuiganji, matsushimaHouse, kokeshiHouse
+    // ── 福島 ──
+    case fukushimaField, aizu, kitakata, fukushima, abukumado, bandai1, bandai2
+    case tsurugajo, akabekoHouse, kuraHouse, ramenHouse, warajiHouse, momoHouse
+    // ── 山形 ──
+    case yamagataField, yamagata, tendo, sakata, yamadera1, yamadera2, zao1, zao2, zao3
+    case hanagasaHouse, imoniHouse, shogiHouse, tendoHouse, sankyoSouko, sakataHouse
     /// 宿屋と道具屋の中。どの街から入っても ここを使い、出るときに元の街へ戻る。
     case innInside, shopInside
-    /// 街の 家の中。1軒ずつ ちがい、宝箱や ヒントをくれる人がいる。出るときは 入った扉の前へ戻る。
-    case bugyosho, asaichiSouko, motomachiHouse, bukeyashiki, tsukemonoya, ryoshiHouse, noukaHouse, dangoya, yamagoya, glassKobo, tokeidaiHouse, sapporoHouse, doucho, susukinoHouse, orgelDo, otaruSouko, onsenHouse, bokujoHouse, nakaHouse, utoroCenter, utoroHouse, banya, ekashiHouse, rausuHouse
 
-    /// 漢字の地名。フィールドの目印の下や 看板に出す。街・ほらあな・空港の行き先。
-    var placeName: String? {
-        switch self {
-        case .hakodate: "函館"
-        case .matsumae: "松前"
-        case .onuma: "大沼"
-        case .sapporo: "札幌"
-        case .otaru: "小樽"
-        case .jozankei: "定山渓"
-        case .rausu: "羅臼"
-        case .nakashibetsu: "中標津"
-        case .utoro: "ウトロ"
-        case .shiretokoMisaki: "知床岬"
-        case .hakodateyama: "函館山"
-        case .komagatake: "駒ヶ岳"
-        case .tenguyama: "天狗山"
-        case .moiwa1, .moiwa2: "藻岩山"
-        case .rausudake1, .rausudake2: "羅臼岳"
-        default: nil
-        }
-    }
+    private var map: GameMap? { World.all[self] }
 
-    /// どの地方の地図か。宿屋・道具屋の中は 入ってきた街で決まるので nil。
-    var region: Region? {
-        switch self {
-        case .hakodateArea, .hakodate, .matsumae, .onuma, .hakodateyama, .komagatake: .hakodate
-        case .sapporoArea, .sapporo, .otaru, .jozankei, .tenguyama, .moiwa1, .moiwa2: .sapporo
-        case .shiretokoArea, .nakashibetsu, .utoro, .rausu, .shiretokoMisaki, .rausudake1, .rausudake2: .shiretoko
-        default: nil
-        }
-    }
+    /// 漢字の地名。フィールドの目印の下や 看板に出す。
+    var placeName: String? { map?.label }
 
-    /// 地方の フィールドか。
-    var isField: Bool { Region.allCases.contains { $0.field == self } }
+    /// どの県の地図か。宿屋・道具屋の中は 入ってきた街で決まるので nil。
+    var region: Region? { map?.region }
+
+    var kind: MapKind { map?.kind ?? .interior }
+
+    /// 県の フィールドか。
+    var isField: Bool { kind == .field }
 
     /// ほらあなか。
-    var isCave: Bool {
-        switch self {
-        case .hakodateyama, .komagatake, .tenguyama, .moiwa1, .moiwa2, .shiretokoMisaki, .rausudake1, .rausudake2: true
-        default: false
-        }
-    }
+    var isCave: Bool { kind == .cave }
 
-    /// 宿屋・道具屋の中か。
-    var isInterior: Bool { self == .innInside || self == .shopInside || isHouse }
+    /// 宿屋・道具屋・家の中か。
+    var isInterior: Bool { kind == .interior }
 
     /// 街の 家の中か。
-    var isHouse: Bool { World.houses.contains(self) }
+    var isHouse: Bool { isInterior && self != .innInside && self != .shopInside }
 
     /// 街かどうか（宿屋・道具屋から戻る先になれるか）。
     var isTown: Bool { townInfo != nil }
 
     /// 街ごとの ちがい。街でなければ nil。
-    var townInfo: TownInfo? {
-        switch self {
-        case .hakodate: .hakodate
-        case .matsumae: .matsumae
-        case .onuma: .onuma
-        case .sapporo: .sapporo
-        case .otaru: .otaru
-        case .jozankei: .jozankei
-        case .rausu: .rausu
-        case .nakashibetsu: .nakashibetsu
-        case .utoro: .utoro
-        default: nil
-        }
-    }
+    var townInfo: TownInfo? { map?.town }
 }
 
-/// 真ん中に しばらく出す 地名の札（街に入ったとき・ひこうきで着いたとき）。
+/// 真ん中に しばらく出す 地名の札（街に入ったとき・新幹線で着いたとき）。
 struct PlaceBanner: Equatable {
     let name: String
     let reading: String
@@ -193,7 +286,7 @@ struct PlaceBanner: Equatable {
 }
 
 /// 街ごとの ちがい。奥の街ほど 宿代は高く、道具屋の品ぞろえは強くなる。
-/// 地形・人数・家の数は地図（`Maps.swift`）のほうで変える。
+/// 地形・人数・家の数は地図のほうで変える。
 struct TownInfo: Equatable {
     /// 漢字の名前と よみ。街に入ったときの札と 看板に出す。
     let name: String
@@ -207,43 +300,6 @@ struct TownInfo: Equatable {
     let stock: [Item]
 
     var banner: PlaceBanner { PlaceBanner(name: name, reading: reading, tagline: tagline) }
-
-    /// みなとの街。旅のはじめなので 安く、そろえも いちばん下。
-    static let hakodate = TownInfo(name: "函館", reading: "はこだて", tagline: "みなとの 街",
-                                   innBase: 2, innPerLevel: 3,
-                                   stock: [.herb, .ikameshi, .squidSpear, .copperSword, .scallopPlate, .leatherArmor])
-    /// 城と さくらの 町。函館の つぎに たずねる。
-    static let matsumae = TownInfo(name: "松前", reading: "まつまえ", tagline: "城と さくらの 町",
-                                   innBase: 3, innPerLevel: 3,
-                                   stock: [.herb, .ikameshi, .copperSword, .katana, .leatherArmor, .samuraiArmor])
-    /// 湖の ほとりの 町。駒ヶ岳の ふもと。
-    static let onuma = TownInfo(name: "大沼", reading: "おおぬま", tagline: "駒ヶ岳を うつす 湖の 町",
-                                innBase: 3, innPerLevel: 4,
-                                stock: [.herb, .ikameshi, .dango, .katana, .samuraiArmor])
-    /// 大きな街。鋼の剣が ここで買える。
-    static let sapporo = TownInfo(name: "札幌", reading: "さっぽろ", tagline: "北の 大きな 街",
-                                  innBase: 4, innPerLevel: 5,
-                                  stock: [.herb, .misoRamen, .dango, .steelSword, .chainMail])
-    /// 運河の みなと町。札幌の となりで、品ぞろえも 札幌と ほぼ同じ。
-    static let otaru = TownInfo(name: "小樽", reading: "おたる", tagline: "運河と ガラスの みなと町",
-                                innBase: 5, innPerLevel: 5,
-                                stock: [.herb, .misoRamen, .steelSword, .glassSword, .chainMail, .herringMail])
-    /// 山あいの 温泉街。札幌の 南西、藻岩山の さき。
-    static let jozankei = TownInfo(name: "定山渓", reading: "じょうざんけい", tagline: "かっぱの すむ 温泉街",
-                                   innBase: 5, innPerLevel: 6,
-                                   stock: [.herb, .misoRamen, .onsenTamago, .glassSword, .herringMail])
-    /// 酪農の町。知床への 空の入口。
-    static let nakashibetsu = TownInfo(name: "中標津", reading: "なかしべつ", tagline: "牧場と 空港の 町",
-                                       innBase: 5, innPerLevel: 7,
-                                       stock: [.herb, .misoRamen, .milk, .glassSword, .attush])
-    /// オホーツク海がわの 知床の 町。知床五湖の 入口。
-    static let utoro = TownInfo(name: "ウトロ", reading: "うとろ", tagline: "オホーツクの 知床の 町",
-                                innBase: 6, innPerLevel: 7,
-                                stock: [.herb, .ikuraDon, .milk, .orcaSpear, .attush, .driftIceArmor])
-    /// さいはての町。運ぶのが大変なぶん 宿も品も高い。銅の剣・革の鎧は もう置かない。
-    static let rausu = TownInfo(name: "羅臼", reading: "らうす", tagline: "知床の さいはての 町",
-                                innBase: 6, innPerLevel: 8,
-                                stock: [.herb, .ikuraDon, .milk, .orcaSpear, .driftIceArmor])
 }
 
 /// フィールドの区域。目印（街・ほらあな）ごとに 出る敵を決める。
@@ -252,16 +308,12 @@ struct EncounterArea: Equatable {
     /// どの目印のまわりか（メッセージやテストで見分けるため）。
     let name: String
     /// この区域の中心。**ひとつとは限らない**。
-    /// 海でへだてられて まわり道になる土地は、目印だけを中心にすると
+    /// 海や山で へだてられて まわり道になる土地は、目印だけを中心にすると
     /// 先の区域が食いこんでしまうので、通り道にも中心を足して押し返す。
     let around: [Point]
     let enemies: [EnemyKind]
-
-    init(name: String, around: [Point], enemies: [EnemyKind]) {
-        self.name = name
-        self.around = around
-        self.enemies = enemies
-    }
+    /// この区域の 戦いで「ちしき」を 出す 街。
+    var quizTown: MapID?
 
     func distance(to point: Point) -> Int {
         around.map { abs($0.x - point.x) + abs($0.y - point.y) }.min() ?? .max
@@ -318,6 +370,13 @@ struct Chest: Equatable {
 struct GameMap {
     let id: MapID
     let name: String
+    let kind: MapKind
+    /// どの県か。宿屋・道具屋の中は nil（入ってきた街で決まる）。
+    let region: Region?
+    /// フィールドの目印の下に出す 漢字の地名（街・ほらあな）。
+    let label: String?
+    /// 街なら その街の 宿代・品ぞろえ。
+    let town: TownInfo?
     let tiles: [[Tile]]
     let outside: Tile
     let warps: [Point: Warp]
@@ -332,6 +391,8 @@ struct GameMap {
     let encounterAreas: [EncounterArea]
     /// A で しらべると読める 名所の看板（`P` のマス）。載っていない看板は 街の名前を出す。
     let plaques: [Point: Plaque]
+    /// ここで 戦うと「ちしき」を 出す 街（街は 自分、ほらあな・家は ちかくの 街）。
+    let quizTown: MapID?
 
     var width: Int { tiles.first?.count ?? 0 }
     var height: Int { tiles.count }
@@ -344,6 +405,14 @@ struct GameMap {
         contains(point) ? tiles[point.y][point.x] : outside
     }
 
+    /// 駅のマス（フィールドに ひとつ）。
+    var station: Point? {
+        for (y, row) in tiles.enumerated() {
+            if let x = row.firstIndex(of: .station) { return Point(x: x, y: y) }
+        }
+        return nil
+    }
+
     /// そのマスが どの区域か。いちばん近い中心を選ぶ。
     /// 区域は 旅の順に並べてあるので、同じ距離なら 先に書いたほう（弱いほう）になる。
     func area(at point: Point) -> EncounterArea? {
@@ -352,8 +421,9 @@ struct GameMap {
 
     /// そのマスで出る敵。区域があればそちら、なければ地形で決める。
     /// 区域は **道の上もふくめて** 全部のマスをおおう。道だけ安全だと、
-    /// 街から街まで一度も戦わずに歩けてしまう。
+    /// 街から街まで一度も戦わずに歩けてしまう。駅の上では 出ない。
     func encounterTable(at point: Point) -> [EnemyKind]? {
+        if tile(at: point) == .station { return nil }
         if !encounterAreas.isEmpty { return area(at: point)?.enemies }
         return encounters[tile(at: point)]
     }
@@ -383,6 +453,10 @@ struct GameMap {
     init(
         id: MapID,
         name: String,
+        kind: MapKind,
+        region: Region?,
+        label: String? = nil,
+        town: TownInfo? = nil,
         rows: [String],
         outside: Tile,
         warps: [Point: Warp],
@@ -394,6 +468,8 @@ struct GameMap {
         bossKind: EnemyKind? = nil,
         encounters: [Tile: [EnemyKind]] = [:],
         encounterAreas: [EncounterArea] = [],
+        /// ここで 戦うと「ちしき」を 出す 街（街なら 書かなくてよい）。
+        quizTown: MapID? = nil,
         /// 人・宝箱の印（i・s・e・t・c）の足元に敷く床。
         markerFloor: Tile = .townFloor
     ) {
@@ -430,6 +506,10 @@ struct GameMap {
         }
         self.id = id
         self.name = name
+        self.kind = kind
+        self.region = region
+        self.label = label ?? town?.name
+        self.town = town
         self.tiles = tiles
         self.outside = outside
         self.warps = warps
@@ -440,5 +520,6 @@ struct GameMap {
         self.encounters = encounters
         self.encounterAreas = encounterAreas
         self.plaques = plaques
+        self.quizTown = quizTown ?? (kind == .town ? id : nil)
     }
 }
