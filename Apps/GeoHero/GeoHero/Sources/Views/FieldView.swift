@@ -28,7 +28,9 @@ struct FieldView: View {
                             x: center.x - CGFloat(game.position.x + MapLayer.padding) * tile,
                             y: center.y - CGFloat(game.position.y + MapLayer.padding) * tile
                         )
-                        .animation(game.lastMoveWasWarp ? nil : .linear(duration: 0.15), value: game.position)
+                        // 1歩（0.15秒）より すこし 長く 動かして、つぎの 1歩と すきまなく つなぐ。
+                        // ぴったり 同じだと 1歩ごとに 一瞬 止まって カクカク 見えた。
+                        .animation(game.lastMoveWasWarp ? nil : .linear(duration: 0.17), value: game.position)
 
                     SpriteCache.image(.hero(facing: game.facing, step: game.walkFrame))
                         .resizable()
@@ -152,7 +154,13 @@ struct MapLayer: View {
 
     var body: some View {
         let pad = Self.padding
+        // 描く板は 勇者の まわり（中心 ± radius マス）だけの 大きさに する。
+        // 前は 地図ぜんぶの 大きさ（フィールドだと 2800×1900pt ほど）の 板を 1歩ごとに 描きなおしていて、
+        // 歩くたびに 画面が 引っかかって カクカク していた。
+        let origin = Point(x: center.x - radius, y: center.y - radius)
+        let side = CGFloat(radius * 2 + 1) * tile
         Canvas { context, _ in
+            context.translateBy(x: -CGFloat(origin.x + pad) * tile, y: -CGFloat(origin.y + pad) * tile)
             // 地図が広いので、画面に入らないところは描かない。
             let yRange = max(-pad, center.y - radius)..<min(map.height + pad, center.y + radius + 1)
             let xRange = max(-pad, center.x - radius)..<min(map.width + pad, center.x + radius + 1)
@@ -223,7 +231,13 @@ struct MapLayer: View {
                 context.draw(SpriteCache.image(sprite), in: rect(for: boss).insetBy(dx: -tile * 0.25, dy: -tile * 0.25))
             }
         }
-        .frame(width: CGFloat(map.width + pad * 2) * tile, height: CGFloat(map.height + pad * 2) * tile)
+        .frame(width: side, height: side)
+        // 板の 置き場所は 勇者と いっしょに すぐ 動かす（ここが アニメーションすると 絵が ずれて 見える）。
+        // 地図の スクロールは 外側（FieldView）の offset だけで 見せる。
+        .offset(x: CGFloat(origin.x + pad) * tile, y: CGFloat(origin.y + pad) * tile)
+        .transaction { $0.animation = nil }
+        .frame(width: CGFloat(map.width + pad * 2) * tile, height: CGFloat(map.height + pad * 2) * tile,
+               alignment: .topLeading)
     }
 
     private func rect(for point: Point) -> CGRect {
