@@ -11,7 +11,8 @@ struct FieldView: View {
     var body: some View {
         VStack(spacing: 0) {
             GeometryReader { geo in
-                let tile = geo.size.width / CGFloat(Self.columns)
+                // マスは 整数の ポイントに そろえる（板の 継ぎ目に すきまが 出ないように）。
+                let tile = (geo.size.width / CGFloat(Self.columns)).rounded(.up)
                 let center = CGPoint(x: (geo.size.width - tile) / 2, y: (geo.size.height - tile) / 2)
                 ZStack(alignment: .topLeading) {
                     MapLayer(
@@ -28,9 +29,8 @@ struct FieldView: View {
                             x: center.x - CGFloat(game.position.x + MapLayer.padding) * tile,
                             y: center.y - CGFloat(game.position.y + MapLayer.padding) * tile
                         )
-                        // 1歩（0.15秒）より すこし 長く 動かして、つぎの 1歩と すきまなく つなぐ。
-                        // ぴったり 同じだと 1歩ごとに 一瞬 止まって カクカク 見えた。
-                        .animation(game.lastMoveWasWarp ? nil : .linear(duration: 0.17), value: game.position)
+                        // 1歩（0.15秒）と おなじ 長さ。長くすると つぎの 1歩と かさなった あいだだけ 速くなり、ガクッと 見える。
+                        .animation(game.lastMoveWasWarp ? nil : .linear(duration: 0.15), value: game.position)
 
                     SpriteCache.image(.hero(facing: game.facing, step: game.walkFrame))
                         .resizable()
@@ -113,9 +113,16 @@ struct PlaceBannerView: View {
     }
 }
 
-/// マップ全体を1枚に描く。外周に `padding` マス分だけ「外側の地形」を足し、端でも黒い余白が見えないようにする。
+/// マップを 描く。外周に `padding` マス分だけ「外側の地形」を足し、端でも黒い余白が見えないようにする。
+///
+/// 地面は 8×8 マスの 小さな 板（`MapChunk`）に わけて 描く。板は 一度 描いたら 歩いても 描きなおさず、
+/// 歩くときの スクロールは 外側（FieldView）の offset だけで 見せる（GPU が 板を ずらすだけなので なめらか）。
+/// 前は 地図ぜんぶの 大きさの 1枚の 板を 1歩ごとに 描きなおしていて、歩くたびに 引っかかっていた。
+/// 町・ほらあな・人・宝箱などは 板とは べつの 絵として かさねる（板の ふちで 大きな 絵が 切れないように）。
 struct MapLayer: View {
     static let padding = 7
+    /// 地面の 板の 1辺の マス数。
+    static let chunkSize = 8
 
     let map: GameMap
     /// いま出ている人（迷子のように 出たり消えたりする人がいる）。
@@ -124,7 +131,7 @@ struct MapLayer: View {
     /// まだ立っているボスのマス。倒したあとは nil（絵も消す）。
     let boss: Point?
     let tile: CGFloat
-    /// 勇者のいるマス。この まわりだけ描く。
+    /// 勇者のいるマス。この まわりの 板だけ 置く。
     let center: Point
     /// 中心から何マスぶん描くか。
     let radius: Int
@@ -152,96 +159,160 @@ struct MapLayer: View {
         )
     }
 
+    /// 勇者の まわりに 置く 板（板の 番号。マス = 番号 × chunkSize）。
+    /// 板の 境目を またぐまでは 同じ 並びを 返すので、1歩ごとには 板が 入れかわらない。
+    static func chunks(around center: Point, radius: Int, map: GameMap) -> [Point] {
+        let size = chunkSize
+        func floorDiv(_ a: Int) -> Int { a >= 0 ? a / size : -((-a + size - 1) / size) }
+        let minX = floorDiv(max(-padding, center.x - radius))
+        let maxX = floorDiv(min(map.width + padding - 1, center.x + radius))
+        let minY = floorDiv(max(-padding, center.y - radius))
+        let maxY = floorDiv(min(map.height + padding - 1, center.y + radius))
+        return (minY...maxY).flatMap { y in (minX...maxX).map { Point(x: $0, y: y) } }
+    }
+
     var body: some View {
         let pad = Self.padding
-        // 描く板は 勇者の まわり（中心 ± radius マス）だけの 大きさに する。
-        // 前は 地図ぜんぶの 大きさ（フィールドだと 2800×1900pt ほど）の 板を 1歩ごとに 描きなおしていて、
-        // 歩くたびに 画面が 引っかかって カクカク していた。
-        let origin = Point(x: center.x - radius, y: center.y - radius)
-        let side = CGFloat(radius * 2 + 1) * tile
-        Canvas { context, _ in
-            context.translateBy(x: -CGFloat(origin.x + pad) * tile, y: -CGFloat(origin.y + pad) * tile)
-            // 地図が広いので、画面に入らないところは描かない。
-            let yRange = max(-pad, center.y - radius)..<min(map.height + pad, center.y + radius + 1)
-            let xRange = max(-pad, center.x - radius)..<min(map.width + pad, center.x + radius + 1)
-            for y in yRange {
-                for x in xRange {
-                    let point = Point(x: x, y: y)
-                    let rect = CGRect(x: CGFloat(x + pad) * tile, y: CGFloat(y + pad) * tile, width: tile, height: tile)
-                    let kind = map.tile(at: point)
-                    // 街と ほらあなは あとでまとめて大きく描くので、ここでは地面だけ敷く。
-                    let ground = MapLayer.landmark(kind) == nil ? kind : .grass
-                    context.draw(SpriteCache.image(SpriteID(tile: ground)), in: rect)
-                }
+        let chunks = Self.chunks(around: center, radius: radius, map: map)
+        // 板の ならぶ 範囲（マス）。人や 宝箱も この 範囲の ものだけ 置く。
+        let area = (
+            minX: (chunks.map(\.x).min() ?? 0) * Self.chunkSize, maxX: ((chunks.map(\.x).max() ?? 0) + 1) * Self.chunkSize,
+            minY: (chunks.map(\.y).min() ?? 0) * Self.chunkSize, maxY: ((chunks.map(\.y).max() ?? 0) + 1) * Self.chunkSize
+        )
+        let inArea: (Point) -> Bool = { p in p.x >= area.minX && p.x < area.maxX && p.y >= area.minY && p.y < area.maxY }
+
+        ZStack(alignment: .topLeading) {
+            ForEach(chunks, id: \.self) { chunk in
+                MapChunk(map: map, chunk: chunk, tile: tile)
+                    .equatable()
+                    .offset(x: CGFloat(chunk.x * Self.chunkSize + pad) * tile,
+                            y: CGFloat(chunk.y * Self.chunkSize + pad) * tile)
+                    // 新しく 置く 板は ふわっと 出さずに すぐ 出す（歩く アニメーションに まきこまれないように）。
+                    .transition(.identity)
             }
-            // 街と ほらあなは 1マスより大きく描く。
-            // ふつうのタイルを敷き終えたあとに描かないと、右や下のタイルに削られる。
-            for y in yRange {
-                for x in xRange {
-                    let point = Point(x: x, y: y)
-                    let kind = map.tile(at: point)
-                    guard let mark = MapLayer.landmark(kind) else { continue }
-                    let rect = CGRect(x: CGFloat(x + pad) * tile, y: CGFloat(y + pad) * tile, width: tile, height: tile)
-                    context.draw(SpriteCache.image(mark.sprite), in: MapLayer.standing(rect, scale: mark.scale))
-                }
+            ForEach(sprites(where: inArea), id: \.id) { sprite in
+                SpriteCache.image(sprite.sprite)
+                    .resizable()
+                    .interpolation(.none)
+                    .frame(width: sprite.rect.width, height: sprite.rect.height)
+                    .offset(x: sprite.rect.minX, y: sprite.rect.minY)
+                    .transition(.identity)
             }
-            // 看板には 街の名前を書く。
-            if let town = map.id.townInfo {
-                for y in yRange {
-                    for x in xRange where map.tile(at: Point(x: x, y: y)) == .signpost {
-                        let point = Point(x: x, y: y)
-                        let board = rect(for: point)
-                        // 名所の看板には その名前、ほかは 街の名前。3文字は 板に収まるよう 小さくする。
-                        let title = map.plaques[point]?.title ?? town.name
-                        let size = tile * (title.count > 2 ? 0.25 : 0.34)
-                        let text = context.resolve(Text(title).font(Retro.font(size)).foregroundColor(.black))
-                        context.draw(text, at: CGPoint(x: board.midX, y: board.minY + board.height * 5.5 / 16))
-                    }
-                }
-            }
-            // フィールドでは 街と ほらあなの下に 地名を出す。どこが どの街か 地図だけで分かるように。
-            var labels: [(Point, String)] = map.warps.compactMap { point, warp in
-                guard MapLayer.landmark(map.tile(at: point)) != nil, let name = warp.to.placeName else { return nil }
-                return (point, name)
-            }
-            // 駅には 駅の 名前（新青森駅 など）。
-            if let station = map.station, let region = map.region, let name = region.stationName {
-                labels.append((station, name))
-            }
-            for (point, name) in labels {
-                guard abs(point.x - center.x) <= radius, abs(point.y - center.y) <= radius else { continue }
-                let below = rect(for: point)
-                let text = context.resolve(Text(name).font(Retro.font(tile * 0.36)).foregroundColor(.white))
-                let size = text.measure(in: CGSize(width: tile * 4, height: tile))
-                let label = CGRect(x: below.midX - size.width / 2 - 6, y: below.maxY + 2,
-                                   width: size.width + 12, height: size.height + 4)
-                context.fill(Path(roundedRect: label, cornerRadius: 3), with: .color(.black.opacity(0.7)))
-                context.draw(text, at: CGPoint(x: label.midX, y: label.midY))
-            }
-            for chest in map.chests {
-                let sprite: SpriteID = openedChests.contains(chest.id) ? .chestOpen : .chestClosed
-                context.draw(SpriteCache.image(sprite), in: rect(for: chest.position))
-            }
-            for npc in npcs {
-                context.draw(SpriteCache.image(SpriteID(npc: npc.role)), in: rect(for: npc.position))
-            }
-            if let boss {
-                // そのマップのボスの絵で出す（どの ほらあなでも守護神が座っていた）。
-                let sprite = map.bossKind.map(SpriteID.init(enemy:)) ?? .guardian
-                context.draw(SpriteCache.image(sprite), in: rect(for: boss).insetBy(dx: -tile * 0.25, dy: -tile * 0.25))
+            ForEach(captions(where: inArea), id: \.id) { caption in
+                caption.view
+                    .transition(.identity)
             }
         }
-        .frame(width: side, height: side)
-        // 板の 置き場所は 勇者と いっしょに すぐ 動かす（ここが アニメーションすると 絵が ずれて 見える）。
-        // 地図の スクロールは 外側（FieldView）の offset だけで 見せる。
-        .offset(x: CGFloat(origin.x + pad) * tile, y: CGFloat(origin.y + pad) * tile)
-        .transaction { $0.animation = nil }
         .frame(width: CGFloat(map.width + pad * 2) * tile, height: CGFloat(map.height + pad * 2) * tile,
                alignment: .topLeading)
     }
 
+    private struct PlacedSprite {
+        let id: String
+        let sprite: SpriteID
+        let rect: CGRect
+    }
+
+    /// 町・ほらあなの 大きな 絵、宝箱、人、ボス（かさねる 順）。
+    private func sprites(where visible: (Point) -> Bool) -> [PlacedSprite] {
+        var result: [PlacedSprite] = []
+        for (y, row) in map.tiles.enumerated() where visible(Point(x: max(0, centerColumn), y: y)) {
+            for (x, kind) in row.enumerated() {
+                let point = Point(x: x, y: y)
+                guard let mark = Self.landmark(kind), visible(point) else { continue }
+                result.append(PlacedSprite(id: "mark-\(x)-\(y)", sprite: mark.sprite,
+                                           rect: Self.standing(rect(for: point), scale: mark.scale)))
+            }
+        }
+        for chest in map.chests where visible(chest.position) {
+            let sprite: SpriteID = openedChests.contains(chest.id) ? .chestOpen : .chestClosed
+            result.append(PlacedSprite(id: "chest-\(chest.id)", sprite: sprite, rect: rect(for: chest.position)))
+        }
+        for npc in npcs where visible(npc.position) {
+            result.append(PlacedSprite(id: "npc-\(npc.position.x)-\(npc.position.y)", sprite: SpriteID(npc: npc.role),
+                                       rect: rect(for: npc.position)))
+        }
+        if let boss, visible(boss) {
+            // そのマップのボスの絵で出す（どの ほらあなでも守護神が座っていた）。
+            let sprite = map.bossKind.map(SpriteID.init(enemy:)) ?? .guardian
+            result.append(PlacedSprite(id: "boss", sprite: sprite,
+                                       rect: rect(for: boss).insetBy(dx: -tile * 0.25, dy: -tile * 0.25)))
+        }
+        return result
+    }
+
+    private struct Caption {
+        let id: String
+        let view: AnyView
+    }
+
+    /// 看板の 字と、フィールドの 町・ほらあな・駅の 下の 地名。
+    private func captions(where visible: (Point) -> Bool) -> [Caption] {
+        var result: [Caption] = []
+        // 看板には 街の名前を書く。名所の看板には その名前。3文字は 板に収まるよう 小さくする。
+        if let town = map.id.townInfo {
+            for (y, row) in map.tiles.enumerated() where visible(Point(x: max(0, centerColumn), y: y)) {
+                for (x, kind) in row.enumerated() where kind == .signpost && visible(Point(x: x, y: y)) {
+                    let point = Point(x: x, y: y)
+                    let board = rect(for: point)
+                    let title = map.plaques[point]?.title ?? town.name
+                    let size = tile * (title.count > 2 ? 0.25 : 0.34)
+                    let text = Text(title).font(Retro.font(size)).foregroundColor(.black)
+                        .fixedSize()
+                        .frame(width: board.width * 2, height: tile * 0.5)
+                        .offset(x: board.midX - board.width, y: board.minY + board.height * 5.5 / 16 - tile * 0.25)
+                    result.append(Caption(id: "sign-\(x)-\(y)", view: AnyView(text)))
+                }
+            }
+        }
+        // フィールドでは 街と ほらあなの下に 地名を出す。どこが どの街か 地図だけで分かるように。
+        var labels: [(Point, String)] = map.warps.compactMap { point, warp in
+            guard Self.landmark(map.tile(at: point)) != nil, let name = warp.to.placeName else { return nil }
+            return (point, name)
+        }
+        // 駅には 駅の 名前（新青森駅 など）。
+        if let station = map.station, let region = map.region, let name = region.stationName {
+            labels.append((station, name))
+        }
+        for (point, name) in labels where visible(point) {
+            let below = rect(for: point)
+            let label = Text(name).font(Retro.font(tile * 0.36)).foregroundColor(.white)
+                .fixedSize()
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
+                .frame(width: tile * 5)
+                .offset(x: below.midX - tile * 2.5, y: below.maxY + 2)
+            result.append(Caption(id: "label-\(point.x)-\(point.y)", view: AnyView(label)))
+        }
+        return result
+    }
+
+    /// 行を しぼる ときに 使う 列（勇者の いる 列。地図の 外なら 0）。
+    private var centerColumn: Int { min(max(center.x, 0), map.width - 1) }
+
     private func rect(for point: Point) -> CGRect {
         CGRect(x: CGFloat(point.x + Self.padding) * tile, y: CGFloat(point.y + Self.padding) * tile, width: tile, height: tile)
+    }
+}
+
+/// 地面の 8×8 マスの 板。絵は `ChunkCache` に 焼いてあるので、歩いても 描きなおさない。
+struct MapChunk: View, Equatable {
+    let map: GameMap
+    let chunk: Point
+    let tile: CGFloat
+
+    static func == (lhs: MapChunk, rhs: MapChunk) -> Bool {
+        lhs.map.id == rhs.map.id && lhs.chunk == rhs.chunk && lhs.tile == rhs.tile
+    }
+
+    var body: some View {
+        let size = MapLayer.chunkSize
+        // 焼いておいた 絵を ぼかさずに 拡大して 出す（Canvas だと 歩くたびに 描きなおされた）。
+        Image(decorative: ChunkCache.image(map: map, chunk: chunk, size: size), scale: 1)
+            .resizable()
+            .interpolation(.none)
+        .frame(width: CGFloat(size) * tile, height: CGFloat(size) * tile)
     }
 }
 

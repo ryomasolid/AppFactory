@@ -217,3 +217,47 @@ enum SpriteCache {
         )
     }
 }
+
+/// 地面の 8×8 マスの 板を 1枚の 絵に 焼いて おく（マップごと・板ごとに 1回だけ）。
+/// 1ドット = 1ピクセルで 焼き（128×128）、表示側で ぼかさずに 拡大する。
+/// Canvas で 描くと 画面上で 動くたびに 描きなおされて、歩くたびに カクカク していた。
+@MainActor
+enum ChunkCache {
+    private static var images: [String: CGImage] = [:]
+
+    static func image(map: GameMap, chunk: Point, size: Int) -> CGImage {
+        let key = "\(map.id.rawValue)-\(chunk.x)-\(chunk.y)-\(size)"
+        if let cached = images[key] { return cached }
+        let dots = 16
+        let w = size * dots
+        var pixels = [UInt8](repeating: 0, count: w * w * 4)
+        for ty in 0..<size {
+            for tx in 0..<size {
+                let point = Point(x: chunk.x * size + tx, y: chunk.y * size + ty)
+                let kind = map.tile(at: point)
+                // 街と ほらあなは 上に 大きな 絵を かさねるので、ここでは 地面だけ 敷く。
+                let ground = MapLayer.landmark(kind) == nil ? kind : .grass
+                let rows = SpriteID.art[SpriteID(tile: ground)] ?? []
+                for (y, row) in rows.enumerated() where y < dots {
+                    for (x, char) in row.enumerated() where x < dots {
+                        guard let color = Palette.colors[char] else { continue }
+                        let i = ((ty * dots + y) * w + (tx * dots + x)) * 4
+                        pixels[i] = color.r
+                        pixels[i + 1] = color.g
+                        pixels[i + 2] = color.b
+                        pixels[i + 3] = 255
+                    }
+                }
+            }
+        }
+        let image = CGDataProvider(data: Data(pixels) as CFData).flatMap {
+            CGImage(width: w, height: w, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: w * 4,
+                    space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                    provider: $0, decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+        }
+        guard let image else { fatalError("板の 絵を 作れない") }
+        images[key] = image
+        return image
+    }
+}
