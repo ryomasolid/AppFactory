@@ -57,7 +57,7 @@ enum Launch {
 
         for old in (try? context.fetch(FetchDescriptor<HamsterProfile>())) ?? [] { context.delete(old) }
         context.insert(HamsterProfile(
-            name: String(localized: "もち"), species: "ジャンガリアンハムスター",
+            name: String(localized: "ごま"), species: "ジャンガリアンハムスター",
             birthDate: daysAgo(290), welcomeDate: daysAgo(230),
             photoPath: demoPhoto(named: "demo-avatar", real: "avatar", hue: 0.07)
         ))

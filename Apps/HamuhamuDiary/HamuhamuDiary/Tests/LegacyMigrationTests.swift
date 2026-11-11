@@ -11,7 +11,7 @@ struct LegacyMigrationTests {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
         let recordsValue = #"{"state":{"records":["# + records.joined(separator: ",") + #"],"_hasHydrated":true},"version":0}"#
-        let profileValue = #"{"state":{"profile":{"id":"p1","name":"もち","species":"ジャンガリアンハムスター","birthDate":"2025-12-14","welcomeDate":null,"photoUri":"photos/avatar.jpg"},"#
+        let profileValue = #"{"state":{"profile":{"id":"p1","name":"ごま","species":"ジャンガリアンハムスター","birthDate":"2025-12-14","welcomeDate":null,"photoUri":"photos/avatar.jpg"},"#
             + #""presetMeals":[{"id":"pellets","name":"いつもの","text":"ペレット 4g"}],"singleFoods":[{"id":"corn","name":"コーン"}],"#
             + #""cleaningOptions":[{"id":"partial","name":"部分掃除","emoji":"🧹"},{"id":"custom-1","name":"砂浴び場","emoji":"🏖️"}]},"version":0}"#
         let remindersValue = #"{"state":{"reminders":[{"id":"bedding_change","name":"床材全面交換","lastDate":"2026-06-20","cycleDays":14,"category":"bedding","emoji":"🌿"}]},"version":0}"#
@@ -44,7 +44,7 @@ struct LegacyMigrationTests {
         #expect(snapshot.records.count == 1)
         #expect(snapshot.records[0].weight == 39.6)
         #expect(snapshot.records[0].cleaningTaskIds == ["partial"])
-        #expect(snapshot.profile?.name == "もち")
+        #expect(snapshot.profile?.name == "ごま")
         #expect(snapshot.profile?.welcomeDate == nil)
         #expect(snapshot.cleaningOptions?.map(\.id) == ["partial", "custom-1"])
         #expect(snapshot.reminders?.first?.lastDate == "2026-06-20")
@@ -94,7 +94,7 @@ struct LegacyMigrationTests {
         #expect(records[1].photoPath == "photos/b.jpg")
 
         let profile = try #require(try context.fetch(FetchDescriptor<HamsterProfile>()).first)
-        #expect(profile.name == "もち")
+        #expect(profile.name == "ごま")
         #expect(profile.birthDate.map { DayFormat.string(from: $0) } == "2025-12-14")
 
         // 旧版にあった項目はそのまま、旧版に無かった項目（ここでは無し）だけ既定値。

@@ -102,7 +102,7 @@ struct NotificationPlannerTests {
     @Test func nothingWhenBothAreOff() {
         let planned = NotificationPlanner.plan(
             reminders: [reminder("a", last: at(2026, 6, 18, 9))], remindersEnabled: false, dailyEnabled: false,
-            dailyHour: 20, hamsterName: "もち", now: now, calendar: jst
+            dailyHour: 20, hamsterName: "ごま", now: now, calendar: jst
         )
         #expect(planned.isEmpty)
     }
@@ -118,17 +118,17 @@ struct NotificationPlannerTests {
 
     @Test func dailyUsesTheHamsterName() {
         let planned = NotificationPlanner.plan(
-            reminders: [], remindersEnabled: false, dailyEnabled: true, dailyHour: 21, hamsterName: "もち", now: now, calendar: jst
+            reminders: [], remindersEnabled: false, dailyEnabled: true, dailyHour: 21, hamsterName: "ごま", now: now, calendar: jst
         )
         #expect(planned.count == 1)
         #expect(planned.first?.dailyHour == 21)
-        #expect(planned.first?.title.contains("もち") == true)
+        #expect(planned.first?.title.contains("ごま") == true)
     }
 
     @Test func inactiveStartsThreeDaysAfterTheLastRecordAndRepeatsDaily() {
         let planned = NotificationPlanner.plan(
             reminders: [], remindersEnabled: false, dailyEnabled: false, dailyHour: 20,
-            inactiveEnabled: true, lastRecordDate: at(2026, 6, 19, 0), hamsterName: "もち", now: now, calendar: jst
+            inactiveEnabled: true, lastRecordDate: at(2026, 6, 19, 0), hamsterName: "ごま", now: now, calendar: jst
         )
         #expect(planned.count == NotificationSettings.inactiveScheduleDays)
         #expect(planned.first?.id == "inactive-3")
@@ -209,10 +209,10 @@ struct AnniversaryTests {
                 Anniversary(date: at(2026, 6, 20, 0), kind: .halfBirthday),
                 Anniversary(date: at(2026, 6, 25, 0), kind: .birthday(years: 1)),
             ],
-            hamsterName: "もち", now: now, calendar: jst
+            hamsterName: "ごま", now: now, calendar: jst
         )
         #expect(planned.count == 1)
         #expect(planned.first?.fireDate == at(2026, 6, 25, 9))
-        #expect(planned.first?.title == "🎂 今日はもちの1歳のお誕生日！")
+        #expect(planned.first?.title == "🎂 今日はごまの1歳のお誕生日！")
     }
 }

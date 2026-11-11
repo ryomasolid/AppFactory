@@ -11,7 +11,8 @@ struct ShareCardView: View {
     @AppStorage(StorageKey.reviewRequestedAt) private var reviewRequestedAt = 0.0
     @Query private var profiles: [HamsterProfile]
 
-    static let hashtags = "#はむはむ日記 #ハムスター #ハムスターのいる生活"
+    /// 画像に添える文。X・LINE では文が残るので、見た人がそのままストアへ行けるようにリンクを付ける（Instagram は文を捨てる）。
+    static let hashtags = "#はむはむ日記 #ハムスター #ハムスターのいる生活\n\(AppLinks.appStoreURL.absoluteString)"
 
     var body: some View {
         NavigationStack {

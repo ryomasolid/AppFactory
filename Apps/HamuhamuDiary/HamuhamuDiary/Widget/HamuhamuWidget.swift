@@ -31,7 +31,7 @@ struct Entry: TimelineEntry {
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> Entry {
-        Entry(date: Date(), snapshot: WidgetSnapshot(name: "もち", lastRecordDate: Date(), latestWeight: 39.6, weightChange: -0.2))
+        Entry(date: Date(), snapshot: WidgetSnapshot(name: "ごま", lastRecordDate: Date(), latestWeight: 39.6, weightChange: -0.2))
     }
 
     func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) {
