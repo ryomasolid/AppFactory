@@ -84,3 +84,4 @@ To see sample data quickly: add a gecko from the + button on the Cage tab, then 
 - 2026-11-06: ASC に登録（Apple ID 6831492029）。掲載情報・審査メモ・スクショ5枚・4+・データ収集なし・無料。
 - 2026-11-10: 1.0 (1) をアップロードし、TestFlight の内部グループ「開発者」に配信。実機で確認して OK。
 - 2026-11-10 16:35: 1.0 (1) を紐付けて審査提出（審査待ち・承認後に自動で公開）。
+- 2026-11-11 08:35: 1.0 (1) が 2.1 Information Needed（画面収録＋6項目）で却下 → 録画 `Store/GeckoLog-review-1.0.mp4` を添付し、審査メモを `Store/ReviewNotes-2.1.md` の英文に差し替えて 18:19 に再提出（審査待ち）。

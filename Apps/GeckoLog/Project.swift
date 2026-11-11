@@ -45,6 +45,16 @@ let project = Project(
             buildableFolders: ["GeckoLog/Tests"],
             dependencies: [.target(name: "GeckoLog")]
         ),
+        // 審査用の画面収録で、新規インストールからの流れを毎回同じ手順で操作する。
+        .target(
+            name: "GeckoLogUITests",
+            destinations: [.iPhone],
+            product: .uiTests,
+            bundleId: "tech.sesame.geckolog.uitests",
+            infoPlist: .default,
+            buildableFolders: ["GeckoLog/UITests"],
+            dependencies: [.target(name: "GeckoLog")]
+        ),
     ],
     schemes: [
         .scheme(
@@ -52,6 +62,12 @@ let project = Project(
             shared: true,
             buildAction: .buildAction(targets: ["GeckoLog"]),
             testAction: .targets(["GeckoLogTests"])
+        ),
+        .scheme(
+            name: "GeckoLogReviewWalkthrough",
+            shared: true,
+            buildAction: .buildAction(targets: ["GeckoLog", "GeckoLogUITests"]),
+            testAction: .targets(["GeckoLogUITests"], configuration: .release)
         ),
     ]
 )
