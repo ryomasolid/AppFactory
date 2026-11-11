@@ -42,9 +42,13 @@ struct PrefsScreen: View {
 
                 Section("このアプリについて") {
                     LabeledContent("バージョン", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
-                    Text("記録と写真はこの iPhone の中だけに保存されます。アカウント登録はなく、外部へ送信することもありません。")
+                    Text("記録と写真はこの iPhone の中だけに保存されます。アカウント登録はなく、記録が外部へ送られることもありません。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                    Text("画面の下に小さな広告（Google AdMob）が出ます。広告の表示のために広告 ID などが Google に送られることがあります。くわしくはプライバシーポリシーをご覧ください。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Link("プライバシーポリシー", destination: URL(string: "https://ryomasolid.github.io/privacy-geckolog.html")!)
                     Text("ごはんの間隔・脱皮・孵化の日数は一般的な目安です。体調が心配なときは爬虫類を診られる動物病院に相談してください。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)

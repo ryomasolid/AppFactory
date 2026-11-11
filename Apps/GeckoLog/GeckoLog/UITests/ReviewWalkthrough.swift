@@ -10,6 +10,8 @@ final class ReviewWalkthrough: XCTestCase {
     func testWalkthrough() throws {
         continueAfterFailure = true
         pause(3)
+        // 広告の同意・ATT のダイアログで操作が止まらないよう、録画では広告を出さない。
+        app.launchArguments += ["-noAds"]
         app.launch()
         pause(3)
 

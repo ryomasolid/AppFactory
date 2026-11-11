@@ -33,21 +33,30 @@ struct GeckoLogApp: App {
 
 struct RootTabs: View {
     @State private var tab = Showcase.startTab
+    @State private var ads = AdGate()
 
     var body: some View {
+        // 棚は TabView ではなく各タブの中身に付ける。TabView に safeAreaInset を付けると、
+        // iOS 26 の浮いたタブバーが棚の裏に隠れてしまう。
         TabView(selection: $tab) {
             CageScreen()
+                .bannerShelf(ads)
                 .tabItem { Label("ケージ", systemImage: "square.grid.2x2") }
                 .tag(0)
             JournalScreen()
+                .bannerShelf(ads)
                 .tabItem { Label("きろく", systemImage: "list.bullet.rectangle") }
                 .tag(1)
             EggScreen()
+                .bannerShelf(ads)
                 .tabItem { Label("たまご", systemImage: "hourglass") }
                 .tag(2)
             PrefsScreen()
+                .bannerShelf(ads)
                 .tabItem { Label("せってい", systemImage: "gearshape") }
                 .tag(3)
         }
+        // 最初の画面を描いてから、同意 → ATT → SDK の順に進める。
+        .task { await ads.open() }
     }
 }
