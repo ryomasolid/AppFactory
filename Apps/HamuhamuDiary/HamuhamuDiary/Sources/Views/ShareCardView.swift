@@ -31,6 +31,17 @@ struct ShareCardView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle(radius: 14))
+                    if record.photoPath != nil {
+                        NavigationLink {
+                            StickerView(record: record, profile: profiles.first, onShared: askForReviewIfDue)
+                        } label: {
+                            Label("ハムちゃんを切り抜いてステッカーにする", systemImage: "scissors")
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.roundedRectangle(radius: 14))
+                    }
                     Text("Instagram・X・LINE などに投稿できます")
                         .font(.caption)
                         .foregroundStyle(.secondary)
