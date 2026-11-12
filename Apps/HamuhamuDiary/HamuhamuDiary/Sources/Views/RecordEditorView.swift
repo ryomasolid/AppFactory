@@ -48,10 +48,10 @@ struct RecordEditorView: View {
                             .datePickerStyle(.compact)
                             .environment(\.locale, Locale(identifier: "ja_JP"))
                     }
+                    section("📷 写真・メモ（任意）") { photoAndMemo }
                     section("⚖️ 体重（任意）") { weightField }
                     section("🌾 ごはん（任意）") { foodField }
                     section("🧹 今日のお掃除（任意）") { cleaningField }
-                    section("📷 写真・メモ（任意）") { photoAndMemo }
                     if isEditing {
                         Button("この記録を削除", role: .destructive) { confirmDelete = true }
                             .padding(.top, 4)
