@@ -20,6 +20,7 @@ struct RecordEditorView: View {
     @State private var photoPath: String?
     @State private var newPhoto: UIImage?
     @State private var pickedItem: PhotosPickerItem?
+    @State private var showCamera = false
     @State private var confirmDelete = false
     @State private var loaded = false
     @FocusState private var focused: Field?
@@ -80,6 +81,10 @@ struct RecordEditorView: View {
         }
         .onAppear(perform: load)
         .onChange(of: pickedItem) { _, item in Task { await loadPicked(item) } }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { newPhoto = $0 }
+                .ignoresSafeArea()
+        }
     }
 
     // MARK: - 入力欄
@@ -171,11 +176,19 @@ struct RecordEditorView: View {
                         .accessibilityLabel("写真を外す")
                     }
             }
-            PhotosPicker(selection: $pickedItem, matching: .images) {
-                Label(newPhoto == nil && photoPath == nil ? "写真を追加" : "写真を変更", systemImage: "photo.on.rectangle")
-                    .frame(maxWidth: .infinity)
+            HStack(spacing: 10) {
+                if CameraPicker.isAvailable {
+                    Button { showCamera = true } label: {
+                        Label("カメラで撮る", systemImage: "camera").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                PhotosPicker(selection: $pickedItem, matching: .images) {
+                    Label(pickerTitle, systemImage: "photo.on.rectangle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.bordered)
 
             TextField("今日の様子をメモ", text: $memo, axis: .vertical)
                 .lineLimit(2...6)
@@ -186,6 +199,12 @@ struct RecordEditorView: View {
                     if value.count > 500 { memo = String(value.prefix(500)) }
                 }
         }
+    }
+
+    /// カメラと並ぶときは短く「アルバムから」、カメラがないときは従来どおり。
+    private var pickerTitle: LocalizedStringKey {
+        if CameraPicker.isAvailable { return "アルバムから" }
+        return newPhoto == nil && photoPath == nil ? "写真を追加" : "写真を変更"
     }
 
     private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {

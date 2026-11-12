@@ -72,6 +72,8 @@ let project = Project(
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~9733110624",
                     // 広告のトラッキング許可（ATT）ダイアログの説明文。
                     "NSUserTrackingUsageDescription": "あなたに関連性の高い広告を表示するために使用します。許可しなくてもアプリの機能はご利用いただけます。",
+                    // 記録の「カメラで撮る」。撮った写真はアプリ内にだけ保存する。
+                    "NSCameraUsageDescription": "ハムスターの写真を撮って記録に残すために使用します。",
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
                     "SKAdNetworkItems": .array(
                         skAdNetworkIDs.map { .dictionary(["SKAdNetworkIdentifier": .string($0)]) }
