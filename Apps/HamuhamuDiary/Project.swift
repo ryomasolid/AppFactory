@@ -22,8 +22,8 @@ let skAdNetworkIDs: [String] = [
 
 // アプリとウィジェットでそろえる（ずれていると App Store Connect に弾かれる）。
 // ストアの公開版が 1.3（React Native 版）だったので、Swift 版は 2.0 から。
-let marketingVersion = "2.1.4"
-let buildNumber = "9"
+let marketingVersion = "2.2"
+let buildNumber = "10"
 
 /// ウィジェットへ要約を渡す共有フォルダ（`WidgetSnapshot`）。
 let appGroupEntitlements: Entitlements = .dictionary([
