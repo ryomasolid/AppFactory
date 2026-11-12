@@ -42,9 +42,9 @@ struct HomeView: View {
                     recordButton
                     if profile == nil { setupCard }
                     weightAlertCard
+                    memoryCard
                     statusCard
                     attentionCard
-                    memoryCard
                 }
                 .padding(16)
             }
