@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1024px;height:1024px;overflow:hidden;background:#1F6F78}
+</style></head><body>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="pond" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#5FB8B9"/>
+      <stop offset="1" stop-color="#1B5F68"/>
+    </radialGradient>
+    <linearGradient id="fish" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF9A5E"/>
+      <stop offset="1" stop-color="#E0552A"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#pond)"/>
+  <!-- 波紋 -->
+  <ellipse cx="300" cy="250" rx="150" ry="54" fill="none" stroke="#BFE8E4" stroke-opacity=".35" stroke-width="10"/>
+  <ellipse cx="300" cy="250" rx="80" ry="28" fill="none" stroke="#BFE8E4" stroke-opacity=".45" stroke-width="10"/>
+  <!-- 浮き草 -->
+  <path d="M760 760 L908 739 A150 150 0 1 0 908 781 Z" fill="#7DBB55"/>
+  <circle cx="230" cy="830" r="60" fill="#7DBB55" opacity=".85"/>
+  <!-- めだか（右向き・上から少し横） -->
+  <g transform="translate(530 470) rotate(-12) scale(1.12)">
+    <!-- 尾びれ -->
+    <path d="M-250 0 L-380 -95 Q-350 0 -380 95 Z" fill="#F07A45"/>
+    <!-- 背びれ・尻びれ -->
+    <path d="M-120 -78 L-60 -150 L-30 -92 Z" fill="#F07A45"/>
+    <path d="M-170 70 L-20 82 L-60 140 Z" fill="#F07A45"/>
+    <!-- 体 -->
+    <path d="M300 -10 C250 -110 40 -125 -100 -90 C-200 -65 -260 -25 -270 0 C-260 25 -200 65 -100 85 C40 118 250 100 300 -10 Z" fill="url(#fish)"/>
+    <!-- 目 -->
+    <circle cx="200" cy="-25" r="40" fill="#FFF6EC"/>
+    <circle cx="210" cy="-25" r="24" fill="#1D2A2C"/>
+    <circle cx="219" cy="-34" r="8" fill="#FFFFFF"/>
+    <!-- 背中のひかり -->
+    <path d="M140 -88 C40 -104 -80 -90 -180 -50" fill="none" stroke="#FFE3C4" stroke-width="12" stroke-linecap="round" opacity=".8"/>
+  </g>
+</svg>
+</body></html>
