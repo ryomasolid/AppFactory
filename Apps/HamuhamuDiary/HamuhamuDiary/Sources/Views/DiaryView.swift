@@ -162,15 +162,20 @@ struct RecordCard: View {
                     Text("体重").font(.caption).foregroundStyle(.secondary)
                     WeightText(weight: weight)
                 }
-                Button(action: onShare) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.subheadline.weight(.semibold))
-                        .padding(7)
-                        .background(Theme.softFill, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Theme.accent)
-                .accessibilityLabel("この記録をシェア")
+                // カード全体の onTapGesture（編集を開く）に Button のタップを奪われるので、
+                // 子のジェスチャーとして付けて先に拾う。
+                Image(systemName: "square.and.arrow.up")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                    .frame(width: 40, height: 40)
+                    .background(Theme.softFill, in: Circle())
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: onShare)
+                    .accessibilityElement()
+                    .accessibilityLabel("この記録をシェア")
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { onShare() }
             }
 
             if record.photoPath != nil {
