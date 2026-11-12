@@ -175,8 +175,9 @@ def render(slide: dict, out: pathlib.Path) -> None:
         ),
         visual=(
             f'<div class="photo"><img src="{(PHOTOS / slide["photo"]).as_uri()}"></div>'
-            # 写真だけだとアプリの画面が写らないので、ホームの「最新ステータス」を切り出して重ねる
-            f'<div class="ui"><img src="{(SRC / "home.png").as_uri()}"></div>'
+            # 写真だけだとアプリの画面が写らないので、ホームの「最新ステータス」を切り出して重ねる。
+            # 切り出し位置は固定なので、最新ステータスが思い出フォトの上にあった頃（2.1.4）の画面を使う。
+            f'<div class="ui"><img src="{(SRC / "home-status.png").as_uri()}"></div>'
             if slide.get("photo")
             else f'<div class="phone"><img src="{(SRC / slide["shot"]).as_uri()}"></div>'
         ),
