@@ -74,6 +74,14 @@ final class Game {
         return (outcome, fresh)
     }
 
+    /// 広告を見たほうび（クエスト数には数えない）。
+    func grantBonus(exp: Int, gold: Int) -> [Achievement] {
+        let (checked, fresh) = Leveling.withAchievements(Leveling.reward(player, exp: exp, gold: gold))
+        player = checked
+        save()
+        return fresh
+    }
+
     func buy(_ item: ShopItem) -> Bool {
         guard let next = Leveling.buy(item, state: player) else { return false }
         player = Leveling.withAchievements(next).0

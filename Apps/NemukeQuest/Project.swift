@@ -2,7 +2,17 @@ import ProjectDescription
 
 // ストアの公開版は 1.2（React Native 版「Nemuke Quest」）。Swift 版は 2.0 から。
 let marketingVersion = "2.0"
-let buildNumber = "1"
+let buildNumber = "2"
+
+/// AdMob が案内している SKAdNetwork の ID。広告の効果計測に使う。
+let adNetworks = [
+    "cstr6suwn9", "4fzdc2evr5", "2u9pt9hc89", "8s468mfl3y", "klf5c3l5u5",
+    "ppxm28t8ap", "424m5254lk", "uw77j35x4d", "578prtvx9j", "4dzt52r2t5",
+    "gta9lk7p23", "e5fvkxwrpn", "zq492l623r", "3qcr597p9d", "3rd42ekr43",
+]
+
+/// テストでは 広告まわり（同意・ATT・バナー）を起こさない。
+let quietLaunch: Arguments = .arguments(launchArguments: [.launchArgument(name: "-quiet", isEnabled: true)])
 
 let project = Project(
     name: "NemukeQuest",
@@ -36,11 +46,20 @@ let project = Project(
                     // iPad でも縦向き固定にするため、Split View には出さない。
                     "UIRequiresFullScreen": true,
                     "UIUserInterfaceStyle": "Dark",
+                    // AdMob「Nemuke Quest」（2026-11-13 登録・App Store にリンク）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~1148840721",
+                    "NSUserTrackingUsageDescription": "あなたの興味に近い広告を出すために使います。許可しなくても、ねむけクエストはすべて遊べます。",
+                    "SKAdNetworkItems": .array(
+                        adNetworks.map { .dictionary(["SKAdNetworkIdentifier": .string("\($0).skadnetwork")]) }
+                    ),
                 ]
             ),
             buildableFolders: [
                 "NemukeQuest/Sources",
                 "NemukeQuest/Resources",
+            ],
+            dependencies: [
+                .external(name: "GoogleMobileAds"),
             ]
         ),
         .target(
@@ -58,7 +77,7 @@ let project = Project(
             name: "NemukeQuest",
             shared: true,
             buildAction: .buildAction(targets: ["NemukeQuest"]),
-            testAction: .targets(["NemukeQuestTests"])
+            testAction: .targets(["NemukeQuestTests"], arguments: quietLaunch)
         ),
     ]
 )

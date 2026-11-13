@@ -7,8 +7,13 @@ import PackageDescription
     let packageSettings = PackageSettings(productTypes: [:])
 #endif
 
-// 2.0 は広告なし（旧 RN 版も広告IDが未設定で出ていなかった）。AdMob に登録したら Google Mobile Ads を足す。
+// 2.1 から 画面下の バナーと、見たい人だけのリワード広告（AdMob）を出す。同意フォーム（UMP）は Google Mobile Ads の依存として入る。
 let package = Package(
     name: "NemukeQuest",
-    dependencies: []
+    dependencies: [
+        .package(
+            url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
+            from: "11.0.0"
+        ),
+    ]
 )

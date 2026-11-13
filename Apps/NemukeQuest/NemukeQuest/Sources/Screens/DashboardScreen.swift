@@ -27,6 +27,8 @@ struct DashboardScreen: View {
     @Environment(\.requestReview) private var requestReview
     @State private var tab = Sample.firstTab
     @State private var notice: Notice?
+    @State private var consent = AdConsent()
+    @State private var bonus = RewardedBonus()
 
     var body: some View {
         NavigationStack {
@@ -47,14 +49,22 @@ struct DashboardScreen: View {
                 .frame(maxWidth: .infinity)
             }
             .background(Palette.background.ignoresSafeArea())
+            .adStrip(consent)
             .navigationTitle("ねむけクエスト ⚔️")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Palette.background, for: .navigationBar)
             .alert(notice?.title ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { closeNotice() } })) {
-                Button("OK") { closeNotice() }
+                if notice?.offersBonus == true && bonus.isReady {
+                    Button("広告を見てボーナス（+\(RewardedBonus.exp) EXP / +\(RewardedBonus.gold) G）") { watchBonus() }
+                }
+                Button("OK", role: .cancel) { closeNotice() }
             } message: {
                 Text(notice?.message ?? "")
             }
+        }
+        .task {
+            await consent.begin()
+            await bonus.start(consent: consent)
         }
     }
 
@@ -86,6 +96,8 @@ struct DashboardScreen: View {
         let title: String
         let message: String
         var askReviewAfter = false
+        /// クエスト達成・討伐のあとだけ「広告を見てボーナス」を出す（旧版と同じ）。
+        var offersBonus = false
     }
 
     private func complete(_ quest: Quest) {
@@ -96,14 +108,16 @@ struct DashboardScreen: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             notice = Notice(
                 title: "クエスト達成！",
-                message: "デーモンに \(damage) ダメージ！\n+\(quest.exp) EXP / +\(quest.gold) G を獲得" + unlocked
+                message: "デーモンに \(damage) ダメージ！\n+\(quest.exp) EXP / +\(quest.gold) G を獲得" + unlocked,
+                offersBonus: true
             )
         case let .defeated(bonusExp, bonusGold, _):
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             notice = Notice(
                 title: "🎉 デーモン討伐！",
                 message: "スリープデーモンを倒した！\n討伐ボーナス +\(bonusExp) EXP / +\(bonusGold) G" + unlocked,
-                askReviewAfter: true
+                askReviewAfter: true,
+                offersBonus: true
             )
         }
     }
@@ -118,6 +132,17 @@ struct DashboardScreen: View {
         } else {
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             notice = Notice(title: "購入できません", message: "ゴールドが足りません。")
+        }
+    }
+
+    private func watchBonus() {
+        notice = nil
+        Task {
+            guard await bonus.show() else { return }
+            let fresh = game.grantBonus(exp: RewardedBonus.exp, gold: RewardedBonus.gold)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            let unlocked = fresh.isEmpty ? "" : "\n\n🏆 実績「\(fresh.map(\.title).joined(separator: "」「"))」を解除！"
+            notice = Notice(title: "ボーナス獲得！", message: "広告を見てくれてありがとう！\n+\(RewardedBonus.exp) EXP / +\(RewardedBonus.gold) G を獲得" + unlocked)
         }
     }
 
