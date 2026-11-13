@@ -70,6 +70,16 @@ let project = Project(
             buildableFolders: ["KanshokuStop/Tests"],
             dependencies: [.target(name: "KanshokuStop")]
         ),
+        // 広告がひと回り出るかを確かめる UI テスト（広告を本当に読み込むので、ふだんのテストとは分ける）。
+        .target(
+            name: "KanshokuStopUITests",
+            destinations: [.iPhone],
+            product: .uiTests,
+            bundleId: "com.ryomasolid.dontsnack2.uitests",
+            infoPlist: .default,
+            buildableFolders: ["KanshokuStop/UITests"],
+            dependencies: [.target(name: "KanshokuStop")]
+        ),
     ],
     schemes: [
         .scheme(
@@ -77,6 +87,12 @@ let project = Project(
             shared: true,
             buildAction: .buildAction(targets: ["KanshokuStop"]),
             testAction: .targets(["KanshokuStopTests"], arguments: quietLaunch)
+        ),
+        .scheme(
+            name: "KanshokuStopBannerTour",
+            shared: true,
+            buildAction: .buildAction(targets: ["KanshokuStop", "KanshokuStopUITests"]),
+            testAction: .targets(["KanshokuStopUITests"])
         ),
     ]
 )
