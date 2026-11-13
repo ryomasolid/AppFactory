@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftData
 import SwiftUI
 
@@ -5,6 +6,7 @@ import SwiftUI
 /// アプリを開く理由はほぼこれひとつなので、スクロールせずに答えが出ることを最優先にする。
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.requestReview) private var requestReview
     @Query(sort: \GarbageKind.sortOrder) private var kinds: [GarbageKind]
     @Query private var doneRecords: [DoneRecord]
 
@@ -265,8 +267,23 @@ struct HomeView: View {
             modelContext.delete(record)
         } else {
             modelContext.insert(DoneRecord(kindID: kind.id, date: day, calendar: calendar))
+            try? modelContext.save()
+            askForRatingIfDue()
+            return
         }
         try? modelContext.save()
+    }
+
+    /// 「出した」をつけて連続が続いている人にだけ、評価をお願いする。
+    private func askForRatingIfDue() {
+        // @Query の反映を待ってから連続回数を数える。
+        let ask = requestReview
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            guard RatingPrompt.shouldAsk(streak: streak) else { return }
+            RatingPrompt.markAsked()
+            ask()
+        }
     }
 }
 
