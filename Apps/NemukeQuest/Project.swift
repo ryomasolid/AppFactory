@@ -71,6 +71,16 @@ let project = Project(
             buildableFolders: ["NemukeQuest/Tests"],
             dependencies: [.target(name: "NemukeQuest")]
         ),
+        // リワード広告がひと回り動くかを確かめる UI テスト（広告を本当に読み込むので、ふだんのテストとは分ける）。
+        .target(
+            name: "NemukeQuestUITests",
+            destinations: [.iPhone],
+            product: .uiTests,
+            bundleId: "com.ryomasolid.nemukequest.uitests",
+            infoPlist: .default,
+            buildableFolders: ["NemukeQuest/UITests"],
+            dependencies: [.target(name: "NemukeQuest")]
+        ),
     ],
     schemes: [
         .scheme(
@@ -78,6 +88,12 @@ let project = Project(
             shared: true,
             buildAction: .buildAction(targets: ["NemukeQuest"]),
             testAction: .targets(["NemukeQuestTests"], arguments: quietLaunch)
+        ),
+        .scheme(
+            name: "NemukeQuestRewardedTour",
+            shared: true,
+            buildAction: .buildAction(targets: ["NemukeQuest", "NemukeQuestUITests"]),
+            testAction: .targets(["NemukeQuestUITests"])
         ),
     ]
 )
