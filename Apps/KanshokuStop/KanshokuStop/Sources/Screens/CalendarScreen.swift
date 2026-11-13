@@ -22,6 +22,9 @@ struct CalendarScreen: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
+                // iPad では横に広がりすぎないよう、iPhone くらいの幅で真ん中に置く。
+                .frame(maxWidth: 560)
+                .frame(maxWidth: .infinity)
             }
             .background(Palette.paper)
             .navigationTitle("カレンダー")

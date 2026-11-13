@@ -16,7 +16,8 @@ let project = Project(
     targets: [
         .target(
             name: "NemukeQuest",
-            destinations: [.iPhone],
+            // 旧 RN 版が iPad 対応（supportsTablet）で出ていたので、アップデートも iPad を外せない。
+            destinations: [.iPhone, .iPad],
             product: .app,
             // 既存アプリ（旧 React Native 版）のアップデートとして出すため、旧版のバンドルIDをそのまま使う。
             // 変えると別アプリ扱いになり、ユーザー・レビュー・端末内のレベルや連続記録が引き継げない。
@@ -31,6 +32,9 @@ let project = Project(
                     "CFBundleVersion": .string(buildNumber),
                     "ITSAppUsesNonExemptEncryption": false,
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
+                    "UISupportedInterfaceOrientations~ipad": .array([.string("UIInterfaceOrientationPortrait")]),
+                    // iPad でも縦向き固定にするため、Split View には出さない。
+                    "UIRequiresFullScreen": true,
                     "UIUserInterfaceStyle": "Dark",
                 ]
             ),
