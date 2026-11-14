@@ -217,6 +217,7 @@ struct EntryRow: View {
                 Text(entry.summary).font(.caption).foregroundStyle(.secondary).lineLimit(2)
             }
             Spacer()
+            if let photo = entry.photo { PhotoThumb(data: photo) }
             // きろくタブは日ごとの見出しがあるので時刻だけ。
             Text(showsName ? entry.occurredAt.formatted(date: .omitted, time: .shortened) : entry.occurredAt.shortDayText)
                 .font(.caption)

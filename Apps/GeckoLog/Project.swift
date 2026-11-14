@@ -1,8 +1,8 @@
 import ProjectDescription
 
 // 1.0 は広告も課金も載せなかった（外部 SDK ゼロ）。1.1 からタブの上にバナー広告（AdMob）を置く。
-let marketingVersion = "1.1"
-let buildNumber = "2"
+let marketingVersion = "1.2"
+let buildNumber = "3"
 
 // AdMob の広告計測に使う SKAdNetwork の識別子（Google の公式リスト）。足りなくても計測の範囲が狭まるだけ。
 let skAdNetworkIDs: [String] = [
@@ -51,6 +51,8 @@ let project = Project(
                     "CFBundleVersion": .string(buildNumber),
                     "ITSAppUsesNonExemptEncryption": false,
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
+                    // 記録に付ける写真をその場で撮るため。撮った写真はアプリの中にだけ保存する。
+                    "NSCameraUsageDescription": "レオパの写真を撮って、記録に残すために使います。",
                     // AdMob のアプリ ID（pub-6105029932689433 に 2026-11-12 登録）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~9601976006",
                     // トラッキング許可（ATT）のダイアログに出す説明。

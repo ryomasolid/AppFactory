@@ -21,6 +21,7 @@ struct EntrySheet: View {
     @State private var warmText = ""
     @State private var humidityText = ""
     @State private var note = ""
+    @State private var photo: Data?
     @State private var loaded = false
 
     var body: some View {
@@ -34,6 +35,7 @@ struct EntrySheet: View {
                     TextField(placeholder, text: $note, axis: .vertical)
                         .lineLimit(2...6)
                 }
+                PhotoField(photo: $photo)
                 if let existing {
                     Section {
                         Button("この記録を削除", role: .destructive) {
@@ -120,7 +122,7 @@ struct EntrySheet: View {
         switch kind {
         case .weight: number(gramsText) != nil
         case .climate: number(warmText) != nil || number(humidityText) != nil
-        case .vet, .memo: !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .vet, .memo: photo != nil || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .feeding, .shed, .dropping, .cleaning: true
         }
     }
@@ -154,12 +156,14 @@ struct EntrySheet: View {
         warmText = entry.warmSideC.map { String(format: "%g", $0) } ?? ""
         humidityText = entry.humidityPercent.map { String(format: "%g", $0) } ?? ""
         note = entry.note
+        photo = entry.photo
     }
 
     private func save() {
         let entry = existing ?? CareEntry(kind: kind, occurredAt: occurredAt, gecko: gecko)
         entry.occurredAt = occurredAt
         entry.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if entry.photo != photo { entry.photo = photo }
         switch kind {
         case .feeding:
             entry.accepted = accepted

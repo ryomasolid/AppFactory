@@ -17,6 +17,8 @@ final class PondLog {
     /// 移した先の容器の名前（消されても記録が読めるよう文字で持つ）。
     var destination: String = ""
     var note: String = ""
+    /// 記録に付けた写真（縮めた JPEG）。大きいので本体とは別のファイルに置く。
+    @Attribute(.externalStorage) var photo: Data?
 
     init(kind: LogKind, at: Date = Date(), vessel: Vessel?) {
         self.kindCode = kind.rawValue

@@ -7,6 +7,7 @@ struct VesselScreen: View {
     @Environment(\.dismiss) private var close
     @Bindable var vessel: Vessel
     @State private var sheetKind: LogKind?
+    @State private var openedLog: PondLog?
     @State private var editing = false
     @State private var justLogged: String?
 
@@ -25,7 +26,7 @@ struct VesselScreen: View {
             } header: {
                 Text("記録する")
             } footer: {
-                Text("えさ・足し水・底掃除はワンタップで。ほかは数や水温を入れて保存します。")
+                Text("えさ・足し水・底掃除はワンタップで。ほかは数や水温を入れて保存します。写真とメモは、下の記録をタップするとあとから付けられます。")
             }
             .listRowBackground(Palette.surface)
 
@@ -34,7 +35,8 @@ struct VesselScreen: View {
                     Text("まだ記録がありません").foregroundStyle(.secondary)
                 }
                 ForEach(vessel.history) { log in
-                    LogRow(log: log)
+                    Button { openedLog = log } label: { LogRow(log: log) }
+                        .buttonStyle(.plain)
                 }
                 .onDelete { offsets in
                     let shown = vessel.history
@@ -52,6 +54,9 @@ struct VesselScreen: View {
         }
         .sheet(item: $sheetKind) { kind in
             LogSheet(vessel: vessel, kind: kind)
+        }
+        .sheet(item: $openedLog) { log in
+            LogDetailSheet(log: log)
         }
         .sheet(isPresented: $editing) {
             VesselEditor(vessel: vessel, nextOrder: vessel.order) {
@@ -231,9 +236,11 @@ struct LogRow: View {
                 }
             }
             Spacer()
+            if let photo = log.photo { PhotoThumb(data: photo) }
             Text(DayText.short(log.at))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+        .contentShape(Rectangle())
     }
 }

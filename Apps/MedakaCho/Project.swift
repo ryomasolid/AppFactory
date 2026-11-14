@@ -1,7 +1,7 @@
 import ProjectDescription
 
-let marketingVersion = "1.0"
-let buildNumber = "1"
+let marketingVersion = "1.1"
+let buildNumber = "2"
 
 /// AdMob が案内している SKAdNetwork の ID。広告の効果計測に使う。
 let adNetworks = [
@@ -38,6 +38,8 @@ let project = Project(
                     "CFBundleVersion": .string(buildNumber),
                     "ITSAppUsesNonExemptEncryption": false,
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
+                    // 記録に付ける写真をその場で撮るため。撮った写真はアプリの中にだけ保存する。
+                    "NSCameraUsageDescription": "めだかや容器の写真を撮って、記録に残すために使います。",
                     // AdMob「めだか帳」（2026-11-12 登録・ストア未掲載で作成）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~7039306127",
                     "NSUserTrackingUsageDescription": "あなたの興味に近い広告を出すために使います。許可しなくても、めだか帳の機能はすべて使えます。",

@@ -18,6 +18,7 @@ struct LogSheet: View {
     @State private var destinationName = ""
     @State private var watchEggs = true
     @State private var note = ""
+    @State private var photo: Data?
 
     private var others: [Vessel] { allVessels.filter { $0.persistentModelID != vessel.persistentModelID } }
 
@@ -75,6 +76,8 @@ struct LogSheet: View {
                     TextField(notePlaceholder, text: $note, axis: .vertical)
                         .lineLimit(2...5)
                 }
+
+                PhotoField(photo: $photo)
             }
             .navigationTitle("\(vessel.name)・\(kind.label)")
             .navigationBarTitleDisplayMode(.inline)
@@ -115,6 +118,7 @@ struct LogSheet: View {
     private func save() {
         let log = PondLog(kind: kind, at: at, vessel: vessel)
         log.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        log.photo = photo
         switch kind {
         case .waterChange: log.percent = percent
         case .temperature: log.celsius = celsius

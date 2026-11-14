@@ -33,6 +33,8 @@ final class CareEntry {
     var humidityPercent: Double?
 
     var note: String = ""
+    /// 記録に付けた写真（縮めた JPEG）。大きいので本体とは別のファイルに置く。
+    @Attribute(.externalStorage) var photo: Data?
 
     init(kind: CareKind, occurredAt: Date = Date(), gecko: Gecko?) {
         self.kindCode = kind.rawValue
