@@ -52,13 +52,13 @@ final class AdsReady {
         #if DEBUG
         return Self.googleSample
         #else
-        return testFlight || Self.mine.isEmpty ? Self.googleSample : Self.mine
+        return testFlight ? Self.googleSample : Self.mine
         #endif
     }
 
     static let googleSample = "ca-app-pub-3940256099942544/2435281174"
-    /// TODO: AdMob に「インコ帳」を登録したらバナーのユニット ID を入れる。
-    static let mine = ""
+    /// AdMob「InkoCho Banner」（2026-11-17 作成）。
+    static let mine = "ca-app-pub-6105029932689433/8588274637"
 
     private static func presenter() -> UIViewController? {
         let window = UIApplication.shared.connectedScenes

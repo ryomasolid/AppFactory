@@ -39,8 +39,8 @@ let project = Project(
                     "ITSAppUsesNonExemptEncryption": false,
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
                     "NSCameraUsageDescription": "インコの写真を撮って、きょうの記録に残すために使います。写真はこの端末の中にだけ保存します。",
-                    // TODO: AdMob に登録したら本物のアプリ ID に替える（いまは Google のサンプル）。
-                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    // AdMob「インコ帳」（2026-11-17 登録・ストア未掲載で作成）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~5697232465",
                     "NSUserTrackingUsageDescription": "興味に合った広告を出すために使います。許可しなくても、インコ帳はすべての機能を使えます。",
                     "SKAdNetworkItems": .array(networkIDs.map { .dictionary(["SKAdNetworkIdentifier": .string($0 + ".skadnetwork")]) }),
                 ]

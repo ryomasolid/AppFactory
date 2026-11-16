@@ -28,7 +28,9 @@ Bundle ID `tech.sesame.inkocho`・iOS 17+・iPhone 縦のみ。
 
 ## 3. AdMob
 
-- **未登録**。Info.plist の `GADApplicationIdentifier` は Google のサンプル、`AdsReady.mine` は空（空のあいだはテスト広告）。
+- 2026-11-17 登録（ストア未掲載で作成）。アプリ ID `ca-app-pub-6105029932689433~5697232465`・バナー「InkoCho Banner」`ca-app-pub-6105029932689433/8588274637`。
+- Debug と TestFlight（sandbox）は Google のテスト用ユニット。
+- **公開後に AdMob の「アプリの設定」で App Store に紐づける** → app-ads.txt の Verify app。
 
 ## 4. ストア・Web（未）
 
