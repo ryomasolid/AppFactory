@@ -44,9 +44,9 @@ Bundle ID `tech.sesame.toypoodiary`・iOS 17+・iPhone 縦のみ。
 - **公開後に AdMob の「アプリの設定」で App Store に紐づける**（未掲載で作ったため）→ そのあと app-ads.txt の Verify app。
 - 流れ: UMP 同意 → ATT → SDK 開始 → 各タブ下にアダプティブバナー（届くまで高さ0）。
 
-## 6. ストア・Web（未）
+## 6. ストア・Web
 
-- スクショ: iPhone 17 Pro で `src/` に撮る（diary / detail -openToday / trim -tab 1 / health -tab 2 / settings -tab 3・起動後9秒待つ）→ `python3 Store/screenshots/generate.py` で `out/`（6.9）と `out-6.3/` に5枚。
-
-- プライバシー: https://ryomasolid.github.io/privacy-toypoodiary.html ／ サポート: support-toypoodiary.html（まだ作っていない）
+- プライバシー: https://ryomasolid.github.io/privacy-toypoodiary.html ／ サポート: support-toypoodiary.html（ryomasolid.github.io 50bdbac・2026-11-16 公開）
+- ASC: Apple ID **6835449914**・SKU toypoodiary・App ID tech.sesame.toypoodiary（2026-11-16 登録）。掲載文は `Store/ASO.md`、審査メモは `Store/ReviewNotes-1.0.md`、録画 `Store/ToypooDiary-review-1.0.mp4` を添付ずみ。
+- スクショ: iPhone 17 Pro で `src/` に撮る（diary / detail -openToday / trim -tab 1 / health -tab 2 / settings -tab 3・起動後9秒待つ）→ `python3 Store/screenshots/generate.py` で `out/`（6.9）と `out-6.3/` に5枚。ASC には out-6.3 を入れた。
 - アイコンの元は `Store/icon/icon.html`（Chrome ヘッドレス → JPEG 経由で透過なし PNG）。
