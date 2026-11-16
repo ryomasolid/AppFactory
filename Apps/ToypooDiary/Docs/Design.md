@@ -36,10 +36,13 @@ Bundle ID `tech.sesame.toypoodiary`・iOS 17+・iPhone 縦のみ。
 - `-demoPhotos <絶対パス>`：`Store/screenshots/photos` の本物の写真（portrait・today・day1〜3・trim0〜3）を見本に入れる。ユーザーの子の写真（2026-11-16 提供・6枚中5枚。見守りカメラの1枚はロゴ入りなので不使用）
 - `-calm`（広告・同意・ATT を出さない。単体テストと審査用録画 scheme `ToypooDiaryWalkthrough`（Release）で使う）
 
-## 5. AdMob
+## 5. AdMob（2026-11-16 登録・ストア未掲載で作成）
 
-- **未登録**。いまは Info.plist の `GADApplicationIdentifier` が Google のサンプル ID、`AdGate.liveBanner` が空（空のあいだはテスト広告）。
-- 登録したら両方を本物にする。流れ: UMP 同意 → ATT → SDK 開始 → 各タブ下にアダプティブバナー。
+- アプリ ID: `ca-app-pub-6105029932689433~9897311863`（AdMob のアプリ番号 9897311863）
+- バナー「ToypooDiary Banner」: `ca-app-pub-6105029932689433/4644985181`
+- Debug と TestFlight（sandbox）は Google のテスト用ユニット。
+- **公開後に AdMob の「アプリの設定」で App Store に紐づける**（未掲載で作ったため）→ そのあと app-ads.txt の Verify app。
+- 流れ: UMP 同意 → ATT → SDK 開始 → 各タブ下にアダプティブバナー（届くまで高さ0）。
 
 ## 6. ストア・Web（未）
 

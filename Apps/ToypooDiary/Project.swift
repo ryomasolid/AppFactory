@@ -40,8 +40,8 @@ let project = Project(
                     "ITSAppUsesNonExemptEncryption": false,
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
                     "NSCameraUsageDescription": "わんちゃんの写真を撮って、日記やトリミングの記録に残すために使います。写真はこの端末の中にだけ保存します。",
-                    // TODO: AdMob にアプリを登録したら本物の ID に差し替える（いまは Google のサンプル用）。
-                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    // AdMob「といぷー日記」（2026-11-16 登録・ストア未掲載で作成）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~9897311863",
                     "NSUserTrackingUsageDescription": "興味に合った広告を出すために使います。許可しなくても、といぷー日記はすべての機能を使えます。",
                     "SKAdNetworkItems": .array(
                         skanIDs.map { .dictionary(["SKAdNetworkIdentifier": .string("\($0).skadnetwork")]) }

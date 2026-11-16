@@ -54,14 +54,14 @@ final class AdGate {
         #if DEBUG
         Self.sampleBanner
         #else
-        inSandbox || Self.liveBanner.isEmpty ? Self.sampleBanner : Self.liveBanner
+        inSandbox ? Self.sampleBanner : Self.liveBanner
         #endif
     }
 
     /// Google のサンプル（アダプティブバナー）。
     static let sampleBanner = "ca-app-pub-3940256099942544/2435281174"
-    /// TODO: AdMob に「といぷー日記」を登録したら、バナーのユニット ID を入れる。
-    static let liveBanner = ""
+    /// AdMob「ToypooDiary Banner」（2026-11-16 作成）。
+    static let liveBanner = "ca-app-pub-6105029932689433/4644985181"
 
     private static func topScreen() -> UIViewController? {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
