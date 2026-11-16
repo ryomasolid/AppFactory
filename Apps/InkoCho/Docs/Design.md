@@ -32,7 +32,9 @@ Bundle ID `tech.sesame.inkocho`・iOS 17+・iPhone 縦のみ。
 - Debug と TestFlight（sandbox）は Google のテスト用ユニット。
 - **公開後に AdMob の「アプリの設定」で App Store に紐づける** → app-ads.txt の Verify app。
 
-## 4. ストア・Web（未）
+## 4. ストア・Web
 
-- プライバシー: https://ryomasolid.github.io/privacy-inkocho.html ／ サポート: support-inkocho.html（まだ作っていない）
+- プライバシー: https://ryomasolid.github.io/privacy-inkocho.html ／ サポート: support-inkocho.html（ryomasolid.github.io ffc3ee5・2026-11-17 公開）
+- ASC: Apple ID **6835493563**・SKU inkocho・App ID tech.sesame.inkocho（2026-11-17 登録）。掲載文 `Store/ASO.md`、審査メモ `Store/ReviewNotes-1.0.md`、録画 `Store/InkoCho-review-1.0.mp4` を添付ずみ。
+- スクショ: iPhone 17 Pro で `-demo -tab N`（today 0 / weight 1 / words 2 / chores 3 / settings 4・起動後9秒）を `src/` に撮る → `python3 Store/screenshots/generate.py` で out/（6.9）・out-6.3/。ASC には out-6.3 を入れた（イラストのまま・写真なし）。
 - アイコンの元は `Store/icon/icon.html`。
