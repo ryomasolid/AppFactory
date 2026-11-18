@@ -27,14 +27,19 @@ Bundle ID `tech.sesame.mudazero`・iOS 17+・iPhone 縦のみ・無料＋AdMob �
 - 連続：きょうがまだなら、きのうから数える。
 - 浮いたお金：ムダゼロの日は ふだんのムダ、ついつい の日は max(0, ふだんのムダ − ついつい)。もくひょうを保存した日から数える。
 
-## 3. 起動引数
+## 3. AdMob
+
+- 2026-11-18 登録（ストア未掲載で作成）。アプリ ID `ca-app-pub-6105029932689433~7627044198`・バナー「MudaZero Banner」`ca-app-pub-6105029932689433/5880069447`。
+- Debug と TestFlight（sandbox）は Google のテスト用ユニット。
+- **公開後に AdMob の「アプリの設定」で App Store に紐づける** → app-ads.txt の Verify app。
+
+## 4. 起動引数
 
 - `-demo`（メモリ上の見本・沖縄旅行 60,000円・広告なし）、`-tab N`（0 きょう / 1 カレンダー / 2 設定）
 - `-noAds`（単体テストと録画用 scheme `MudaZeroTour`（Release））
 
-## 4. 未対応（公開まで）
+## 5. 未対応（公開まで）
 
-- AdMob 登録 → `Project.swift` の GADApplicationIdentifier と `AdsReady.liveUnit` を本物にする（いまは Google のサンプル）。
 - アイコン・スクショ・`Store/ASO.md`・審査メモと録画。
 - プライバシー／サポートページ（ryomasolid.github.io の privacy-mudazero.html / support-mudazero.html）。
 - ASC 登録。

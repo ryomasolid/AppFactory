@@ -38,8 +38,8 @@ let project = Project(
                     "CFBundleVersion": .string(buildNumber),
                     "ITSAppUsesNonExemptEncryption": false,
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
-                    // TODO: AdMob に「ムダゼロ」を登録したら本物のアプリ ID にする（いまは Google のサンプル）。
-                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    // AdMob「ムダゼロ」（2026-11-18 登録・ストア未掲載で作成）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~7627044198",
                     "NSUserTrackingUsageDescription": "興味に合った広告を出すために使います。許可しなくても、ムダゼロはすべての機能を使えます。",
                     "SKAdNetworkItems": .array(networkIDs.map { .dictionary(["SKAdNetworkIdentifier": .string($0 + ".skadnetwork")]) }),
                 ]

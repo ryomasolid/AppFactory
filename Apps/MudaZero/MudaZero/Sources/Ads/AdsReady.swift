@@ -57,8 +57,8 @@ final class AdsReady {
     }
 
     static let testUnit = "ca-app-pub-3940256099942544/2435281174"
-    /// TODO: AdMob に「ムダゼロ」を登録したら本物のバナーユニットにする。
-    static let liveUnit = "ca-app-pub-3940256099942544/2435281174"
+    /// AdMob「MudaZero Banner」（2026-11-18 作成）。
+    static let liveUnit = "ca-app-pub-6105029932689433/5880069447"
 
     private static func topController() -> UIViewController? {
         var vc = UIApplication.shared.connectedScenes
