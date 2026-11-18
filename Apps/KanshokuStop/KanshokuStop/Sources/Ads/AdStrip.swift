@@ -27,12 +27,12 @@ private struct AdStripSlot: ViewModifier {
 }
 
 extension AdConsent {
-    /// 画面ごとの広告ユニット（旧 RN 版と同じもの）。
+    /// 画面ごとの広告ユニット（pub-6105029932689433 に 2026-11-18 作成）。
     enum Unit: String {
-        /// AdMob「Don't snack」バナー1（きょうの記録）。
-        case today = "ca-app-pub-3362493734697220/3306381969"
-        /// AdMob「Don't snack」バナー2（カレンダー）。
-        case calendar = "ca-app-pub-3362493734697220/1388918187"
+        /// AdMob「KanshokuStop Banner Today」（きょうの記録）。
+        case today = "ca-app-pub-6105029932689433/9110682104"
+        /// AdMob「KanshokuStop Banner Calendar」（カレンダー）。
+        case calendar = "ca-app-pub-6105029932689433/5171437099"
     }
 
     /// Google のサンプル用（アダプティブバナー）。

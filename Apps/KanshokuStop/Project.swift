@@ -1,8 +1,8 @@
 import ProjectDescription
 
 // ストアの公開版は 1.2（React Native 版「dont snack」）。Swift 版は 2.0 から。
-let marketingVersion = "2.0"
-let buildNumber = "1"
+let marketingVersion = "2.0.1"
+let buildNumber = "2"
 
 /// AdMob が案内している SKAdNetwork の ID。広告の効果計測に使う。
 let adNetworks = [
@@ -45,8 +45,9 @@ let project = Project(
                     "UISupportedInterfaceOrientations~ipad": .array([.string("UIInterfaceOrientationPortrait")]),
                     // iPad でも縦向き固定にするため、Split View には出さない。
                     "UIRequiresFullScreen": true,
-                    // AdMob「Don't snack」（旧 RN 版から使っている ryomasolid の AdMob。app-ads.txt は don-t-snack.web.app）。
-                    "GADApplicationIdentifier": "ca-app-pub-3362493734697220~2379722807",
+                    // AdMob「dont snack」（いつもの pub-6105029932689433 に 2026-11-18 登録。2.0 までは旧 RN 版の pub-3362493734697220 だった）。
+                    // app-ads.txt は App Store のデベロッパサイト don-t-snack.web.app に置く。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~7115074159",
                     "NSUserTrackingUsageDescription": "あなたの興味に近い広告を出すために使います。許可しなくても、間食ストップの機能はすべて使えます。",
                     "SKAdNetworkItems": .array(
                         adNetworks.map { .dictionary(["SKAdNetworkIdentifier": .string("\($0).skadnetwork")]) }
