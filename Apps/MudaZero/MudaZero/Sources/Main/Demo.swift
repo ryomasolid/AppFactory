@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// スクショ用の見本。起動引数 `-demo`（`-tab N` で最初のタブ）。
+/// スクショ用の見本。起動引数 `-demo`（`-tab N` で最初のタブ・`-demoClosed` できょうを0円でしめた形・`-hello` ではじめての画面）。
 enum Demo {
     private static var args: [String] { ProcessInfo.processInfo.arguments }
     static var on: Bool { args.contains("-demo") }
@@ -18,8 +18,8 @@ enum Demo {
         func ago(_ n: Int) -> Date { cal.date(byAdding: .day, value: -n, to: today)! }
 
         let d = UserDefaults.standard
-        d.set(true, forKey: Plan.startedKey)
-        d.set(600, forKey: Plan.usualKey)
+        d.set(!args.contains("-hello"), forKey: Plan.startedKey)
+        d.set(500, forKey: Plan.usualKey)
         d.set(10000, forKey: Plan.budgetKey)
         d.set("沖縄旅行", forKey: Plan.goalNameKey)
         d.set(60000, forKey: Plan.goalYenKey)
@@ -52,8 +52,13 @@ enum Demo {
                 context.insert(Spend(day: day, yen: w.1, category: w.0, memo: w.2))
             }
         }
-        // きょうは食材だけ記録して、まだしめていない。
-        context.insert(Spend(day: today, yen: 1280, category: .groceries, memo: "夕飯の材料"))
+        if args.contains("-demoClosed") {
+            // きょうは1円も使わずにしめた。
+            context.insert(DayMark(day: today))
+        } else {
+            // きょうは食材だけ記録して、まだしめていない。
+            context.insert(Spend(day: today, yen: 1280, category: .groceries, memo: "夕飯の材料"))
+        }
         try? context.save()
     }
 }

@@ -35,11 +35,16 @@ Bundle ID `tech.sesame.mudazero`・iOS 17+・iPhone 縦のみ・無料＋AdMob �
 
 ## 4. 起動引数
 
-- `-demo`（メモリ上の見本・沖縄旅行 60,000円・広告なし）、`-tab N`（0 きょう / 1 カレンダー / 2 設定）
+- `-demo`（メモリ上の見本・ふだんのムダ 500円・沖縄旅行 60,000円・広告なし）、`-tab N`（0 きょう / 1 カレンダー / 2 設定）、`-demoClosed`（きょうを0円でしめた形）、`-hello`（はじめての画面）
 - `-noAds`（単体テストと録画用 scheme `MudaZeroTour`（Release））
 
-## 5. 未対応（公開まで）
+## 5. ストア
 
-- アイコン・スクショ・`Store/ASO.md`・審査メモと録画。
+- アイコンの元は `Store/icon/icon.html`（ミント地に金の「0円」コインとチェック）。
+- スクショ: iPhone 17 Pro で `-demo`（closed=`-demoClosed -tab 0` / today=`-tab 0` / calendar=`-tab 1` / hello=`-hello` / settings=`-tab 2`・起動後5秒）を `Store/screenshots/src/` に撮る → `python3 Store/screenshots/generate.py` で out/（6.9）・out-6.3/（JPEG）。
+- 掲載文 `Store/ASO.md`、審査メモ `Store/ReviewNotes-1.0.md`、録画 `Store/MudaZero-review-1.0.mp4`。
+
+## 6. 未対応（公開まで）
+
 - プライバシー／サポートページ（ryomasolid.github.io の privacy-mudazero.html / support-mudazero.html）。
 - ASC 登録。
