@@ -44,7 +44,9 @@ Bundle ID `tech.sesame.mudazero`・iOS 17+・iPhone 縦のみ・無料＋AdMob �
 - スクショ: iPhone 17 Pro で `-demo`（closed=`-demoClosed -tab 0` / today=`-tab 0` / calendar=`-tab 1` / hello=`-hello` / settings=`-tab 2`・起動後5秒）を `Store/screenshots/src/` に撮る → `python3 Store/screenshots/generate.py` で out/（6.9）・out-6.3/（JPEG）。
 - 掲載文 `Store/ASO.md`、審査メモ `Store/ReviewNotes-1.0.md`、録画 `Store/MudaZero-review-1.0.mp4`。
 
-## 6. 未対応（公開まで）
+## 6. ストア・Web
 
-- プライバシー／サポートページ（ryomasolid.github.io の privacy-mudazero.html / support-mudazero.html）。
-- ASC 登録。
+- プライバシー: https://ryomasolid.github.io/privacy-mudazero.html ／ サポート: support-mudazero.html（ryomasolid.github.io b79863b・2026-11-18 公開）
+- ASC: Apple ID **6836280810**・SKU mudazero・App ID tech.sesame.mudazero（2026-11-18 登録）。カテゴリ ファイナンス／ライフスタイル・4+・無料。
+- 配信は 174 地域（**中国本土は外した**：新規アプリはセキュリティアセスメント報告書と AIGC 申告がないと「審査用に追加」できないため）。
+- 1.0 (1) を 2026-11-18 19:30 ごろ審査提出（承認後に自動公開）。**公開後に AdMob の「アプリの設定」で App Store に紐づける** → Verify app。
