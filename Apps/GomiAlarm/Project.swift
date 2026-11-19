@@ -49,8 +49,8 @@ let project = Project(
                     ],
                     "CFBundleDisplayName": "ゴミの日アラーム",
                     "CFBundleDevelopmentRegion": "ja",
-                    "CFBundleShortVersionString": "1.1",
-                    "CFBundleVersion": "2",
+                    "CFBundleShortVersionString": "1.1.1",
+                    "CFBundleVersion": "3",
                     "ITSAppUsesNonExemptEncryption": false,
                     // AdMob アプリID（本番・GomiAlarm）。
                     "GADApplicationIdentifier": "ca-app-pub-6105029932689433~3160546570",
