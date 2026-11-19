@@ -24,7 +24,7 @@ enum Showcase {
         func daysAgo(_ n: Int) -> Date { calendar.date(byAdding: .day, value: -n, to: calendar.startOfDay(for: now))! }
 
         // 主役は写真の子（レッド）。2頭目は多頭飼いの切りかえを見せるための子。
-        let star = Dog(name: "あずき", birthday: calendar.date(byAdding: .month, value: -40, to: now), homeDay: calendar.date(byAdding: .month, value: -37, to: now), sex: .girl, coat: .red, order: 0)
+        let star = Dog(name: "そら", birthday: calendar.date(byAdding: .month, value: -40, to: now), homeDay: calendar.date(byAdding: .month, value: -37, to: now), sex: .girl, coat: .red, order: 0)
         let buddy = Dog(name: "むぎ", birthday: calendar.date(byAdding: .month, value: -14, to: now), homeDay: calendar.date(byAdding: .month, value: -12, to: now), sex: .boy, coat: .apricot, order: 1)
         star.portrait = photo("portrait")
         context.insert(star)

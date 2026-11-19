@@ -32,7 +32,7 @@ Bundle ID `tech.sesame.toypoodiary`・iOS 17+・iPhone 縦のみ。
 
 ## 4. 起動引数
 
-- `-sample`（メモリ上の見本・あずき（レッド・主役）/むぎ・広告なし）、`-tab N`、`-openToday`
+- `-sample`（メモリ上の見本・そら（レッド・主役）/むぎ・広告なし）、`-tab N`、`-openToday`
 - `-demoPhotos <絶対パス>`：`Store/screenshots/photos` の本物の写真（portrait・today・day1〜3・trim0〜3）を見本に入れる。ユーザーの子の写真（2026-11-16 提供・6枚中5枚。見守りカメラの1枚はロゴ入りなので不使用）
 - `-calm`（広告・同意・ATT を出さない。単体テストと審査用録画 scheme `ToypooDiaryWalkthrough`（Release）で使う）
 
