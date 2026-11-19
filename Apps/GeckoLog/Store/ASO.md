@@ -135,3 +135,5 @@ To see sample data quickly: add a gecko from the + button on the Cage tab, then 
 | 脱皮 | 2 |
 
 **効果を見る:** 公開の4週間後に同じ検索語で測り直す。
+
+**2026-11-19 11:50〜11:53 に審査提出**（ASC で版を作り iris API で入力・ビルド紐づけ。承認後に自動公開）。
