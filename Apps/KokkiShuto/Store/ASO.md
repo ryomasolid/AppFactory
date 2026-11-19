@@ -90,3 +90,34 @@
 ## 価格・配信地域
 
 無料・中国本土を外したすべての地域（新規アプリは中国本土を外さないと提出できない）。
+
+
+## 公開後にやること: 英語（English (U.S.)）の枠を足す（1.0.1 (2)・2026-11-19 下書き）
+
+1.0 が審査待ちのあいだは新しい版を作れないので、公開されたら次をやる。日本語の名前・副題・キーワードは変えない。コードは変えず番号だけ上げる（Project.swift の marketingVersion / buildNumber）。日本のストアは英語(U.S.)のキーワードも拾うので、その枠に日本語の追加語を入れる。スクショは日本語のものを使う。
+
+- 名前: `Kokki Shuto: Flags & Capitals`
+- 副題: `World flags and capitals quiz`
+- キーワード（99文字）:
+
+```
+国旗クイズ,首都クイズ,国名クイズ,世界地理,世界の国旗,国当て,オセアニア,中東,北中米,国連,ずかん,図鑑,苦手,すきま時間,flags,capitals,countries,geography
+```
+
+- 説明（先頭に `Note: the app is available in Japanese only.` と空行を付ける）:
+
+```
+Kokki Shuto is a four-choice quiz focused only on the names, capitals and flags of 197 countries.
+
+- Four modes: flag to country, country to flag, country to capital, capital to country, or mix them all
+- Wrong choices come from the same region, so you learn to tell similar flags and capitals apart
+- A country counts as learned after three correct answers in a row
+- Countries you have not learned or got wrong come up first, with review modes for tricky flags and capitals
+- Filter by region; 10, 20 or 30 questions per round
+- A reference list of every country's flag, name and capital, with search
+
+No ads, no in-app purchases, no account and no network access. Records stay on your device.
+```
+
+- このバージョンの新機能: 日本語 `App Store の掲載情報を見直しました。`／英語 `Updated the App Store listing.`
+- サポートURL・マーケティングURL・プライバシーポリシーURL は日本語のものと同じ。

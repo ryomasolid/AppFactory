@@ -84,3 +84,37 @@
 ## App のプライバシー
 
 AdMob 分（インコ帳・めだか帳と同じ）。
+
+
+## 公開後にやること: 英語（English (U.S.)）の枠を足す（1.0.1 (2)・2026-11-19 下書き）
+
+1.0 が審査待ちのあいだは新しい版を作れないので、公開されたら次をやる。日本語の名前・副題・キーワードは変えない。コードは変えず番号だけ上げる（Project.swift の marketingVersion / buildNumber）。日本のストアは英語(U.S.)のキーワードも拾うので、その枠に日本語の追加語を入れる。スクショは日本語のものを使う。
+
+- 名前: `MudaZero: No Spend Day Tracker`
+- 副題: `Saving calendar, one tap a day`
+- キーワード（89文字）:
+
+```
+NMD,ノーマネー,ゼロ円,0円の日,カフェ,外食,飲み会,ネット通販,服,趣味,おやつ,食費,ムダ使い,つい買い,振り返り,貯金箱,no spend,budget,frugal
+```
+
+- 説明（先頭に `Note: the app is available in Japanese only.` と空行を付ける）:
+
+```
+MudaZero is a saving app that helps you build up no-spend days.
+
+- Close each day with one tap when you did not waste money
+- Days with zero spending and days with only necessary spending are counted separately, with your current streak shown large
+- When you do spend, choose impulse (convenience store, cafe, online shopping, eating out and more) or necessary, and enter the amount
+- A monthly budget for impulse spending shows how much you have left per day
+- Saved money goes toward goals such as a trip
+- A color-coded saving calendar and a monthly review
+- One evening reminder only on days you have not closed yet
+
+Records stay on your device. No bank or card connection and no account.
+
+All features are free (a banner ad is shown).
+```
+
+- このバージョンの新機能: 日本語 `App Store の掲載情報を見直しました。`／英語 `Updated the App Store listing.`
+- サポートURL・マーケティングURL・プライバシーポリシーURL は日本語のものと同じ。
