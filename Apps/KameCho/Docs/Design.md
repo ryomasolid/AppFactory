@@ -23,15 +23,19 @@ Bundle ID `tech.sesame.kamecho`・iOS 17+・iPhone 縦のみ・SwiftData・AdMob
 
 ## 2. 起動引数
 
-- `-sample`（メモリ上の見本：かめきち（クサガメ・3歳）/ぽんず（ロシアリクガメ）・器具5つ・広告なし）、`-tab N`、`-samplePhotos <絶対パス>`（portrait・check）
+- `-sample`（メモリ上の見本：かめきち（クサガメ・3歳）/ぽんず（ロシアリクガメ）・器具5つ・広告なし）、`-tab N`、`-samplePhotos <絶対パス>`（portrait・check）、`-sampleWinter`（かめきちが冬眠中）、`-pickSecond`（ぽんずを開く）
 - `-noAds`（広告・同意・ATT を出さない。単体テストと録画 scheme `KameChoWalkthrough`（Release））
 
 ## 3. AdMob
 
-- **未登録**。いまは Info.plist の `GADApplicationIdentifier` と `AdGate.liveUnit` が Google のテスト用。登録したら両方差しかえる（TODO コメントあり）。
+- 2026-11-19 登録（ストア未掲載で作成）。アプリ ID `ca-app-pub-6105029932689433~1228798985`・バナー「KameCho Banner」`ca-app-pub-6105029932689433/4935788906`。
+- Debug と TestFlight（sandbox）は Google のテスト用ユニット。
+- **公開後に AdMob の「アプリの設定」で App Store に紐づける** → app-ads.txt の Verify app。
 
 ## 4. ストア・Web
 
-- プライバシー: https://ryomasolid.github.io/privacy-kamecho.html ／ サポート: support-kamecho.html（**未作成**）
-- ASC: **未登録**。
+- プライバシー: https://ryomasolid.github.io/privacy-kamecho.html ／ サポート: support-kamecho.html（ryomasolid.github.io 95e2d8e・2026-11-19 公開）
+- ASC: Apple ID **6836622400**・SKU kamecho・App ID tech.sesame.kamecho（2026-11-19 登録）。掲載文 `Store/ASO.md`、審査メモ `Store/ReviewNotes-1.0.md`、録画 `Store/KameCho-review-1.0.mp4` を添付ずみ。配信は中国本土以外の174地域・無料・4+（広告あり）・プライバシーはインコ帳と同じ16行。
+- **2026-11-19 12:55 ごろ JST に 1.0 (1) を審査提出**（承認後に自動公開）。
+- スクショ: iPhone 17 Pro で `-sample`（today `-tab 0` / growth `-tab 1` / winter `-tab 1 -sampleWinter` / gear `-tab 2` / land `-tab 0 -pickSecond`・起動後8秒）を `src/` に撮る → `python3 Store/screenshots/generate.py` で out/（6.9）・out-6.3/。ASC には out-6.3 を入れた。
 - アイコンの元は `Store/icon/icon.html`（Chrome headless で 1024 を撮り、JPEG 経由で透過なし PNG に）。

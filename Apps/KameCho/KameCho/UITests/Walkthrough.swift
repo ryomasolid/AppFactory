@@ -35,15 +35,21 @@ final class Walkthrough: XCTestCase {
         app.buttons["done-measure"].tap()
         let shell = app.textFields["measure-shell"]
         XCTAssertTrue(shell.waitForExistence(timeout: 5))
+        pause(1)
         shell.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         shell.typeText("85")
         let grams = app.textFields["measure-grams"]
         grams.tap()
+        pause(0.5)
         grams.typeText("142")
+        XCTAssertEqual(grams.value as? String, "142")
         app.navigationBars.buttons["保存"].tap()
         pause(1)
 
         // 温度
+        app.swipeUp()
+        pause(1)
         let base = app.textFields["temp-base"]
         base.tap()
         base.typeText("26")

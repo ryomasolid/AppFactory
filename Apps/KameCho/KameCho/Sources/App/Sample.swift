@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// スクリーンショット用の見本。起動引数 `-sample`、`-tab N`、`-samplePhotos <フォルダ>`。
+/// スクリーンショット用の見本。起動引数 `-sample`、`-tab N`、`-samplePhotos <フォルダ>`、`-sampleWinter`（かめきちが冬眠中）、`-pickSecond`。
 enum Sample {
     private static var arguments: [String] { ProcessInfo.processInfo.arguments }
     static var isOn: Bool { arguments.contains("-sample") }
@@ -30,7 +30,8 @@ enum Sample {
         let pon = Turtle(name: "ぽんず", species: .russian, sex: .female, hatchedOn: cal.date(byAdding: .month, value: -20, to: today), arrivedOn: cal.date(byAdding: .month, value: -14, to: today)!, order: 1)
         context.insert(kame)
         context.insert(pon)
-        UserDefaults.standard.set(kame.key.uuidString, forKey: Selection.storageKey)
+        // `-pickSecond` でリクガメ（ぽんず）を開く。
+        UserDefaults.standard.set((arguments.contains("-pickSecond") ? pon : kame).key.uuidString, forKey: Selection.storageKey)
 
         // 2年ぶんの成長（月に1回）。冬は伸びない。
         var shell = 62.0
@@ -41,6 +42,8 @@ enum Sample {
             let winter = [12, 1, 2].contains(month)
             shell += winter ? 0 : 2.6
             grams += winter ? -1.5 : 9.5
+            // 冬眠の見本では、冬眠を始めてからの月の計測は週1回のほうで入れる。
+            if arguments.contains("-sampleWinter"), m < 2 { continue }
             context.insert(Measure(on: on, shellMM: (shell * 10).rounded() / 10, grams: grams.rounded(), turtle: kame))
         }
 
@@ -54,7 +57,15 @@ enum Sample {
         }
         for n in [1, 4, 7] { context.insert(Care(kind: .water, at: daysAgo(n, hour: 8), turtle: kame)) }
         for n in [0, 3, 6] { context.insert(Care(kind: .sun, at: daysAgo(n, hour: 11), turtle: kame)) }
-        context.insert(Reading(at: daysAgo(0, hour: 8), baseC: 25.5, spotC: 32, turtle: kame))
+        context.insert(Reading(at: daysAgo(0, hour: 8), baseC: 23.2, spotC: 32, turtle: kame))
+        if arguments.contains("-sampleWinter") {
+            // 5週間前から冬眠中。体重は週1回、ゆっくり減っている。
+            let startGrams = grams.rounded()
+            context.insert(Rest(startedOn: daysAgo(35), startGrams: startGrams, turtle: kame))
+            for week in 1...5 {
+                context.insert(Measure(on: daysAgo(35 - week * 7), shellMM: nil, grams: startGrams - Double(week) * 0.4, turtle: kame))
+            }
+        }
         let check = Checkup(on: daysAgo(2, hour: 20), turtle: kame)
         check.memo = "甲羅干しのあと、ずっと首をのばしていた。"
         check.photo = photo("check")

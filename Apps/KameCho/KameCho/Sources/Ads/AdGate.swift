@@ -57,8 +57,8 @@ final class AdGate {
     }
 
     private static let testUnit = "ca-app-pub-3940256099942544/2435281174"
-    /// TODO: AdMob に「カメ帳」を登録したら、本番のバナーユニットに差しかえる。
-    private static let liveUnit = "ca-app-pub-3940256099942544/2435281174"
+    /// AdMob「KameCho Banner」（2026-11-19 作成）。
+    private static let liveUnit = "ca-app-pub-6105029932689433/4935788906"
 
     private func topController() -> UIViewController? {
         let root = UIApplication.shared.connectedScenes

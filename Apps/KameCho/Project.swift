@@ -38,8 +38,8 @@ let project = Project(
                     "CFBundleVersion": .string(buildNumber),
                     "ITSAppUsesNonExemptEncryption": false,
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
-                    // TODO: AdMob に「カメ帳」を登録したら差しかえる（いまは Google のテスト用 ID）。
-                    "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511",
+                    // AdMob「カメ帳」（2026-11-19 登録・ストア未掲載で作成）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~1228798985",
                     "NSUserTrackingUsageDescription": "あなたに合った広告を出すために使います。許可しなくても、カメ帳はすべての機能を使えます。",
                     "SKAdNetworkItems": .array(skNetworks.map { .dictionary(["SKAdNetworkIdentifier": .string("\($0).skadnetwork")]) }),
                 ]

@@ -37,8 +37,14 @@ struct GrowthScreen: View {
                 if let turtle = Selection.pick(turtles, key: selectedKey) {
                     VStack(spacing: 14) {
                         TurtleSwitcher(turtles: turtles, selectedKey: $selectedKey)
-                        chartCard(turtle)
-                        RestCard(turtle: turtle) { starting = turtle }
+                        // 冬眠中は体重の減りがいちばん大事なので、上に出す。
+                        if turtle.currentRest != nil {
+                            RestCard(turtle: turtle) { starting = turtle }
+                            chartCard(turtle)
+                        } else {
+                            chartCard(turtle)
+                            RestCard(turtle: turtle) { starting = turtle }
+                        }
                         historyCard(turtle)
                     }
                     .padding()
