@@ -1,8 +1,8 @@
 import ProjectDescription
 
 // 1.0 は広告も課金も載せなかった（外部 SDK ゼロ）。1.1 からタブの上にバナー広告（AdMob）を置く。
-let marketingVersion = "1.2"
-let buildNumber = "3"
+let marketingVersion = "1.2.1"
+let buildNumber = "4"
 
 // AdMob の広告計測に使う SKAdNetwork の識別子（Google の公式リスト）。足りなくても計測の範囲が狭まるだけ。
 let skAdNetworkIDs: [String] = [

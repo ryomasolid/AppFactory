@@ -1,7 +1,7 @@
 import ProjectDescription
 
-let marketingVersion = "1.0"
-let buildNumber = "1"
+let marketingVersion = "1.0.1"
+let buildNumber = "2"
 
 /// AdMob が案内している SKAdNetwork。
 let networkIDs = [

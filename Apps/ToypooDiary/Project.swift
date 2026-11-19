@@ -1,7 +1,7 @@
 import ProjectDescription
 
-let marketingVersion = "1.0"
-let buildNumber = "1"
+let marketingVersion = "1.0.1"
+let buildNumber = "2"
 
 /// SKAdNetwork（AdMob が案内しているもの）。広告の効果を測るのに使う。
 let skanIDs = [
