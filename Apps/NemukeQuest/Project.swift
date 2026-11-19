@@ -1,8 +1,8 @@
 import ProjectDescription
 
 // ストアの公開版は 1.2（React Native 版「Nemuke Quest」）。Swift 版は 2.0 から。
-let marketingVersion = "2.0"
-let buildNumber = "2"
+let marketingVersion = "2.0.1"
+let buildNumber = "3"
 
 /// AdMob が案内している SKAdNetwork の ID。広告の効果計測に使う。
 let adNetworks = [
