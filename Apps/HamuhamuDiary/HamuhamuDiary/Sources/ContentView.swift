@@ -19,6 +19,8 @@ struct ContentView: View {
     @State private var selection: AppTab = .home
     @State private var adPermission = AdPermission()
     @State private var launchSheet: LaunchSheet?
+    /// ウィジェットから開くたびに変える。同じシートの中身が使い回されて前回の入力が残らないように。
+    @State private var launchToken = UUID()
 
     /// 起動引数から直接開く画面（スクショ撮影・レイアウト確認用）。
     private enum LaunchSheet: String, Identifiable {
@@ -65,6 +67,7 @@ struct ContentView: View {
         .onOpenURL { url in
             guard url == WidgetSnapshot.recordURL else { return }
             selection = .home
+            launchToken = UUID()
             launchSheet = .todayRecord
         }
         .onChange(of: records.count) { old, new in
@@ -89,13 +92,14 @@ struct ContentView: View {
         .sheet(item: $launchSheet) { sheet in
             switch sheet {
             case .recordEntry:
-                RecordEditorView(record: nil)
+                RecordEditorView(record: nil).id(launchToken)
             case .shareCard:
                 if let record = records.first {
                     ShareCardView(record: record)
                 }
             case .todayRecord:
                 RecordEditorView(record: records.first { Calendar.current.isDateInToday($0.date) })
+                    .id(launchToken)
             }
         }
     }

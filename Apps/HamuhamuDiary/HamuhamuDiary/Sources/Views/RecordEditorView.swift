@@ -2,6 +2,11 @@ import PhotosUI
 import SwiftData
 import SwiftUI
 
+/// 「記録する」で新しい記録を開くときの目印。開くたびに別の id になる。
+struct NewRecordRequest: Identifiable {
+    let id = UUID()
+}
+
 /// 記録の入力・編集。体重以外はすべて任意で、よく使うごはんはテンプレートから1タップで入る。
 struct RecordEditorView: View {
     let record: DiaryRecord?
@@ -220,7 +225,13 @@ struct RecordEditorView: View {
     private func load() {
         guard !loaded else { return }
         loaded = true
-        guard let record else { return }
+        guard let record else {
+            // 新しい記録は、開いた日の日付・写真なしから始める。
+            date = Calendar.current.startOfDay(for: Date())
+            photoPath = nil
+            newPhoto = nil
+            return
+        }
         date = record.date
         weightText = record.weight.map(Formatting.weight) ?? ""
         food = record.food

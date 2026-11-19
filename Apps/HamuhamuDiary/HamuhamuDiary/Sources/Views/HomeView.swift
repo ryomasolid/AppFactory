@@ -14,15 +14,21 @@ struct HomeView: View {
     @State private var editing: RecordSheet?
     @State private var sharing: DiaryRecord?
     @State private var showProfileEditor = false
+    /// 日付をまたいだら画面を描き直すための「いま」。アプリを開いたまま翌日になっても、
+    /// 見出しの日付や「記録する／今日の記録を編集する」が前日のままにならないようにする。
+    @State private var now = Date()
+    @Environment(\.scenePhase) private var scenePhase
     /// 思い出フォトに出す記録。開くたびに変わると落ち着かないので、画面ごとに1回だけ選ぶ。
     @State private var memoryKey: String?
 
+    /// 新しい記録は開くたびに別の id にする。同じ id だとシートの中身が使い回され、
+    /// 前回の日付や写真が残ったまま開くことがある。
     private enum RecordSheet: Identifiable {
-        case new
+        case new(UUID)
         case edit(DiaryRecord)
         var id: String {
             switch self {
-            case .new: "new"
+            case .new(let token): "new-\(token.uuidString)"
             case .edit(let record): record.key
             }
         }
@@ -54,12 +60,18 @@ struct HomeView: View {
         }
         .sheet(item: $editing) { sheet in
             switch sheet {
-            case .new: RecordEditorView(record: nil)
-            case .edit(let record): RecordEditorView(record: record)
+            case .new: RecordEditorView(record: nil).id(sheet.id)
+            case .edit(let record): RecordEditorView(record: record).id(sheet.id)
             }
         }
         .sheet(item: $sharing) { ShareCardView(record: $0) }
         .sheet(isPresented: $showProfileEditor) { ProfileEditorView(profile: profile) }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { now = Date() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
+            now = Date()
+        }
         .onAppear {
             if memoryKey == nil { memoryKey = records.filter { $0.photoPath != nil }.randomElement()?.key }
         }
@@ -70,7 +82,7 @@ struct HomeView: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(Formatting.fullDay(Date()))
+                Text(Formatting.fullDay(now))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(profile.map { "\($0.name)の今日のお世話" } ?? String(localized: "今日のお世話"))
@@ -94,7 +106,7 @@ struct HomeView: View {
 
     private var recordButton: some View {
         Button {
-            editing = todayRecord.map(RecordSheet.edit) ?? .new
+            editing = todayRecord.map(RecordSheet.edit) ?? .new(UUID())
         } label: {
             Label(todayRecord == nil ? "記録する" : "今日の記録を編集する",
                   systemImage: todayRecord == nil ? "plus" : "square.and.pencil")
@@ -136,7 +148,7 @@ struct HomeView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Button {
-                    if let todayRecord { sharing = todayRecord } else { editing = .new }
+                    if let todayRecord { sharing = todayRecord } else { editing = .new(UUID()) }
                 } label: {
                     Label(todayRecord == nil ? "記録してお祝いする" : "シェアカードを作る",
                           systemImage: todayRecord == nil ? "camera" : "square.and.arrow.up")

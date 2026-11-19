@@ -11,7 +11,8 @@ struct DiaryView: View {
 
     @State private var editing: DiaryRecord?
     @State private var sharing: DiaryRecord?
-    @State private var showNew = false
+    /// 開くたびに新しい id にして、前回の入力（日付・写真）が残らないようにする。
+    @State private var newRecord: NewRecordRequest?
     @State private var deleting: DiaryRecord?
 
     var body: some View {
@@ -42,11 +43,11 @@ struct DiaryView: View {
             .navigationTitle("日記")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("記録する", systemImage: "plus") { showNew = true }
+                    Button("記録する", systemImage: "plus") { newRecord = NewRecordRequest() }
                 }
             }
         }
-        .sheet(isPresented: $showNew) { RecordEditorView(record: nil) }
+        .sheet(item: $newRecord) { RecordEditorView(record: nil).id($0.id) }
         .sheet(item: $editing) { RecordEditorView(record: $0) }
         .sheet(item: $sharing) { ShareCardView(record: $0) }
         .confirmationDialog("この記録を削除しますか？", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
@@ -69,7 +70,7 @@ struct DiaryView: View {
             Text("体重やごはん、掃除の記録を残しましょう")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Button("最初の記録を追加") { showNew = true }
+            Button("最初の記録を追加") { newRecord = NewRecordRequest() }
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 4)
         }
