@@ -99,3 +99,37 @@
 ## App のプライバシー
 
 AdMob 分（インコ帳と同じ）。
+
+## 英語（English (U.S.)）の枠（2026-11-19 13:49 に 1.0 を取り下げて入れ、再提出ずみ）
+
+日本のストアは英語(U.S.)のキーワードも拾うので、その枠に日本語の追加語（日本語の名前・副題・キーワードにない語）を入れる。スクショは日本語のものを使う。URL は日本語と同じ。
+
+- 名前: `KameCho: Turtle & Tortoise Log`
+- 副題: `Care, growth & hibernation log`
+- キーワード（95文字）:
+
+```
+ニオイガメ,ギリシャリクガメ,ヒョウモンガメ,ホシガメ,アカアシガメ,セマルハコガメ,ゼニガメ,カメの餌,日光浴,バスキング,床材,メタハラ,ろ材,水温,健康,turtle,tortoise
+```
+
+- 説明:
+
+```
+Note: the app is available in Japanese only.
+
+KameCho is a care and growth log for aquatic turtles and tortoises.
+
+- Today's care, set automatically from the species type and age: feeding and water changes for aquatic turtles; feeding, soaking and substrate changes for tortoises. Tap "done" to log it and see the next due date
+- Shell length (mm) and weight (g) growth charts, with the change since last time and over the past year
+- Hibernation watch: tracks monthly weight loss from the start weight and alerts you when it drops too fast
+- Replacement timers for UVB lights, basking lamps, heaters and filter media
+- Water and basking temperature logs, plus health signs with photos and notes
+- One morning reminder with the day's care and any equipment due
+- Any number of turtles and tortoises
+
+Records and photos stay on your device. No account.
+
+All features are free (a banner ad is shown).
+
+Care intervals, temperatures and hibernation weights are general guidelines. If you are worried about your turtle's health, please see a reptile vet.
+```
