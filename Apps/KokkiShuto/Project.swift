@@ -41,6 +41,15 @@ let project = Project(
             buildableFolders: ["KokkiShuto/Tests"],
             dependencies: [.target(name: "KokkiShuto")]
         ),
+        .target(
+            name: "KokkiShutoUITests",
+            destinations: [.iPhone],
+            product: .uiTests,
+            bundleId: "tech.sesame.kokkishuto.uitests",
+            infoPlist: .default,
+            buildableFolders: ["KokkiShuto/UITests"],
+            dependencies: [.target(name: "KokkiShuto")]
+        ),
     ],
     schemes: [
         .scheme(
@@ -48,6 +57,13 @@ let project = Project(
             shared: true,
             buildAction: .buildAction(targets: ["KokkiShuto"]),
             testAction: .targets(["KokkiShutoTests"])
+        ),
+        // 審査用の画面収録（Release）。
+        .scheme(
+            name: "KokkiShutoTour",
+            shared: true,
+            buildAction: .buildAction(targets: ["KokkiShuto", "KokkiShutoUITests"]),
+            testAction: .targets(["KokkiShutoUITests"], configuration: .release)
         ),
     ]
 )

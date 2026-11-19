@@ -147,6 +147,7 @@ struct QuizView: View {
         .buttonStyle(.plain)
         .allowsHitTesting(chosen == nil)
         .accessibilityLabel(q.mode == .nameToFlag ? "国旗 \(choiceIndex(q, c))" : q.label(of: c))
+        .accessibilityIdentifier("choice-\(choiceIndex(q, c))")
     }
 
     private func choiceIndex(_ q: Question, _ c: Country) -> Int { (q.choices.firstIndex(of: c) ?? 0) + 1 }
