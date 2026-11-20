@@ -1,7 +1,17 @@
 import ProjectDescription
 
-let marketingVersion = "1.0"
-let buildNumber = "1"
+let marketingVersion = "1.0.1"
+let buildNumber = "2"
+
+/// AdMob の案内にある SKAdNetwork の ID。
+let skNetworks = [
+    "cstr6suwn9", "4fzdc2evr5", "2u9pt9hc89", "8s468mfl3y", "klf5c3l5u5",
+    "ppxm28t8ap", "424m5254lk", "uw77j35x4d", "578prtvx9j", "4dzt52r2t5",
+    "gta9lk7p23", "e5fvkxwrpn", "zq492l623r", "3qcr597p9d", "3rd42ekr43",
+]
+
+/// 単体テスト・審査用の録画は、バナーなしで動かす。
+let withoutAds: Arguments = .arguments(launchArguments: [.launchArgument(name: "-noAds", isEnabled: true)])
 
 let project = Project(
     name: "KokkiShuto",
@@ -28,9 +38,13 @@ let project = Project(
                     "CFBundleVersion": .string(buildNumber),
                     "ITSAppUsesNonExemptEncryption": false,
                     "UISupportedInterfaceOrientations": .array([.string("UIInterfaceOrientationPortrait")]),
+                    // AdMob「国旗と首都」（2026-11-20 登録・App Store に紐づけ済み）。
+                    "GADApplicationIdentifier": "ca-app-pub-6105029932689433~7450487203",
+                    "SKAdNetworkItems": .array(skNetworks.map { .dictionary(["SKAdNetworkIdentifier": .string("\($0).skadnetwork")]) }),
                 ]
             ),
-            buildableFolders: ["KokkiShuto/Sources", "KokkiShuto/Resources"]
+            buildableFolders: ["KokkiShuto/Sources", "KokkiShuto/Resources"],
+            dependencies: [.external(name: "GoogleMobileAds")]
         ),
         .target(
             name: "KokkiShutoTests",
@@ -56,14 +70,14 @@ let project = Project(
             name: "KokkiShuto",
             shared: true,
             buildAction: .buildAction(targets: ["KokkiShuto"]),
-            testAction: .targets(["KokkiShutoTests"])
+            testAction: .targets(["KokkiShutoTests"], arguments: withoutAds)
         ),
         // 審査用の画面収録（Release）。
         .scheme(
             name: "KokkiShutoTour",
             shared: true,
             buildAction: .buildAction(targets: ["KokkiShuto", "KokkiShutoUITests"]),
-            testAction: .targets(["KokkiShutoUITests"], configuration: .release)
+            testAction: .targets(["KokkiShutoUITests"], arguments: withoutAds, configuration: .release)
         ),
     ]
 )

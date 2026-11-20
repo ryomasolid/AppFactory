@@ -15,16 +15,20 @@ struct KokkiShutoApp: App {
 
 struct Root: View {
     @State private var tab = Demo.firstTab
+    @State private var ads = AdGate()
 
     var body: some View {
         TabView(selection: $tab) {
             HomeTab()
+                .adStrip(ads)
                 .tabItem { Label("クイズ", systemImage: "questionmark.bubble") }
                 .tag(0)
             DexTab()
+                .adStrip(ads)
                 .tabItem { Label("ずかん", systemImage: "globe.asia.australia") }
                 .tag(1)
         }
+        .task { await ads.prepare() }
     }
 }
 
